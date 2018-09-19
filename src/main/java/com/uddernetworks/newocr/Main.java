@@ -37,17 +37,19 @@ public class Main {
 
         ParsingImage parsingImage = new ParsingImage(input, values);
         parsingImage.parseLines();
-        parsingImage.graphLines();
+//        parsingImage.graphLines();
 
         parsingImage.getLines().forEach(ParsingLine::parseCharacterLRB);
-        parsingImage.getLines().forEach(ParsingLine::graphLR);
+//        parsingImage.getLines().forEach(ParsingLine::graphLR);
 
         System.out.println("Total lines: " + parsingImage.getLines().size());
 
         ImageIO.write(input, "png", new File("E:\\NewOCR\\step1.png"));
 
         parsingImage.getLines().forEach(ParsingLine::parseCharacterTBB);
-        parsingImage.getLines().forEach(ParsingLine::graphTB);
+//        parsingImage.getLines().forEach(ParsingLine::graphTB);
+
+        parsingImage.getLines().forEach(ParsingLine::graphCharacterBoundingBox);
 
         ImageIO.write(input, "png", new File("E:\\NewOCR\\step3.png"));
     }
@@ -76,15 +78,6 @@ public class Main {
         }
 
         return false;
-    }
-
-    public static boolean isRowEmpty(short[][] values, int y) {
-        System.out.println(Arrays.toString(values[y]));
-        for (int x = 0; x < values[y].length; x++) {
-            if (values[y][x] == 255) return false;
-        }
-
-        return true;
     }
 
     public static boolean isColumnPopulated(short[][] values, int x) {

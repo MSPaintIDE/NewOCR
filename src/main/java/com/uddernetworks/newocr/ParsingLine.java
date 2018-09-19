@@ -46,8 +46,6 @@ public class ParsingLine {
                     System.arraycopy(lineData[y], usingX, newData[y], 0, width);
                 }
 
-//                Main.printOut(newData);
-
                 ocrCharacter.setValues(newData);
 
                 width = 0;
@@ -72,7 +70,7 @@ public class ParsingLine {
             }
 
             for (int y = this.lineData.length; 0 <=-- y; ) {
-                if (Main.isRowEmpty(data, y)) {
+                if (!Main.isRowPopulated(data, y)) {
                     excessBottom++;
                 } else {
                     break;
@@ -93,7 +91,7 @@ public class ParsingLine {
         }
     }
 
-    // Graph Left-Right bounds
+    // Graph Left and Right bounds
     public void graphLR() {
         for (OCRCharacter character : characters) {
             Main.colorColumn(this.parsingImage.getImage(), Color.BLUE, character.getX(), this.y, this.height);
@@ -101,11 +99,22 @@ public class ParsingLine {
         }
     }
 
-    // Graph Top-Bottom per-character bounds
+    // Graph Top and Bottom per-character bounds
     public void graphTB() {
         for (OCRCharacter character : characters) {
             Main.colorRow(this.parsingImage.getImage(), Color.GREEN, character.getY(), character.getX(), character.getWidth());
             Main.colorRow(this.parsingImage.getImage(), Color.GREEN, character.getY() + character.getHeight(), character.getX(), character.getWidth());
+        }
+    }
+
+    // Graph exact bounding box around character
+    public void graphCharacterBoundingBox() {
+        for (OCRCharacter character : characters) {
+            Main.colorRow(this.parsingImage.getImage(), Color.MAGENTA, character.getY(), character.getX(), character.getWidth());
+            Main.colorRow(this.parsingImage.getImage(), Color.MAGENTA, character.getY() + character.getHeight(), character.getX(), character.getWidth());
+
+            Main.colorColumn(this.parsingImage.getImage(), Color.MAGENTA, character.getX(), character.getY(), character.getHeight());
+            Main.colorColumn(this.parsingImage.getImage(), Color.MAGENTA, character.getX() + character.getWidth(), character.getY(), character.getHeight());
         }
     }
 
