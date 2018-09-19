@@ -14,7 +14,7 @@ public class Main {
     private static int outputIndex = 0;
 
     public static void main(String[] args) throws IOException {
-        input = ImageIO.read(new File("E:\\NewOCR\\lipsum.png"));
+        input = ImageIO.read(new File("E:\\NewOCR\\input.png"));
         values = createGrid(input);
 
         // Pre-filter

@@ -34,17 +34,21 @@ public class ParsingImage {
                     }
 
                     if (Main.isRowPopulated(this.originalData, y + i)) {
-                        if (finalSpace != -1) finalSpace = heightUntil;
+                        if (finalSpace == -1) finalSpace = heightUntil;
                     } else {
                         heightUntil++;
                     }
                 }
 
-                if (finalSpace != -1) {
+                System.out.println("finalSpace = " + finalSpace);
+                if (finalSpace > 0) {
                     System.out.println("Vertical separation was " + finalSpace + " yet height was " + height);
-                    if (height / 2 <= finalSpace) {
+                    if (height == finalSpace) {
                         y += finalSpace;
                         height += finalSpace;
+                    } else {
+                        lines.add(new ParsingLine(this, y - height, height));
+                        height = 0;
                     }
                 } else {
                     lines.add(new ParsingLine(this, y - height, height));
