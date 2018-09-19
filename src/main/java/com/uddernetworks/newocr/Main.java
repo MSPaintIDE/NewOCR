@@ -39,6 +39,9 @@ public class Main {
         parsingImage.parseLines();
         parsingImage.graphLines();
 
+        parsingImage.getLines().forEach(ParsingLine::parseCharacterLRB);
+        parsingImage.getLines().forEach(ParsingLine::graph);
+
         System.out.println("Total lines: " + parsingImage.getLines().size());
 
         ImageIO.write(input, "png", new File("E:\\NewOCR\\step1.png"));
@@ -50,12 +53,23 @@ public class Main {
         }
     }
 
+    public static void colorColumn(BufferedImage image, Color color, int x, int y, int height) {
+        for (int y2 = 0; y2 < height; y2++) {
+            image.setRGB(x, y + y2, color.getRGB());
+        }
+    }
+
     public static boolean isRowPopulated(short[][] values, int y) {
-        for (int i = 0; i < values[y].length; i++) {
-            if (values[y][i] == 255) {
-//                System.out.println(values[y][i]);
-                return true; // 255 displays as 0 in printing
-            }
+        for (int x = 0; x < values[y].length; x++) {
+            if (values[y][x] == 255) return true; // 255 displays as 0 in printing
+        }
+
+        return false;
+    }
+
+    public static boolean isColumnPopulated(short[][] values, int x) {
+        for (int y = 0; y < values.length; y++) {
+            if (values[y][x] == 255) return true; // 255 displays as 0 in printing
         }
 
         return false;

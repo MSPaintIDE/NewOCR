@@ -8,8 +8,10 @@ public class OCRCharacter {
     private int height;
     private int width;
 
-    public OCRCharacter(ParsingImage parsingImage) {
+    public OCRCharacter(ParsingImage parsingImage, int x, int width) {
         this.parsingImage = parsingImage;
+        this.x = x;
+        this.width = width;
     }
 
     public int getX() {
