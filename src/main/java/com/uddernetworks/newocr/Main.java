@@ -40,16 +40,27 @@ public class Main {
         parsingImage.graphLines();
 
         parsingImage.getLines().forEach(ParsingLine::parseCharacterLRB);
-        parsingImage.getLines().forEach(ParsingLine::graph);
+        parsingImage.getLines().forEach(ParsingLine::graphLR);
 
         System.out.println("Total lines: " + parsingImage.getLines().size());
 
         ImageIO.write(input, "png", new File("E:\\NewOCR\\step1.png"));
+
+        parsingImage.getLines().forEach(ParsingLine::parseCharacterTBB);
+        parsingImage.getLines().forEach(ParsingLine::graphTB);
+
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\step3.png"));
     }
 
     public static void colorRow(BufferedImage image, Color color, int y) {
         for (int x = 0; x < image.getWidth(); x++) {
             image.setRGB(x, y, color.getRGB());
+        }
+    }
+
+    public static void colorRow(BufferedImage image, Color color, int y, int x, int width) {
+        for (int x2 = 0; x2 < width; x2++) {
+            image.setRGB(x2 + x, y, color.getRGB());
         }
     }
 
@@ -65,6 +76,15 @@ public class Main {
         }
 
         return false;
+    }
+
+    public static boolean isRowEmpty(short[][] values, int y) {
+        System.out.println(Arrays.toString(values[y]));
+        for (int x = 0; x < values[y].length; x++) {
+            if (values[y][x] == 255) return false;
+        }
+
+        return true;
     }
 
     public static boolean isColumnPopulated(short[][] values, int x) {

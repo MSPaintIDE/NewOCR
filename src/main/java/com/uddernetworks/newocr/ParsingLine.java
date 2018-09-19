@@ -37,6 +37,7 @@ public class ParsingLine {
 
                 OCRCharacter ocrCharacter;
                 characters.add(ocrCharacter = new OCRCharacter(this.parsingImage, usingX, width));
+                ocrCharacter.setY(this.y);
 
                 short[][] newData = new short[height][];
                 for (int i = 0; i < height; i++) newData[i] = new short[width];
@@ -45,7 +46,7 @@ public class ParsingLine {
                     System.arraycopy(lineData[y], usingX, newData[y], 0, width);
                 }
 
-                Main.printOut(newData);
+//                Main.printOut(newData);
 
                 ocrCharacter.setValues(newData);
 
@@ -54,10 +55,57 @@ public class ParsingLine {
         }
     }
 
-    public void graph() {
+    // Parse Character Top-Bottom Bounds
+    public void parseCharacterTBB() {
+        for (OCRCharacter character : this.characters) {
+            short[][] data = character.getValues();
+
+            int excessTop = 0;
+            int excessBottom = 0;
+
+            for (int y = 0; y < this.lineData.length; y++) {
+                if (!Main.isRowPopulated(data, y)) {
+                    excessTop++;
+                } else {
+                    break;
+                }
+            }
+
+            for (int y = this.lineData.length; 0 <=-- y; ) {
+                if (Main.isRowEmpty(data, y)) {
+                    excessBottom++;
+                } else {
+                    break;
+                }
+            }
+
+            int newHeight = this.lineData.length - excessTop - excessBottom;
+
+            short[][] newData = new short[newHeight][];
+            for (int i = 0; i < newHeight; i++) newData[i] = new short[character.getWidth()];
+
+            for (int y = 0; y < newHeight; y++) {
+                System.arraycopy(data[y + excessTop], 0, newData[y], 0, character.getWidth());
+            }
+
+            character.setHeight(newHeight);
+            character.setY(character.getY() + excessTop);
+        }
+    }
+
+    // Graph Left-Right bounds
+    public void graphLR() {
         for (OCRCharacter character : characters) {
             Main.colorColumn(this.parsingImage.getImage(), Color.BLUE, character.getX(), this.y, this.height);
             Main.colorColumn(this.parsingImage.getImage(), Color.BLUE, character.getX() + character.getWidth(), this.y, this.height);
+        }
+    }
+
+    // Graph Top-Bottom per-character bounds
+    public void graphTB() {
+        for (OCRCharacter character : characters) {
+            Main.colorRow(this.parsingImage.getImage(), Color.GREEN, character.getY(), character.getX(), character.getWidth());
+            Main.colorRow(this.parsingImage.getImage(), Color.GREEN, character.getY() + character.getHeight(), character.getX(), character.getWidth());
         }
     }
 
