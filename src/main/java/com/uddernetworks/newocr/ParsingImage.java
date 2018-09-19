@@ -40,7 +40,6 @@ public class ParsingImage {
                     }
                 }
 
-                System.out.println("finalSpace = " + finalSpace);
                 if (finalSpace > 0) {
                     System.out.println("Vertical separation was " + finalSpace + " yet height was " + height);
                     if (height == finalSpace) {

@@ -33,7 +33,22 @@ public class ParsingLine {
             if (Main.isColumnPopulated(this.lineData, x)) {
                 width++;
             } else if (width > 0) {
-                characters.add(new OCRCharacter(this.parsingImage, x - width, width));
+                int usingX = x - width;
+
+                OCRCharacter ocrCharacter;
+                characters.add(ocrCharacter = new OCRCharacter(this.parsingImage, usingX, width));
+
+                short[][] newData = new short[height][];
+                for (int i = 0; i < height; i++) newData[i] = new short[width];
+
+                for (int y = 0; y < height; y++) {
+                    System.arraycopy(lineData[y], usingX, newData[y], 0, width);
+                }
+
+                Main.printOut(newData);
+
+                ocrCharacter.setValues(newData);
+
                 width = 0;
             }
         }

@@ -7,6 +7,7 @@ public class OCRCharacter {
     private int y;
     private int height;
     private int width;
+    private short[][] values;
 
     public OCRCharacter(ParsingImage parsingImage, int x, int width) {
         this.parsingImage = parsingImage;
@@ -44,5 +45,13 @@ public class OCRCharacter {
 
     public void setWidth(int width) {
         this.width = width;
+    }
+
+    public short[][] getValues() {
+        return values;
+    }
+
+    public void setValues(short[][] values) {
+        this.values = values;
     }
 }
