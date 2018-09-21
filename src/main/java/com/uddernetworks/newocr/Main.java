@@ -14,7 +14,7 @@ public class Main {
     private static int outputIndex = 0;
 
     public static void main(String[] args) throws IOException {
-        input = ImageIO.read(new File("E:\\NewOCR\\input.png"));
+        input = ImageIO.read(new File("E:\\NewOCR\\testfggggg.png"));
         values = createGrid(input);
 
         // Pre-filter
@@ -36,8 +36,9 @@ public class Main {
 
 
         ParsingImage parsingImage = new ParsingImage(input, values);
-        parsingImage.parseLines();
+//        parsingImage.parseLines();
 //        parsingImage.graphLines();
+        parsingImage.getLines().add(new ParsingLine(parsingImage, 3, 21));
 
         parsingImage.getLines().forEach(ParsingLine::parseCharacterLRB);
 //        parsingImage.getLines().forEach(ParsingLine::graphLR);
@@ -80,12 +81,59 @@ public class Main {
         return false;
     }
 
+    private static short[] lastColumn;
+
+    public static void resetLastColumn() {
+        lastColumn = null;
+    }
+
     public static boolean isColumnPopulated(short[][] values, int x) {
+        short[] currentColumn = new short[values.length];
         for (int y = 0; y < values.length; y++) {
-            if (values[y][x] == 255) return true; // 255 displays as 0 in printing
+            currentColumn[y] = values[y][x];
         }
 
-        return false;
+        for (int y = 0; y < values.length; y++) {
+            if (values[y][x] == 255) {
+
+                if (lastColumn != null) {
+//                    printOut(values);
+
+                    System.out.println("Last:");
+                    System.out.println(Arrays.toString(lastColumn));
+                    System.out.println("Current:");
+                    System.out.println(Arrays.toString(currentColumn));
+                    System.out.println("==================================");
+
+                    int currentContains = 0;
+                    int lastContains = 0;
+
+                    int bothClear = 0;
+                    for (int y2 = 0; y2 < currentColumn.length; y2++) {
+                        if (currentColumn[y2] == 255) {
+                            currentContains++;
+                        } else {
+                            System.out.println("111 Current: " + currentContains  + " Last: " + lastContains);
+//                            if (currentContains > 2) return false;
+                            currentContains = 0;
+                        }
+
+                        if (lastColumn[y2] == 255) {
+                            lastContains++;
+                        } else {
+                            System.out.println("222 Current: " + currentContains  + " Last: " + lastContains);
+                            lastContains = 0;
+                        }
+                    }
+                }
+
+                lastColumn = currentColumn;
+                return true; // Is part of a character
+            }
+        }
+
+        lastColumn = currentColumn;
+        return false; // Makes a new character
     }
 
     public static short[][] createGrid(BufferedImage bufferedImage) {

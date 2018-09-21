@@ -26,7 +26,7 @@ public class ParsingLine {
         }
     }
 
-    // Parse Character Left-Right Bounds
+    // Parse Character Left and Right Bounds
     public void parseCharacterLRB() {
         int width = 0;
         for (int x = 0; x < this.lineData[0].length; x++) {
@@ -51,9 +51,11 @@ public class ParsingLine {
                 width = 0;
             }
         }
+
+        Main.resetLastColumn();
     }
 
-    // Parse Character Top-Bottom Bounds
+    // Parse Character Top and Bottom Bounds
     public void parseCharacterTBB() {
         for (OCRCharacter character : this.characters) {
             short[][] data = character.getValues();
@@ -111,7 +113,7 @@ public class ParsingLine {
     public void graphCharacterBoundingBox() {
         for (OCRCharacter character : characters) {
             Main.colorRow(this.parsingImage.getImage(), Color.MAGENTA, character.getY(), character.getX(), character.getWidth());
-            Main.colorRow(this.parsingImage.getImage(), Color.MAGENTA, character.getY() + character.getHeight(), character.getX(), character.getWidth());
+            Main.colorRow(this.parsingImage.getImage(), Color.MAGENTA, character.getY() + character.getHeight(), character.getX(), character.getWidth() + 1);
 
             Main.colorColumn(this.parsingImage.getImage(), Color.MAGENTA, character.getX(), character.getY(), character.getHeight());
             Main.colorColumn(this.parsingImage.getImage(), Color.MAGENTA, character.getX() + character.getWidth(), character.getY(), character.getHeight());
