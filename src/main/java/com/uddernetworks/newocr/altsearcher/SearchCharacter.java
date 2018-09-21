@@ -2,6 +2,7 @@ package com.uddernetworks.newocr.altsearcher;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,6 +41,21 @@ public class SearchCharacter {
         return width == height
                 || width - 1 == height
                 || width == height - 1;
+    }
+
+    public void addDot(List<Map.Entry<Integer, Integer>> dotCoordinates) {
+        boolean[][] values = new boolean[this.height + 1][];
+        for (int i = 0; i < values.length; i++) values[i] = new boolean[width + 1];
+
+        int yOffset = this.height - this.values.length + 1;
+
+        for (int y = 0; y < this.values.length; y++) {
+            System.arraycopy(this.values[y], 0, values[y + yOffset], 0, this.values[0].length);
+        }
+
+        dotCoordinates.forEach(entry -> values[entry.getValue() - this.y][entry.getKey() - this.x] = true);
+
+        this.values = values;
     }
 
     public void drawTo(BufferedImage image) {

@@ -71,6 +71,8 @@ public class Main {
                                 baseCharacter.setWidth(dotMaxX - baseCharacter.getX());
                             }
 
+                            baseCharacter.addDot(coordinates);
+
                             coordinates.clear();
                             continue;
                         }
