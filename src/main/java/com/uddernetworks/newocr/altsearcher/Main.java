@@ -59,17 +59,23 @@ public class Main {
 
                     if (dotCharacter.isProbablyDot()) {
                         SearchCharacter baseCharacter = getDotOverLetter(searchCharcaters, dotCharacter).orElse(null);
-                        System.out.println("baseCharacter = " + baseCharacter);
                         if (baseCharacter != null) {
+                            int maxX = baseCharacter.getX() + baseCharacter.getWidth();
                             int maxY = baseCharacter.getY() + baseCharacter.getHeight();
                             baseCharacter.setHeight(maxY - dotCharacter.getY());
                             baseCharacter.setY(dotCharacter.getY());
+
+                            int dotMaxX = dotCharacter.getX() + dotCharacter.getWidth();
+
+                            if (dotMaxX > maxX) {
+                                baseCharacter.setWidth(dotMaxX - baseCharacter.getX());
+                            }
+
                             coordinates.clear();
                             continue;
                         }
                     }
 
-//                    dotCharacter.drawTo(input);
                     searchCharcaters.add(dotCharacter);
                     coordinates.clear();
                 }
@@ -85,16 +91,13 @@ public class Main {
     }
 
     public static Optional<SearchCharacter> getDotOverLetter(List<SearchCharacter> characters, SearchCharacter searchCharacter) {
+        int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2) + 2;
         return characters.parallelStream()
                 .filter(character -> character.getX() <= searchCharacter.getX() && character.getX() + character.getWidth() + 1 >= searchCharacter.getX() + searchCharacter.getWidth())
                 .filter(character -> {
-                    int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2) + 2;
-
                     int mod = -1;
                     for (int i = 0; i < 3; i++) {
-                        if (below + (mod++) == character.getY()) {
-                            return true;
-                        }
+                        if (below + (mod++) == character.getY()) return true;
                     }
 
                     return false;
