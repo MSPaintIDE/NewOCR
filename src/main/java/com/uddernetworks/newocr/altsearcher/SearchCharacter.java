@@ -76,4 +76,12 @@ public class SearchCharacter {
     public int getHeight() {
         return height;
     }
+
+    public void setY(int y) {
+        this.y = y;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
 }

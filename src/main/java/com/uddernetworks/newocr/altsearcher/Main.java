@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class Main {
 
@@ -50,31 +51,56 @@ public class Main {
         List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
 
         for (int y = input.getHeight(); 0 <=-- y;) {
-//        for (int y = 0; y < input.getHeight(); y++) {
             for (int x = 0; x < input.getWidth(); x++) {
                 searchImage.scanFrom(x, y, coordinates);
 
                 if (coordinates.size() != 0) {
-                    SearchCharacter searchCharacter = new SearchCharacter(coordinates);
+                    SearchCharacter dotCharacter = new SearchCharacter(coordinates);
 
-                    if (searchCharacter.isProbablyDot()) {
-                        // TODO: Do stuff
+                    if (dotCharacter.isProbablyDot()) {
+                        SearchCharacter baseCharacter = getDotOverLetter(searchCharcaters, dotCharacter).orElse(null);
+                        System.out.println("baseCharacter = " + baseCharacter);
+                        if (baseCharacter != null) {
+                            int maxY = baseCharacter.getY() + baseCharacter.getHeight();
+                            baseCharacter.setHeight(maxY - dotCharacter.getY());
+                            baseCharacter.setY(dotCharacter.getY());
+                            coordinates.clear();
+                            continue;
+                        }
                     }
 
-                    searchCharcaters.add(searchCharacter);
-                    searchCharacter.drawTo(input);
-
-                    coordinates = new ArrayList<>();
+//                    dotCharacter.drawTo(input);
+                    searchCharcaters.add(dotCharacter);
+                    coordinates.clear();
                 }
             }
         }
+
+        BufferedImage finalInput = input;
+        searchCharcaters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
 
         System.out.println(searchCharcaters.size() + " characters found");
 
         ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
     }
 
+    public static Optional<SearchCharacter> getDotOverLetter(List<SearchCharacter> characters, SearchCharacter searchCharacter) {
+        return characters.parallelStream()
+                .filter(character -> character.getX() <= searchCharacter.getX() && character.getX() + character.getWidth() + 1 >= searchCharacter.getX() + searchCharacter.getWidth())
+                .filter(character -> {
+                    int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2) + 2;
 
+                    int mod = -1;
+                    for (int i = 0; i < 3; i++) {
+                        if (below + (mod++) == character.getY()) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                })
+                .findFirst();
+    }
 
     public static void colorRow(BufferedImage image, Color color, int y, int x, int width) {
         for (int x2 = 0; x2 < width; x2++) {
