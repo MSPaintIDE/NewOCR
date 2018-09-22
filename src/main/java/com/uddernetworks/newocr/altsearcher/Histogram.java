@@ -1,5 +1,7 @@
 package com.uddernetworks.newocr.altsearcher;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,16 +39,35 @@ public class Histogram {
         return Arrays.stream(array).max().getAsInt();
     }
 
-    @Override
-    public String toString() {
+    public void drawTo(BufferedImage image, int xOffset, int yOffset, Color color) {
         int height = Math.max(heightOf(left), heightOf(bottom));
 
         int[] left = Arrays.copyOf(this.left, this.left.length);
         int[] bottom = Arrays.copyOf(this.bottom, this.bottom.length);
 
+        for (int i = 0; i < height; i++) {
+            for (int x = 0; x < left.length; x++) {
+                if (left[x]-- > 0) {
+                    image.setRGB(x + xOffset, height - i + yOffset, color.getRGB());
+                }
+            }
+
+            for (int x = 0; x < bottom.length; x++) {
+                if (bottom[x]-- > 0) {
+                    image.setRGB(x + xOffset + left.length + 5, height - i + yOffset, color.getRGB());
+                }
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        int[] left = Arrays.copyOf(this.left, this.left.length);
+        int[] bottom = Arrays.copyOf(this.bottom, this.bottom.length);
+
         List<String> lines = new ArrayList<>();
 
-        for (int i = 0; i < height; i++) {
+        for (int i = 0; i < getHeight(); i++) {
             StringBuilder line = new StringBuilder();
             for (int x = 0; x < left.length; x++) {
                 line.append(left[x]-- > 0 ? "ｘ" : "　");
@@ -68,4 +89,7 @@ public class Histogram {
         return stringBuilder.toString();
     }
 
+    public int getHeight() {
+        return Math.max(heightOf(left), heightOf(bottom));
+    }
 }

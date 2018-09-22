@@ -5,17 +5,19 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class Main {
 
-    private static Histogram first;
+//    private static Histogram first;
+    private static int histogramY = 0;
+    private static char histogramLetter = 'a';
+    private static Map<Character, Histogram> histogramMap = new HashMap<>();
 
-    public static void main(String[] args) throws IOException {
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\teststuff.png"));
+    public static void main(String[] args) throws IOException { // alphabet48
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\alphabet72.png"));
+        BufferedImage histogramVisual = new BufferedImage(500, 2000, BufferedImage.TYPE_INT_ARGB);
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharcaters = new ArrayList<>();
 
@@ -29,13 +31,13 @@ public class Main {
 
         input = temp;
 
-         // Pre-filter
+        // Pre-filter
 
         filter(input);
 
-         // End pre-filters
+        // End pre-filters
 
-        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout1.png"));
+        ImageIO.write(temp, "png", new File("E:\\NewOCR\\alphabet72.png"));
 
         int arrX = 0;
         int arrY = 0;
@@ -52,7 +54,7 @@ public class Main {
 
         List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
 
-        for (int y = input.getHeight(); 0 <=-- y;) {
+        for (int y = input.getHeight(); 0 <= --y; ) {
             for (int x = 0; x < input.getWidth(); x++) {
                 searchImage.scanFrom(x, y, coordinates);
 
@@ -81,10 +83,14 @@ public class Main {
                     }
 
 //                    if (first == null) {
-                        first = new Histogram(dotCharacter.getValues());
-                        System.out.println(first);
+                    Histogram histogram = new Histogram(dotCharacter.getValues());
 
-                    System.out.println("\n\n");
+
+
+//                    first.drawTo(histogramVisual, 10, histogramY, Color.RED);
+//                    histogramY += first.getHeight() + 10;
+
+//                    System.out.println("\n\n");
 //                    }
 
                     searchCharcaters.add(dotCharacter);
@@ -98,7 +104,96 @@ public class Main {
 
         System.out.println(searchCharcaters.size() + " characters found");
 
+        ImageIO.write(histogramVisual, "png", new File("E:\\NewOCR\\histogramvisual.png"));
+
         ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
+    }
+
+    public static void generateHistograms(File file) throws IOException {
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\alphabet72.png"));
+        BufferedImage histogramVisual = new BufferedImage(500, 2000, BufferedImage.TYPE_INT_ARGB);
+        boolean[][] values = createGrid(input);
+        List<SearchCharacter> searchCharcaters = new ArrayList<>();
+
+        BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
+
+        for (int y = 0; y < input.getHeight(); y++) {
+            for (int x = 0; x < input.getWidth(); x++) {
+                temp.setRGB(x, y, input.getRGB(x, y));
+            }
+        }
+
+        input = temp;
+
+        // Pre-filter
+
+        filter(input);
+
+        // End pre-filters
+
+        int arrX = 0;
+        int arrY = 0;
+        for (int y = 0; y < input.getHeight(); y++) {
+            for (int x = 0; x < input.getWidth(); x++) {
+                values[arrY][arrX++] = new Color(input.getRGB(x, y)).equals(Color.BLACK);
+            }
+
+            arrX = 0;
+            arrY++;
+        }
+
+        SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
+
+        List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
+
+        for (int y = input.getHeight(); 0 <= --y; ) {
+            for (int x = 0; x < input.getWidth(); x++) {
+                searchImage.scanFrom(x, y, coordinates);
+
+                if (coordinates.size() != 0) {
+                    SearchCharacter dotCharacter = new SearchCharacter(coordinates);
+
+                    if (dotCharacter.isProbablyDot()) {
+                        SearchCharacter baseCharacter = getDotOverLetter(searchCharcaters, dotCharacter).orElse(null);
+                        if (baseCharacter != null) {
+                            int maxX = baseCharacter.getX() + baseCharacter.getWidth();
+                            int maxY = baseCharacter.getY() + baseCharacter.getHeight();
+                            baseCharacter.setHeight(maxY - dotCharacter.getY());
+                            baseCharacter.setY(dotCharacter.getY());
+
+                            int dotMaxX = dotCharacter.getX() + dotCharacter.getWidth();
+
+                            if (dotMaxX > maxX) {
+                                baseCharacter.setWidth(dotMaxX - baseCharacter.getX());
+                            }
+
+                            baseCharacter.addDot(coordinates);
+
+                            coordinates.clear();
+                            continue;
+                        }
+                    }
+
+                    Histogram first = new Histogram(dotCharacter.getValues());
+                    System.out.println(first);
+
+                    histogramMap.put(histogramLetter++, first);
+
+                    first.drawTo(histogramVisual, 10, histogramY, Color.RED);
+                    histogramY += first.getHeight() + 10;
+
+                    searchCharcaters.add(dotCharacter);
+                    coordinates.clear();
+                }
+            }
+        }
+
+        BufferedImage finalInput = input;
+        searchCharcaters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
+
+        System.out.println(searchCharcaters.size() + " characters found");
+
+        ImageIO.write(histogramVisual, "png", new File("E:\\NewOCR\\histogramvisual.png"));
     }
 
     public static Optional<SearchCharacter> getDotOverLetter(List<SearchCharacter> characters, SearchCharacter searchCharacter) {
@@ -151,7 +246,7 @@ public class Main {
     }
 
     public static String fixedLengthString(String string, int length) {
-        return String.format("%1$"+length+ "s", string);
+        return String.format("%1$" + length + "s", string);
     }
 
     public static void filter(BufferedImage bufferedImage) {
