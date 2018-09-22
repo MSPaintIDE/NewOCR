@@ -2,18 +2,18 @@ package com.uddernetworks.newocr.altsearcher;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SearchCharacter {
+public class SearchCharacter implements Comparable<SearchCharacter> {
 
     private boolean[][] values;
     private int x;
     private int y;
     private int width;
     private int height;
+    private Histogram histogram;
 
     public SearchCharacter(List<Map.Entry<Integer, Integer>> coordinates) {
         List<Integer> xStream = coordinates.stream().map(Map.Entry::getKey).collect(Collectors.toList());
@@ -107,5 +107,18 @@ public class SearchCharacter {
 
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    public Histogram getHistogram() {
+        return histogram;
+    }
+
+    public void setHistogram(Histogram histogram) {
+        this.histogram = histogram;
+    }
+
+    @Override
+    public int compareTo(SearchCharacter searchCharacter) {
+        return x - searchCharacter.x;
     }
 }

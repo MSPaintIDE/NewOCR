@@ -35,12 +35,20 @@ public class Histogram {
         }
     }
 
-    private int heightOf(int[] array) {
+    private double heightOf(int[] array) {
         return Arrays.stream(array).max().getAsInt();
     }
 
+    private double minOf(int[] array) {
+        return Arrays.stream(array).min().getAsInt();
+    }
+
+    public int getHeight() {
+        return (int) Math.max(heightOf(left), heightOf(bottom));
+    }
+
     public void drawTo(BufferedImage image, int xOffset, int yOffset, Color color) {
-        int height = Math.max(heightOf(left), heightOf(bottom));
+        int height = (int) Math.max(heightOf(left), heightOf(bottom));
 
         int[] left = Arrays.copyOf(this.left, this.left.length);
         int[] bottom = Arrays.copyOf(this.bottom, this.bottom.length);
@@ -58,6 +66,20 @@ public class Histogram {
                 }
             }
         }
+    }
+
+    public double getSimilarity(Histogram comparing) {
+        double comparingMinL = minOf(comparing.left) / heightOf(comparing.left);
+        double comparingMinB = minOf(comparing.bottom) / heightOf(comparing.bottom);
+
+        double currMinL = minOf(this.left) / heightOf(this.left);
+        double currMinB = minOf(this.bottom) / heightOf(this.bottom);
+
+//        System.out.println("Current: [" + currMinL + ", " + currMinB + "]  Comparing: [" + comparingMinL + ", " + comparingMinB + "]");
+//        System.out.println("L difference: " + (Math.min(currMinL, comparingMinL) / Math.max(comparingMinL, currMinL)));
+//        System.out.println("B difference: " + (Math.min(currMinB, comparingMinB) / Math.max(comparingMinB, currMinB)));
+
+        return ((Math.min(currMinL, comparingMinL) / Math.max(comparingMinL, currMinL)) + (Math.min(currMinB, comparingMinB) / Math.max(comparingMinB, currMinB))) / 2;
     }
 
     @Override
@@ -87,9 +109,5 @@ public class Histogram {
         StringBuilder stringBuilder = new StringBuilder();
         lines.forEach(line -> stringBuilder.append(line).append("\n"));
         return stringBuilder.toString();
-    }
-
-    public int getHeight() {
-        return Math.max(heightOf(left), heightOf(bottom));
     }
 }
