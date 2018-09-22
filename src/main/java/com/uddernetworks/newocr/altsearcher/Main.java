@@ -12,8 +12,10 @@ import java.util.Optional;
 
 public class Main {
 
+    private static Histogram first;
+
     public static void main(String[] args) throws IOException {
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\input.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\teststuff.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharcaters = new ArrayList<>();
 
@@ -77,6 +79,13 @@ public class Main {
                             continue;
                         }
                     }
+
+//                    if (first == null) {
+                        first = new Histogram(dotCharacter.getValues());
+                        System.out.println(first);
+
+                    System.out.println("\n\n");
+//                    }
 
                     searchCharcaters.add(dotCharacter);
                     coordinates.clear();
