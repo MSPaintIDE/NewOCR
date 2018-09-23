@@ -1,8 +1,5 @@
 package com.uddernetworks.newocr.altsearcher;
 
-import com.uddernetworks.newocr.altsearcher.feature.Feature;
-import com.uddernetworks.newocr.altsearcher.feature.FeatureType;
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -11,12 +8,14 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class Main {
 
     private static Histogram first;
     private static char letter = 'a';
     private static Map<Character, SearchCharacter> searchCharacters = new HashMap<>();
+    private static double[] segmentPercentages;
 
     private static DecimalFormat percent = new DecimalFormat(".##");
 
@@ -27,7 +26,7 @@ public class Main {
         generateFeatures(new File("E:\\NewOCR\\letter.png"));
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\letter.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\teststuff.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -50,6 +49,20 @@ public class Main {
                     SearchCharacter searchCharacter = new SearchCharacter(coordinates);
 
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
+
+//                    System.out.println("\nDOING TESTING ONE NOW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+
+//                    printOut(searchCharacter.getValues()); // [0.5143769968051118, 0.6233333333333333, 0.5238095238095238, 0.44477611940298506, 0.6538461538461539, 0.2585669781931464, 0.45918367346938777, 0.7792207792207793]
+
+                    searchCharacter.applySections();
+                    searchCharacter.analyzeSlices();
+
+//                    System.out.println("Generated segment percentages: " + Arrays.toString(searchCharacter.getSegmentPercentages()));
+
+                    System.out.println("Similarity with real: " + percent.format(Main.searchCharacters.get('a').getSimilarityWith(searchCharacter) * 100) + "%");
+
+//                    Map.Entry<boolean[][], Integer> firstSegment = searchCharacter.getSegments().entrySet().stream().findFirst().get();
+//                    makeImage(firstSegment.getKey(), "firstTest");
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
@@ -99,19 +112,16 @@ public class Main {
 
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
 
-                    // Split into 2 diagonal parts
+//                    printOut(searchCharacter.getValues());
 
-                    printOut(searchCharacter.getValues());
+                    searchCharacter.applySections();
+                    searchCharacter.analyzeSlices();
 
-                    boolean[][] halves[] = getHorizontalHalf(searchCharacter.getValues());
-                    boolean[][] top = halves[0];
-                    boolean[][][] vertSplitL = getVerticalHalf(top);
+                    segmentPercentages = searchCharacter.getSegmentPercentages();
+                    System.out.println("Trained segmentPercentages = " + Arrays.toString(segmentPercentages));
 
-                    makeImage(vertSplitL[0], "topLeft");
-
-                    boolean[][][] diagonalSplits = getIncreasingDiagonal(vertSplitL[0]);
-                    makeImage(diagonalSplits[0], "topDiagonal");
-                    makeImage(diagonalSplits[1], "bottomDiagonal");
+//                    Map.Entry<boolean[][], Integer> firstSegment = searchCharacter.getSegments().entrySet().stream().findFirst().get();
+//                    makeImage(firstSegment.getKey(), "firstGen");
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
@@ -119,31 +129,35 @@ public class Main {
             }
         }
 
-//        BufferedImage finalInput = input;
-//        searchCharacters.stream().sorted().forEach(searchCharacter -> {
-//            Main.searchCharacters.put(letter++, searchCharacter);
-//
-//            searchCharacter.drawTo(finalInput);
-//        });
+        BufferedImage finalInput = input;
+        searchCharacters.stream().sorted().forEach(searchCharacter -> {
+            Main.searchCharacters.put(letter++, searchCharacter);
+
+            searchCharacter.drawTo(finalInput);
+        });
 
         System.out.println(searchCharacters.size() + " characters found");
 
 //        ImageIO.write(histogramVisual, "png", new File("E:\\NewOCR\\output.png"));
     }
 
-    private static void makeImage(boolean[][] values, String name) throws IOException {
-        BufferedImage image = new BufferedImage(values[0].length, values.length, BufferedImage.TYPE_INT_ARGB);
+    private static void makeImage(boolean[][] values, String name) {
+        try {
+            BufferedImage image = new BufferedImage(values[0].length, values.length, BufferedImage.TYPE_INT_ARGB);
 
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                image.setRGB(x, y, (values[y][x] ? Color.BLACK : Color.WHITE).getRGB());
+            for (int y = 0; y < image.getHeight(); y++) {
+                for (int x = 0; x < image.getWidth(); x++) {
+                    image.setRGB(x, y, (values[y][x] ? Color.BLACK : Color.WHITE).getRGB());
+                }
             }
-        }
 
-        ImageIO.write(image, "png", new File("E:\\NewOCR\\" + name + ".png"));
+            ImageIO.write(image, "png", new File("E:\\NewOCR\\" + name + ".png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private static boolean[][][] getHorizontalHalf(boolean[][] values) {
+    public static Stream<boolean[][]> getHorizontalHalf(boolean[][] values) {
         int topHeight = values.length / 2;
         int bottomHeight = values.length - topHeight;
 
@@ -154,14 +168,14 @@ public class Main {
             if (y < topHeight) {
                 topHalf[y] = values[y];
             } else {
-                bottomHalf[y - bottomHeight] = values[y];
+                bottomHalf[y - topHeight] = values[y];
             }
         }
 
-        return new boolean[][][] { topHalf, bottomHalf };
+        return Stream.of(topHalf, bottomHalf).sequential();
     }
 
-    private static boolean[][][] getVerticalHalf(boolean[][] values) {
+    public static Stream<boolean[][]> getVerticalHalf(boolean[][] values) {
         int leftHeight = values[0].length / 2;
         int rightHeight = values[0].length - leftHeight;
 
@@ -183,21 +197,24 @@ public class Main {
             }
         }
 
-        return new boolean[][][] { leftHalf, rightHalf };
+        return Stream.of(leftHalf, rightHalf).sequential();
     }
 
-    private static boolean[][][] getIncreasingDiagonal(boolean[][] values) {
+    public static Map<boolean[][], Integer> getDiagonal(boolean[][] values, boolean increasing) {
         double slope = (double) values.length / (double) values[0].length;
 
         List<Integer> yPositions = new ArrayList<>();
 
         for (int x = 0; x < values[0].length; x++) {
             double y = slope * x;
+            if (increasing) y = values.length - y;
             yPositions.add((int) y);
         }
 
         boolean[][] topHalf = new boolean[values.length][];
         boolean[][] bottomHalf = new boolean[values.length][];
+        int topSize = 0;
+        int bottomSize = 0;
 
         for (int i = 0; i < values.length; i++) {
             topHalf[i] = new boolean[values[0].length];
@@ -209,13 +226,18 @@ public class Main {
             for (int y = 0; y < values.length; y++) {
                 if (y < yPos) {
                     bottomHalf[y][x] = values[y][x];
+                    bottomSize++;
                 } else {
                     topHalf[y][x] = values[y][x];
+                    topSize++;
                 }
             }
         }
 
-        return new boolean[][][] { topHalf, bottomHalf };
+        Map<boolean[][], Integer> ret = new LinkedHashMap<>();
+        ret.put(topHalf, topSize);
+        ret.put(bottomHalf, bottomSize);
+        return ret;
     }
 
     private static void rewriteImage(BufferedImage temp, BufferedImage input) {

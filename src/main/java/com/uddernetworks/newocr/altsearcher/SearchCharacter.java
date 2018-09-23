@@ -4,11 +4,11 @@ import com.uddernetworks.newocr.altsearcher.feature.Feature;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SearchCharacter implements Comparable<SearchCharacter> {
 
@@ -19,6 +19,8 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int height;
     private Histogram histogram;
     private List<Feature> features = new ArrayList<>();
+    private Map<boolean[][], Integer> segments = new LinkedHashMap<>();
+    private double[] segmentPercentages = new double[8]; // Percentage <= 1
 
     public SearchCharacter(List<Map.Entry<Integer, Integer>> coordinates) {
         List<Integer> xStream = coordinates.stream().map(Map.Entry::getKey).collect(Collectors.toList());
@@ -131,6 +133,51 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         AtomicInteger completed = new AtomicInteger(0);
         features.stream().filter(feature -> feature.hasFeature(this.values)).forEach(t -> completed.getAndIncrement());
         return (double) completed.get() / (double) features.size();
+    }
+
+    public void applySections() {
+        AtomicInteger index = new AtomicInteger();
+        Main.getHorizontalHalf(this.values)
+                .flatMap(Main::getVerticalHalf)
+                .forEach(section -> {
+                    int i = index.getAndIncrement();
+                    Main.getDiagonal(section, i == 1 || i == 2).forEach(this::addSegment);
+                });
+    }
+
+    public void analyzeSlices() {
+        AtomicInteger temp = new AtomicInteger();
+        this.segments.forEach((segment, size) -> {
+            double amountTrue = Arrays.stream(segment)
+                    .flatMap(array -> IntStream.range(0, array.length)
+                            .mapToObj(i -> array[i]))
+                    .filter(Boolean::booleanValue)
+                    .count();
+
+            this.segmentPercentages[temp.getAndIncrement()] = size == 0 ? 0.5 : amountTrue / (double) size; // TODO: Not sure if 0.5 is the best
+        });
+    }
+
+    public void addSegment(boolean[][] segment, int size) {
+        this.segments.put(segment, size);
+    }
+
+    public Map<boolean[][], Integer> getSegments() {
+        return this.segments;
+    }
+
+    public double[] getSegmentPercentages() {
+        return this.segmentPercentages;
+    }
+
+    public double getSimilarityWith(SearchCharacter searchCharacter) {
+        double[] otherPercentages = searchCharacter.segmentPercentages;
+        double[] differences = new double[8];
+        for (int i = 0; i < 8; i++) {
+            differences[i] = Math.max(this.segmentPercentages[i], otherPercentages[i]) - Math.min(otherPercentages[i], this.segmentPercentages[i]);
+        }
+
+        return 1 - Arrays.stream(differences).average().getAsDouble();
     }
 
     @Override
