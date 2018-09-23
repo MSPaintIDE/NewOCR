@@ -1,9 +1,13 @@
 package com.uddernetworks.newocr.altsearcher;
 
+import com.uddernetworks.newocr.altsearcher.feature.Feature;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class SearchCharacter implements Comparable<SearchCharacter> {
@@ -14,6 +18,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int width;
     private int height;
     private Histogram histogram;
+    private List<Feature> features = new ArrayList<>();
 
     public SearchCharacter(List<Map.Entry<Integer, Integer>> coordinates) {
         List<Integer> xStream = coordinates.stream().map(Map.Entry::getKey).collect(Collectors.toList());
@@ -115,6 +120,17 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public void setHistogram(Histogram histogram) {
         this.histogram = histogram;
+    }
+
+    public void addFeature(Feature feature) {
+        features.add(feature);
+    }
+
+    // Returns % of completed features (<= 1)
+    public double hasFeatures(List<Feature> features) {
+        AtomicInteger completed = new AtomicInteger(0);
+        features.stream().filter(feature -> feature.hasFeature(this.values)).forEach(t -> completed.getAndIncrement());
+        return (double) completed.get() / (double) features.size();
     }
 
     @Override

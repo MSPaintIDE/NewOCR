@@ -1,5 +1,8 @@
 package com.uddernetworks.newocr.altsearcher;
 
+import com.uddernetworks.newocr.altsearcher.feature.Feature;
+import com.uddernetworks.newocr.altsearcher.feature.FeatureType;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -12,55 +15,28 @@ import java.util.List;
 public class Main {
 
     private static Histogram first;
-    private static int histogramY = 0;
-    private static char histogramLetter = 'a';
-    private static Map<Character, Histogram> histogramMap = new HashMap<>();
-
-    private static char tempppppcha = 'a';
+    private static char letter = 'a';
+    private static Map<Character, SearchCharacter> searchCharacters = new HashMap<>();
 
     private static DecimalFormat percent = new DecimalFormat(".##");
 
     public static void main(String[] args) throws IOException { // alphabet48
 
-        System.out.println("Generating letter histograms for size 72 font...");
+        System.out.println("Generating features...");
         long start = System.currentTimeMillis();
-
-        generateHistograms(new File("E:\\NewOCR\\alphabet72.png"));
-
+        generateFeatures(new File("E:\\NewOCR\\input2.png"));
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\alphabet48.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\letter.png"));
         boolean[][] values = createGrid(input);
-        List<SearchCharacter> searchCharcaters = new ArrayList<>();
+        List<SearchCharacter> searchCharacters = new ArrayList<>();
 
         BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-
-        for (int y = 0; y < input.getHeight(); y++) {
-            for (int x = 0; x < input.getWidth(); x++) {
-                temp.setRGB(x, y, input.getRGB(x, y));
-            }
-        }
-
+        rewriteImage(temp);
         input = temp;
 
-        // Pre-filter
-
         filter(input);
-
-        // End pre-filters
-
-        ImageIO.write(temp, "png", new File("E:\\NewOCR\\letter.png"));
-
-        int arrX = 0;
-        int arrY = 0;
-        for (int y = 0; y < input.getHeight(); y++) {
-            for (int x = 0; x < input.getWidth(); x++) {
-                values[arrY][arrX++] = new Color(input.getRGB(x, y)).equals(Color.BLACK);
-            }
-
-            arrX = 0;
-            arrY++;
-        }
+        toGrid(input, values);
 
         SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
 
@@ -71,62 +47,135 @@ public class Main {
                 searchImage.scanFrom(x, y, coordinates);
 
                 if (coordinates.size() != 0) {
-                    SearchCharacter dotCharacter = new SearchCharacter(coordinates);
+                    SearchCharacter searchCharacter = new SearchCharacter(coordinates);
 
-                    if (dotCharacter.isProbablyDot()) {
-                        SearchCharacter baseCharacter = getDotOverLetter(searchCharcaters, dotCharacter).orElse(null);
-                        if (baseCharacter != null) {
-                            int maxX = baseCharacter.getX() + baseCharacter.getWidth();
-                            int maxY = baseCharacter.getY() + baseCharacter.getHeight();
-                            baseCharacter.setHeight(maxY - dotCharacter.getY());
-                            baseCharacter.setY(dotCharacter.getY());
+                    if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
 
-                            int dotMaxX = dotCharacter.getX() + dotCharacter.getWidth();
-
-                            if (dotMaxX > maxX) {
-                                baseCharacter.setWidth(dotMaxX - baseCharacter.getX());
-                            }
-
-                            baseCharacter.addDot(coordinates);
-
-                            coordinates.clear();
-                            continue;
-                        }
-                    }
-
-                    Histogram histogram = new Histogram(dotCharacter.getValues());
-                    dotCharacter.setHistogram(histogram);
-
-                    searchCharcaters.add(dotCharacter);
+                    searchCharacters.add(searchCharacter);
                     coordinates.clear();
                 }
             }
         }
 
-        searchCharcaters.stream().sorted().forEach(searchCharacter -> {
-            double max = -1;
-            char cha = ' ';
+        searchCharacters.stream().sorted().forEach(searchCharacter -> {
+            double maxScore = 0;
 
-            for (char characater : histogramMap.keySet()) {
-                double tempPercent = searchCharacter.getHistogram().getSimilarity(histogramMap.get(characater));
-                if (tempPercent > max) {
-                    max = tempPercent;
-                    cha = characater;
-                }
-            }
 
-            System.out.println("Most similar: " + cha + " (Real: " + (tempppppcha++) + ") with " + percent.format(max * 100) + "%");
         });
 
         BufferedImage finalInput = input;
-        searchCharcaters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
+        searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
 
-        System.out.println(searchCharcaters.size() + " characters found");
+        System.out.println(searchCharacters.size() + " characters found");
 
         ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
     }
 
+    public static void generateFeatures(File file) throws IOException {
+        BufferedImage input = ImageIO.read(file); // Full alphabet in 72 font
+        BufferedImage histogramVisual = new BufferedImage(500, 2000, BufferedImage.TYPE_INT_ARGB);
+        boolean[][] values = createGrid(input);
+        List<SearchCharacter> searchCharacters = new ArrayList<>();
 
+        BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        rewriteImage(temp);
+        input = temp;
+
+        filter(input);
+        toGrid(input, values);
+
+        SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
+
+        List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
+
+        for (int y = input.getHeight(); 0 <= --y; ) {
+            for (int x = 0; x < input.getWidth(); x++) {
+                searchImage.scanFrom(x, y, coordinates);
+
+                if (coordinates.size() != 0) {
+                    SearchCharacter searchCharacter = new SearchCharacter(coordinates);
+
+                    if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
+
+                    List<Feature> features = new ArrayList<>();
+                    Arrays.stream(FeatureType.values()).forEach(featureEnum -> {
+                        try {
+                            Feature featureInstance = featureEnum.getFeature();
+
+                            while (true) {
+                                if (!featureInstance.createFeature(searchCharacter.getValues(), features)) break;
+                                features.add(featureInstance);
+                                featureInstance = featureEnum.getFeature();
+                            }
+                        } catch (IllegalAccessException | InstantiationException e) {
+                            e.printStackTrace();
+                        }
+                    });
+
+                    searchCharacters.add(searchCharacter);
+                    coordinates.clear();
+                }
+            }
+        }
+
+        BufferedImage finalInput = input;
+        searchCharacters.stream().sorted().forEach(searchCharacter -> {
+            Main.searchCharacters.put(letter++, searchCharacter);
+
+            searchCharacter.drawTo(finalInput);
+        });
+
+        System.out.println(searchCharacters.size() + " characters found");
+
+        ImageIO.write(histogramVisual, "png", new File("E:\\NewOCR\\output.png"));
+    }
+
+    private static void rewriteImage(BufferedImage input) {
+        for (int y = 0; y < input.getHeight(); y++) {
+            for (int x = 0; x < input.getWidth(); x++) {
+                input.setRGB(x, y, input.getRGB(x, y));
+            }
+        }
+    }
+
+    private static void toGrid(BufferedImage input, boolean[][] values) {
+        int arrX = 0;
+        int arrY = 0;
+        for (int y = 0; y < input.getHeight(); y++) {
+            for (int x = 0; x < input.getWidth(); x++) {
+                values[arrY][arrX++] = new Color(input.getRGB(x, y)).equals(Color.BLACK);
+            }
+
+            arrX = 0;
+            arrY++;
+        }
+    }
+
+    private static boolean doDotStuff(SearchCharacter dotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
+        if (!dotCharacter.isProbablyDot()) return false;
+        SearchCharacter baseCharacter = getDotOverLetter(searchCharacters, dotCharacter).orElse(null);
+        if (baseCharacter != null) {
+            int maxX = baseCharacter.getX() + baseCharacter.getWidth();
+            int maxY = baseCharacter.getY() + baseCharacter.getHeight();
+            baseCharacter.setHeight(maxY - dotCharacter.getY());
+            baseCharacter.setY(dotCharacter.getY());
+
+            int dotMaxX = dotCharacter.getX() + dotCharacter.getWidth();
+
+            if (dotMaxX > maxX) {
+                baseCharacter.setWidth(dotMaxX - baseCharacter.getX());
+            }
+
+            baseCharacter.addDot(coordinates);
+
+            coordinates.clear();
+            return true;
+        }
+
+        return false;
+    }
+
+/*
     public static void generateHistograms(File file) throws IOException {
         BufferedImage input = ImageIO.read(file); // Full alphabet in 72 font
         BufferedImage histogramVisual = new BufferedImage(500, 2000, BufferedImage.TYPE_INT_ARGB);
@@ -209,7 +258,7 @@ public class Main {
         }
 
         searchCharcaters.stream().sorted().forEach(searchCharacter -> {
-            histogramMap.put(histogramLetter++, searchCharacter.getHistogram());
+            searchCharacters.put(letter++, searchCharacter.getHistogram());
 
             searchCharacter.getHistogram().drawTo(histogramVisual, 10, histogramY, Color.RED);
             histogramY += searchCharacter.getHistogram().getHeight() + 10;
@@ -222,6 +271,7 @@ public class Main {
 
         ImageIO.write(histogramVisual, "png", new File("E:\\NewOCR\\histogramvisual.png"));
     }
+*/
 
     public static Optional<SearchCharacter> getDotOverLetter(List<SearchCharacter> characters, SearchCharacter searchCharacter) {
         int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2) + 2;
