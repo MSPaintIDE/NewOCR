@@ -24,7 +24,7 @@ public class Main {
 
         System.out.println("Generating features...");
         long start = System.currentTimeMillis();
-        generateFeatures(new File("E:\\NewOCR\\input2.png"));
+        generateFeatures(new File("E:\\NewOCR\\letter.png"));
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
 
         BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\letter.png"));
@@ -32,7 +32,7 @@ public class Main {
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
         BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        rewriteImage(temp);
+        rewriteImage(temp, input);
         input = temp;
 
         filter(input);
@@ -57,11 +57,11 @@ public class Main {
             }
         }
 
-        searchCharacters.stream().sorted().forEach(searchCharacter -> {
-            double maxScore = 0;
-
-
-        });
+//        searchCharacters.stream().sorted().forEach(searchCharacter -> {
+//            double maxScore = 0;
+//
+//
+//        });
 
         BufferedImage finalInput = input;
         searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
@@ -73,16 +73,18 @@ public class Main {
 
     public static void generateFeatures(File file) throws IOException {
         BufferedImage input = ImageIO.read(file); // Full alphabet in 72 font
-        BufferedImage histogramVisual = new BufferedImage(500, 2000, BufferedImage.TYPE_INT_ARGB);
+//        BufferedImage histogramVisual = new BufferedImage(500, 2000, BufferedImage.TYPE_INT_ARGB);
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
         BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        rewriteImage(temp);
+        rewriteImage(temp, input);
         input = temp;
 
         filter(input);
         toGrid(input, values);
+
+        printOut(values);
 
         SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
 
@@ -97,20 +99,19 @@ public class Main {
 
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
 
-                    List<Feature> features = new ArrayList<>();
-                    Arrays.stream(FeatureType.values()).forEach(featureEnum -> {
-                        try {
-                            Feature featureInstance = featureEnum.getFeature();
+                    // Split into 2 diagonal parts
 
-                            while (true) {
-                                if (!featureInstance.createFeature(searchCharacter.getValues(), features)) break;
-                                features.add(featureInstance);
-                                featureInstance = featureEnum.getFeature();
-                            }
-                        } catch (IllegalAccessException | InstantiationException e) {
-                            e.printStackTrace();
-                        }
-                    });
+                    printOut(searchCharacter.getValues());
+
+                    boolean[][] halves[] = getHorizontalHalf(searchCharacter.getValues());
+                    boolean[][] top = halves[0];
+                    boolean[][][] vertSplitL = getVerticalHalf(top);
+
+                    makeImage(vertSplitL[0], "topLeft");
+
+                    boolean[][][] diagonalSplits = getIncreasingDiagonal(vertSplitL[0]);
+                    makeImage(diagonalSplits[0], "topDiagonal");
+                    makeImage(diagonalSplits[1], "bottomDiagonal");
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
@@ -118,22 +119,109 @@ public class Main {
             }
         }
 
-        BufferedImage finalInput = input;
-        searchCharacters.stream().sorted().forEach(searchCharacter -> {
-            Main.searchCharacters.put(letter++, searchCharacter);
-
-            searchCharacter.drawTo(finalInput);
-        });
+//        BufferedImage finalInput = input;
+//        searchCharacters.stream().sorted().forEach(searchCharacter -> {
+//            Main.searchCharacters.put(letter++, searchCharacter);
+//
+//            searchCharacter.drawTo(finalInput);
+//        });
 
         System.out.println(searchCharacters.size() + " characters found");
 
-        ImageIO.write(histogramVisual, "png", new File("E:\\NewOCR\\output.png"));
+//        ImageIO.write(histogramVisual, "png", new File("E:\\NewOCR\\output.png"));
     }
 
-    private static void rewriteImage(BufferedImage input) {
-        for (int y = 0; y < input.getHeight(); y++) {
-            for (int x = 0; x < input.getWidth(); x++) {
-                input.setRGB(x, y, input.getRGB(x, y));
+    private static void makeImage(boolean[][] values, String name) throws IOException {
+        BufferedImage image = new BufferedImage(values[0].length, values.length, BufferedImage.TYPE_INT_ARGB);
+
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                image.setRGB(x, y, (values[y][x] ? Color.BLACK : Color.WHITE).getRGB());
+            }
+        }
+
+        ImageIO.write(image, "png", new File("E:\\NewOCR\\" + name + ".png"));
+    }
+
+    private static boolean[][][] getHorizontalHalf(boolean[][] values) {
+        int topHeight = values.length / 2;
+        int bottomHeight = values.length - topHeight;
+
+        boolean[][] topHalf = new boolean[topHeight][];
+        boolean[][] bottomHalf = new boolean[bottomHeight][];
+
+        for (int y = 0; y < values.length; y++) {
+            if (y < topHeight) {
+                topHalf[y] = values[y];
+            } else {
+                bottomHalf[y - bottomHeight] = values[y];
+            }
+        }
+
+        return new boolean[][][] { topHalf, bottomHalf };
+    }
+
+    private static boolean[][][] getVerticalHalf(boolean[][] values) {
+        int leftHeight = values[0].length / 2;
+        int rightHeight = values[0].length - leftHeight;
+
+        boolean[][] leftHalf = new boolean[values.length][];
+        boolean[][] rightHalf = new boolean[values.length][];
+
+        for (int i = 0; i < values.length; i++) {
+            leftHalf[i] = new boolean[leftHeight];
+            rightHalf[i] = new boolean[rightHeight];
+        }
+
+        for (int y = 0; y < values.length; y++) {
+            for (int x = 0; x < values[0].length; x++) {
+                if (x < leftHeight) {
+                    leftHalf[y][x] = values[y][x];
+                } else {
+                    rightHalf[y][x - leftHeight] = values[y][x];
+                }
+            }
+        }
+
+        return new boolean[][][] { leftHalf, rightHalf };
+    }
+
+    private static boolean[][][] getIncreasingDiagonal(boolean[][] values) {
+        double slope = (double) values.length / (double) values[0].length;
+
+        List<Integer> yPositions = new ArrayList<>();
+
+        for (int x = 0; x < values[0].length; x++) {
+            double y = slope * x;
+            yPositions.add((int) y);
+        }
+
+        boolean[][] topHalf = new boolean[values.length][];
+        boolean[][] bottomHalf = new boolean[values.length][];
+
+        for (int i = 0; i < values.length; i++) {
+            topHalf[i] = new boolean[values[0].length];
+            bottomHalf[i] = new boolean[values[0].length];
+        }
+
+        for (int x = 0; x < values[0].length; x++) {
+            int yPos = yPositions.get(x);
+            for (int y = 0; y < values.length; y++) {
+                if (y < yPos) {
+                    bottomHalf[y][x] = values[y][x];
+                } else {
+                    topHalf[y][x] = values[y][x];
+                }
+            }
+        }
+
+        return new boolean[][][] { topHalf, bottomHalf };
+    }
+
+    private static void rewriteImage(BufferedImage temp, BufferedImage input) {
+        for (int y = 0; y < temp.getHeight(); y++) {
+            for (int x = 0; x < temp.getWidth(); x++) {
+                temp.setRGB(x, y, input.getRGB(x, y));
             }
         }
     }
