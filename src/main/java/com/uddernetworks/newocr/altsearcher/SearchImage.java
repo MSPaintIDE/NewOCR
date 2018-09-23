@@ -27,7 +27,7 @@ public class SearchImage {
             scanFrom(x + 1, y + 1, coordinates);
             scanFrom(x + 1, y - 1, coordinates);
             scanFrom(x - 1, y + 1, coordinates);
-            scanFrom(x - 1, y + 1, coordinates);
+            scanFrom(x - 1, y - 1, coordinates);
         }
     }
 

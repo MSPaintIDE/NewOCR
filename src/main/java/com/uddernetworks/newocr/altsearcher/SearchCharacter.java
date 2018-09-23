@@ -125,6 +125,18 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         this.histogram = histogram;
     }
 
+    public boolean isInBounds(int x, int y) {
+        return x <= this.x + this.width
+                && x >= this.x
+                && y <= this.y + this.height
+                && y >= this.y;
+    }
+
+    public boolean isInYBounds(int y) {
+        return y <= this.y + this.height
+                && y >= this.y;
+    }
+
     public void addFeature(Feature feature) {
         features.add(feature);
     }

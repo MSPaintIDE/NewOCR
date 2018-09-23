@@ -1,5 +1,7 @@
 package com.uddernetworks.newocr.altsearcher;
 
+import com.uddernetworks.newocr.altsearcher.feature.TrainedCharacterData;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -8,13 +10,17 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Main {
 
     private static Histogram first;
     private static char letter = 'a';
-    private static Map<Character, SearchCharacter> searchCharacters = new HashMap<>();
+    //    private static Map<Character, SearchCharacter> searchCharacters = new HashMap<>();
+    private static int trainWidth = 0;
+    private static List<TrainedCharacterData> trainedCharacterData = new ArrayList<>();
     private static double[] segmentPercentages;
 
     private static DecimalFormat percent = new DecimalFormat(".##");
@@ -23,10 +29,10 @@ public class Main {
 
         System.out.println("Generating features...");
         long start = System.currentTimeMillis();
-        generateFeatures(new File("E:\\NewOCR\\letter.png"));
+        generateFeatures(new File("E:\\NewOCR\\input.png"));
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\teststuff.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\alphabet48.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -61,29 +67,26 @@ public class Main {
 
 //                    System.out.println("Similarity with real: " + percent.format(Main.searchCharacters.get('a').getSimilarityWith(searchCharacter) * 100) + "%");
 
-                    double answerSimilarity = -1;
-                    SearchCharacter answer = null;
-                    for (SearchCharacter value : Main.searchCharacters.values()) {
-                        double similarity = value.getSimilarityWith(searchCharacter);
-                        if (similarity > answerSimilarity) {
-                            answerSimilarity = similarity;
-                            answer = value;
-                        }
-                    }
-
-                    System.out.println("Closest is " + answer + " with a similarity of " + percent.format(answerSimilarity * 100) + "%");
-
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
                 }
             }
         }
 
-//        searchCharacters.stream().sorted().forEach(searchCharacter -> {
-//            double maxScore = 0;
-//
-//
-//        });
+        searchCharacters.stream().sorted().forEach(searchCharacter -> {
+            double answerSimilarity = -1;
+            TrainedCharacterData answer = null;
+            for (TrainedCharacterData characterData : trainedCharacterData) {
+                double similarity = characterData.getSimilarityWith(searchCharacter);
+//                System.out.println("Similarity for " + characterData + ": " + similarity);
+                if (similarity > answerSimilarity) {
+                    answerSimilarity = similarity;
+                    answer = characterData;
+                }
+            }
+
+            System.out.println("Closest is '" + answer + "' with a similarity of " + percent.format(answerSimilarity * 100) + "%");
+        });
 
         BufferedImage finalInput = input;
         searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
@@ -99,6 +102,8 @@ public class Main {
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
+        trainWidth = input.getWidth();
+
         BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
         rewriteImage(temp, input);
         input = temp;
@@ -106,7 +111,9 @@ public class Main {
         filter(input);
         toGrid(input, values);
 
-        printOut(values);
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
+
+//        printOut(values);
 
         SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
 
@@ -123,6 +130,9 @@ public class Main {
 
 //                    printOut(searchCharacter.getValues());
 
+//                    System.out.println("coordinates = " + coordinates);
+//                    System.out.println("Width: " + searchCharacter.getWidth() + " Height = " + searchCharacter.getHeight());
+
                     searchCharacter.applySections();
                     searchCharacter.analyzeSlices();
 
@@ -138,17 +148,131 @@ public class Main {
             }
         }
 
+        char letter = 'a';
+        for (int i = 0; i < 26; i++) {
+            trainedCharacterData.add(new TrainedCharacterData(letter++));
+        }
+
+//        letter = 'a';
+//        for (int i = 0; i < 26; i++) {
+//            System.out.println(letter + " = " + getTrainedData(letter++));
+//        }
+//
+//        System.out.println("trainedCharacterData = " + trainedCharacterData);
+//        System.exit(0);
+
+//        System.out.println("START");
         BufferedImage finalInput = input;
         searchCharacters.stream().sorted().forEach(searchCharacter -> {
-            searchCharacter.setKnownChar(letter);
-            Main.searchCharacters.put(letter++, searchCharacter);
+//            char current = Main.letter++;
+//            if (Main.letter > 'z') Main.letter = 'a';
+//            searchCharacter.setKnownChar(current);
+
+
+//            System.out.println("current = " + current);
+//            Main.searchCharacters.put(letter++, searchCharacter);
+
 
             searchCharacter.drawTo(finalInput);
         });
 
+//        System.exit(0);
+
+//        Main.letter = 'a';
+
+        List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
+        List<SearchCharacter> found = new ArrayList<>();
+        for (int y = 0; y < input.getHeight(); y++) {
+//            System.out.println("y = " + y);
+            List<SearchCharacter> line = findCharacterAtY(y, searchCharacters, found);
+
+            if (!line.isEmpty()) {
+                line.forEach(searchCharacter -> {
+                    char current = Main.letter++;
+                    if (Main.letter > 'z') Main.letter = 'a';
+                    searchCharacter.setKnownChar(current);
+
+//                    System.out.println("(" + searchCharacter.getX());
+
+                    TrainedCharacterData trainedCharacterData = getTrainedData(current);
+//                    System.out.println(trainedCharacterData + " = " + current);
+                    trainedCharacterData.recalculateTo(searchCharacter.getSegmentPercentages());
+
+//                    makeImage(searchCharacter.getValues(), "output\\character_" + current);
+                });
+
+//                System.exit(0);
+
+//                System.out.println("line = " + line);
+
+//                System.out.println("line = " + line);
+//                found.addAll(line);
+                searchCharacters.removeAll(line);
+            }
+        }
+
+        searchCharacters = searchCharactersCopy;
+
         System.out.println(searchCharacters.size() + " characters found");
 
-//        ImageIO.write(histogramVisual, "png", new File("E:\\NewOCR\\output.png"));
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+    }
+
+    private static TrainedCharacterData getTrainedData(char cha) {
+//        System.out.println(cha);
+        return trainedCharacterData.stream().filter(characterData -> characterData.getValue() == cha).findFirst().get();
+    }
+
+    private static List<SearchCharacter> findCharacterAtY(int y, List<SearchCharacter> searchCharacters, List<SearchCharacter> alreadySearched) {
+//        for (int x = 0; x < trainWidth; x++) {
+//            int finalX = x;
+//            Optional<SearchCharacter> possibleResult = searchCharacters
+//                    .parallelStream()
+//                    .filter(searchChar -> !alreadySearched.contains(searchChar))
+//                    .filter(searchCharacter -> searchCharacter.isInBounds(finalX, y))
+//                    .findFirst();
+//
+//            if (possibleResult.isPresent()) {
+//                SearchCharacter result = possibleResult.get();
+//                return getCharcaterLine(result.getY() + result.getHeight() / 2, searchCharacters, alreadySearched);
+//            }
+//        }
+
+        Optional<SearchCharacter> optionalSearchCharacter = searchCharacters
+                .stream()
+//                .filter(searchChar -> !alreadySearched.contains(searchChar))
+                .filter(searchCharacter -> searchCharacter.isInYBounds(y))
+                .findFirst();
+
+        if (!optionalSearchCharacter.isPresent()) return new ArrayList<>();
+        SearchCharacter betterYCharacter = optionalSearchCharacter.get();
+        int betterY = betterYCharacter.getY() + betterYCharacter.getHeight() / 2;
+
+        return searchCharacters
+                .stream()
+                .sorted()
+//                .filter(searchChar -> !alreadySearched.contains(searchChar))
+                .filter(searchCharacter -> searchCharacter.isInYBounds(betterY))
+                .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    private static List<SearchCharacter> getCharcaterLine(int y, List<SearchCharacter> searchCharacters, List<SearchCharacter> alreadySearched) {
+        List<SearchCharacter> result = new LinkedList<>();
+        for (int x = 0; x < trainWidth; x++) {
+            int finalX = x;
+//            List<SearchCharacter> temp = searchCharacters
+//                    .parallelStream()
+//                    .filter(searchChar -> !alreadySearched.contains(searchChar))
+//                    .filter(searchCharacter -> searchCharacter.isInBounds(finalX, y))
+//                    .collect(Collectors.toList());
+//            result.addAll(temp);
+//            alreadySearched.addAll(temp);
+
+
+        }
+
+//        Collections.sort(result);
+        return result;
     }
 
     private static void makeImage(boolean[][] values, String name) {
