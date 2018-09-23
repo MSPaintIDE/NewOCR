@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 
 public class SearchCharacter implements Comparable<SearchCharacter> {
 
+    private char knownChar;
     private boolean[][] values;
     private int x;
     private int y;
@@ -180,8 +181,21 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         return 1 - Arrays.stream(differences).average().getAsDouble();
     }
 
+    public char getKnownChar() {
+        return knownChar;
+    }
+
+    public void setKnownChar(char knownChar) {
+        this.knownChar = knownChar;
+    }
+
     @Override
     public int compareTo(SearchCharacter searchCharacter) {
         return x - searchCharacter.x;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(knownChar);
     }
 }

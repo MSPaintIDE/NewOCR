@@ -59,10 +59,19 @@ public class Main {
 
 //                    System.out.println("Generated segment percentages: " + Arrays.toString(searchCharacter.getSegmentPercentages()));
 
-                    System.out.println("Similarity with real: " + percent.format(Main.searchCharacters.get('a').getSimilarityWith(searchCharacter) * 100) + "%");
+//                    System.out.println("Similarity with real: " + percent.format(Main.searchCharacters.get('a').getSimilarityWith(searchCharacter) * 100) + "%");
 
-//                    Map.Entry<boolean[][], Integer> firstSegment = searchCharacter.getSegments().entrySet().stream().findFirst().get();
-//                    makeImage(firstSegment.getKey(), "firstTest");
+                    double answerSimilarity = -1;
+                    SearchCharacter answer = null;
+                    for (SearchCharacter value : Main.searchCharacters.values()) {
+                        double similarity = value.getSimilarityWith(searchCharacter);
+                        if (similarity > answerSimilarity) {
+                            answerSimilarity = similarity;
+                            answer = value;
+                        }
+                    }
+
+                    System.out.println("Closest is " + answer + " with a similarity of " + percent.format(answerSimilarity * 100) + "%");
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
@@ -131,6 +140,7 @@ public class Main {
 
         BufferedImage finalInput = input;
         searchCharacters.stream().sorted().forEach(searchCharacter -> {
+            searchCharacter.setKnownChar(letter);
             Main.searchCharacters.put(letter++, searchCharacter);
 
             searchCharacter.drawTo(finalInput);
