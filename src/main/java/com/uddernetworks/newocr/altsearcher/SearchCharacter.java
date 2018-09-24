@@ -18,6 +18,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int y;
     private int width;
     private int height;
+    private boolean hasDot;
     private Histogram histogram;
     private List<Feature> features = new ArrayList<>();
     private Map<boolean[][], Integer> segments = new LinkedHashMap<>();
@@ -64,6 +65,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         dotCoordinates.forEach(entry -> values[entry.getValue() - this.y][entry.getKey() - this.x] = true);
 
         this.values = values;
+        this.hasDot = true;
     }
 
     public void drawTo(BufferedImage image) {
@@ -199,6 +201,14 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public void setKnownChar(char knownChar) {
         this.knownChar = knownChar;
+    }
+
+    public boolean hasDot() {
+        return this.hasDot;
+    }
+
+    public void setHasDot(boolean hasDot) {
+        this.hasDot = hasDot;
     }
 
     @Override

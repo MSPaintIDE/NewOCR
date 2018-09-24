@@ -7,6 +7,7 @@ import java.util.Arrays;
 public class TrainedCharacterData {
 
     private char value;
+    private boolean hasDot;
     private double[] segmentPercentages;
 
     public TrainedCharacterData(char value) {
@@ -23,6 +24,14 @@ public class TrainedCharacterData {
 
     public void setSegmentPercentages(double[] segmentPercentages) {
         this.segmentPercentages = segmentPercentages;
+    }
+
+    public boolean hasDot() {
+        return this.hasDot;
+    }
+
+    public void setHasDot(boolean hasDot) {
+        this.hasDot = hasDot;
     }
 
     public void recalculateTo(double[] segmentPercentages) {
