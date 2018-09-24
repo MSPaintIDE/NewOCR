@@ -1,6 +1,7 @@
 package com.uddernetworks.newocr.altsearcher;
 
 import com.uddernetworks.newocr.altsearcher.feature.TrainedCharacterData;
+import javafx.util.Pair;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -16,6 +17,8 @@ import java.util.stream.Stream;
 
 public class Main {
 
+    public static double AFFECT_BACKWARDS = 1D; // Originally 2
+
     private static Histogram first;
     private static char letter = 'a';
     //    private static Map<Character, SearchCharacter> searchCharacters = new HashMap<>();
@@ -23,55 +26,66 @@ public class Main {
     private static List<TrainedCharacterData> trainedCharacterData = new ArrayList<>();
     private static double[] segmentPercentages;
 
+    private static SortedMap<Double, Double> averageToBack = new TreeMap<>();
+
     private static DecimalFormat percent = new DecimalFormat(".##");
 
     public static void main(String[] args) throws IOException { // alphabet48
 
-        System.out.println("Generating features...");
-        long start = System.currentTimeMillis();
-        generateFeatures(new File("E:\\NewOCR\\input.png"));
-        System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
+        for (int i = 0; i < 100; i++) {
+            letter = 'a';
+            trainedCharacterData = new ArrayList<>();
+            System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
+//            System.out.println("Generating features...");
+            long start = System.currentTimeMillis();
+            generateFeatures(new File("E:\\NewOCR\\input.png"));
+//        generateFeatures(new File("E:\\NewOCR\\letter.png"));
+//            System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\lipsum_lower.png"));
-        boolean[][] values = createGrid(input);
-        List<SearchCharacter> searchCharacters = new ArrayList<>();
 
-        BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        rewriteImage(temp, input);
-        input = temp;
+//        System.exit(0);
+//        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\lipsum_lower.png"));
+//        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\alphabet72.png"));
+            BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\shit.png"));
+            boolean[][] values = createGrid(input);
+            List<SearchCharacter> searchCharacters = new ArrayList<>();
 
-        filter(input);
-        toGrid(input, values);
+            BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            rewriteImage(temp, input);
+            input = temp;
 
-        SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
+            filter(input);
+            toGrid(input, values);
 
-        List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
+            SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
 
-        for (int y = input.getHeight(); 0 <= --y; ) {
-            for (int x = 0; x < input.getWidth(); x++) {
-                searchImage.scanFrom(x, y, coordinates);
+            List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
 
-                if (coordinates.size() != 0) {
-                    SearchCharacter searchCharacter = new SearchCharacter(coordinates);
+            for (int y = input.getHeight(); 0 <= --y; ) {
+                for (int x = 0; x < input.getWidth(); x++) {
+                    searchImage.scanFrom(x, y, coordinates);
 
-                    if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
+                    if (coordinates.size() != 0) {
+                        SearchCharacter searchCharacter = new SearchCharacter(coordinates);
+
+                        if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
 
 //                    System.out.println("\nDOING TESTING ONE NOW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
 //                    printOut(searchCharacter.getValues()); // [0.5143769968051118, 0.6233333333333333, 0.5238095238095238, 0.44477611940298506, 0.6538461538461539, 0.2585669781931464, 0.45918367346938777, 0.7792207792207793]
 
-                    searchCharacter.applySections();
-                    searchCharacter.analyzeSlices();
+                        searchCharacter.applySections();
+                        searchCharacter.analyzeSlices();
 
 //                    System.out.println("Generated segment percentages: " + Arrays.toString(searchCharacter.getSegmentPercentages()));
 
 //                    System.out.println("Similarity with real: " + percent.format(Main.searchCharacters.get('a').getSimilarityWith(searchCharacter) * 100) + "%");
 
-                    searchCharacters.add(searchCharacter);
-                    coordinates.clear();
+                        searchCharacters.add(searchCharacter);
+                        coordinates.clear();
+                    }
                 }
             }
-        }
 
 //        searchCharacters.stream().sorted().forEach(searchCharacter -> {
 //
@@ -80,30 +94,66 @@ public class Main {
 ////            System.out.println("Closest is '" + answer + "' with a similarity of " + percent.format(answerSimilarity * 100) + "%");
 //        });
 
-        List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
-        for (int y = 0; y < input.getHeight(); y++) {
-            List<SearchCharacter> line = findCharacterAtY(y, searchCharacters);
+            List<Double> percentages = new ArrayList<>();
+            StringBuilder result = new StringBuilder();
 
-            if (!line.isEmpty()) {
-                System.out.println("");
-                System.out.println(line);
-                line.forEach(searchCharacter -> {
+            List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
+            for (int y = 0; y < input.getHeight(); y++) {
+                List<SearchCharacter> line = findCharacterAtY(y, searchCharacters);
+
+                if (!line.isEmpty()) {
+//                System.out.println("");
+//                System.out.println(line);
+                    line.forEach(searchCharacter -> {
 //                    System.out.print(getCharacterFor(searchCharacter));
-                    getCharacterFor(searchCharacter);
-                });
+                        Pair<Character, Double> pair = getCharacterFor(searchCharacter);
+                        if (pair == null) {
+                            percentages.add(0D);
+                            System.out.print('?');
+                            result.append('?');
+                        } else {
+                            percentages.add(pair.getValue());
+                            System.out.print(pair.getKey());
+                            result.append(pair.getKey());
+                        }
+                    });
 
-                searchCharacters.removeAll(line);
+                    searchCharacters.removeAll(line);
+                }
             }
+
+//            if (!result.toString().equals("abcdefghijklmnopqrstuvwxyz")) {
+            if (!result.toString().trim().equals("dsfjhsdfknefiusjfdlkneoiwejdmsdkljfoweoijfmosuehrmseoruimnhurdignidousenmfiuerfjnseiufhosjiefnisdurofjmsdrofjsieorjfcmsrojifsmefjiosdrefmrnsehoimzapyoiyluknjvmxbchdneywtqraesdzcsgfcbdhfjrueikdhs")) {
+                System.out.println("Not equals! Got: \n\t" + result);
+
+//                System.exit(0);
+            }
+
+            double average = percentages.stream().mapToDouble(t -> t).average().getAsDouble();
+            System.out.println("\nAverage: " + average);
+
+            averageToBack.put(average, AFFECT_BACKWARDS);
+
+            searchCharacters = searchCharactersCopy;
+
+            BufferedImage finalInput = input;
+            searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
+
+//            System.out.println(searchCharacters.size() + " characters found");
+
+
+            AFFECT_BACKWARDS += 0.3D;
         }
 
-        searchCharacters = searchCharactersCopy;
+        List<Map.Entry<Double, Double>> entries = new ArrayList<>(averageToBack.entrySet());
+        Collections.reverse(entries);
+//        System.out.println(averageToBack);
+        System.out.println("\n\n====================");
+        entries.forEach(entry -> {
+            System.out.println(percent.format(entry.getKey() * 100) + "% \t\t| " + entry.getValue());
+        });
 
-        BufferedImage finalInput = input;
-        searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
-
-        System.out.println(searchCharacters.size() + " characters found");
-
-        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
+//        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
     }
 
     public static void generateFeatures(File file) throws IOException {
@@ -121,7 +171,7 @@ public class Main {
         filter(input);
         toGrid(input, values);
 
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
+//        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
 
 //        printOut(values);
 
@@ -137,20 +187,11 @@ public class Main {
                     SearchCharacter searchCharacter = new SearchCharacter(coordinates);
 
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
-
-//                    printOut(searchCharacter.getValues());
-
-//                    System.out.println("coordinates = " + coordinates);
-//                    System.out.println("Width: " + searchCharacter.getWidth() + " Height = " + searchCharacter.getHeight());
-
                     searchCharacter.applySections();
                     searchCharacter.analyzeSlices();
 
                     segmentPercentages = searchCharacter.getSegmentPercentages();
-                    System.out.println("Trained segmentPercentages = " + Arrays.toString(segmentPercentages));
-
-//                    Map.Entry<boolean[][], Integer> firstSegment = searchCharacter.getSegments().entrySet().stream().findFirst().get();
-//                    makeImage(firstSegment.getKey(), "firstGen");
+//                    System.out.println("Trained segmentPercentages = " + Arrays.toString(segmentPercentages));
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
@@ -182,14 +223,16 @@ public class Main {
             }
         }
 
+//        trainedCharacterData.forEach(TrainedCharacterData::preformRecalculations);
+
         searchCharacters = searchCharactersCopy;
 
         System.out.println(searchCharacters.size() + " characters found");
 
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+//        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
     }
 
-    private static char getCharacterFor(SearchCharacter searchCharacter) {
+    private static Pair<Character, Double> getCharacterFor(SearchCharacter searchCharacter) {
         Map<Character, Double> results = new HashMap<>();
         double answerSimilarity = -1;
         TrainedCharacterData answer = null;
@@ -203,16 +246,20 @@ public class Main {
             results.put(characterData.getValue(), similarity);
         }
 
-        System.out.println("Closest is '" + answer + "' with a similarity of " + percent.format(answerSimilarity * 100) + "% \t\tOther: " + sortByValue(results));
+//        System.out.println("Closest is '" + answer + "' with a similarity of " + percent.format(answerSimilarity * 100) + "% \t\tOther: " + sortByValue(results));
 //        System.out.print(answer);
 //        if (answer == null) return ' ';
 //        return answer.getValue();
-        return ' ';
+//        System.out.println("searchCharacter = " + searchCharacter);
+//        System.out.println("answer = " + answer);
+        if (answer == null) return null;
+        return new Pair<>(answer.getValue(), answerSimilarity);
     }
 
     private static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
         List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
         list.sort(Map.Entry.comparingByValue());
+        Collections.reverse(list);
 
         Map<K, V> result = new LinkedHashMap<>();
         for (Map.Entry<K, V> entry : list) {
@@ -277,6 +324,28 @@ public class Main {
         return Stream.of(topHalf, bottomHalf).sequential();
     }
 
+    public static Stream<boolean[][]> getHorizontalThird(boolean[][] values) {
+        int topHeight = values.length / 3;
+        int middleHeight = values.length - topHeight * 2;
+        int bottomHeight = topHeight;
+
+        boolean[][] topThird = new boolean[topHeight][];
+        boolean[][] middleThird = new boolean[middleHeight][];
+        boolean[][] bottomThird = new boolean[bottomHeight][];
+
+        for (int y = 0; y < values.length; y++) {
+            if (y < topHeight) {
+                topThird[y] = values[y];
+            } else if (y < topHeight + middleHeight) {
+                middleThird[y - topHeight] = values[y];
+            } else {
+                bottomThird[y - topHeight - middleHeight] = values[y];
+            }
+        }
+
+        return Stream.of(topThird, middleThird, bottomThird).sequential();
+    }
+
     public static Stream<boolean[][]> getVerticalHalf(boolean[][] values) {
         int leftHeight = values[0].length / 2;
         int rightHeight = values[0].length - leftHeight;
@@ -300,6 +369,36 @@ public class Main {
         }
 
         return Stream.of(leftHalf, rightHalf).sequential();
+    }
+
+    public static Stream<boolean[][]> getVerticalThird(boolean[][] values) {
+        int leftHeight = values[0].length / 3;
+        int middleHeight = values[0].length - leftHeight * 2;
+        int rightHeight = leftHeight;
+
+        boolean[][] leftHalf = new boolean[values.length][];
+        boolean[][] middleHalf = new boolean[values.length][];
+        boolean[][] rightHalf = new boolean[values.length][];
+
+        for (int i = 0; i < values.length; i++) {
+            leftHalf[i] = new boolean[leftHeight];
+            middleHalf[i] = new boolean[middleHeight];
+            rightHalf[i] = new boolean[rightHeight];
+        }
+
+        for (int y = 0; y < values.length; y++) {
+            for (int x = 0; x < values[0].length; x++) {
+                if (x < leftHeight) {
+                    leftHalf[y][x] = values[y][x];
+                } else if (x < middleHeight + leftHeight) {
+                    middleHalf[y][x - leftHeight] = values[y][x];
+                } else {
+                    rightHalf[y][x - leftHeight - middleHeight] = values[y][x];
+                }
+            }
+        }
+
+        return Stream.of(leftHalf, middleHalf, rightHalf).sequential();
     }
 
     public static Map<boolean[][], Integer> getDiagonal(boolean[][] values, boolean increasing) {

@@ -1,5 +1,6 @@
 package com.uddernetworks.newocr.altsearcher.feature;
 
+import com.uddernetworks.newocr.altsearcher.Main;
 import com.uddernetworks.newocr.altsearcher.SearchCharacter;
 
 import java.util.Arrays;
@@ -41,15 +42,18 @@ public class TrainedCharacterData {
         }
 
         for (int i = 0; i < segmentPercentages.length; i++) {
-            segmentPercentages[i] += (segmentPercentages[i] - this.segmentPercentages[i]) / 2;
+            this.segmentPercentages[i] += (segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS; // Default 2
+//            System.out.println((segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS);
 //            System.out.println("Changed by " + ((segmentPercentages[i] - this.segmentPercentages[i]) / 2));
         }
+
+//        System.out.println(Arrays.toString(this.segmentPercentages));
     }
 
     public double getSimilarityWith(SearchCharacter searchCharacter) {
         double[] otherPercentages = searchCharacter.getSegmentPercentages();
-        double[] differences = new double[8];
-        for (int i = 0; i < 8; i++) {
+        double[] differences = new double[8 + 9];
+        for (int i = 0; i < 8 + 9; i++) {
             differences[i] = Math.max(this.segmentPercentages[i], otherPercentages[i]) - Math.min(otherPercentages[i], this.segmentPercentages[i]);
         }
 

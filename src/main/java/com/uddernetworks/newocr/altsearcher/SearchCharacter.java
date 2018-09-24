@@ -22,7 +22,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private Histogram histogram;
     private List<Feature> features = new ArrayList<>();
     private Map<boolean[][], Integer> segments = new LinkedHashMap<>();
-    private double[] segmentPercentages = new double[8]; // Percentage <= 1
+    private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
 
     public SearchCharacter(List<Map.Entry<Integer, Integer>> coordinates) {
         List<Integer> xStream = coordinates.stream().map(Map.Entry::getKey).collect(Collectors.toList());
@@ -158,6 +158,19 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
                     int i = index.getAndIncrement();
                     Main.getDiagonal(section, i == 1 || i == 2).forEach(this::addSegment);
                 });
+
+//        Main.getDiagonal(this.values, true).forEach((section, size) -> {
+//            Main.getDiagonal(section, false).forEach((innerSection, innerSize) -> {
+//                System.out.println("size = " + size + " inner = " + innerSize);
+//            });
+//        });
+
+//        Main.printOut(values);
+//        System.out.println("\n");
+
+        Main.getHorizontalThird(this.values).forEach(values ->
+                Main.getVerticalThird(values).forEach(nineth ->
+                        addSegment(nineth, nineth.length * nineth[0].length)));
     }
 
     public void analyzeSlices() {
@@ -184,17 +197,17 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public double[] getSegmentPercentages() {
         return this.segmentPercentages;
     }
-
+/*
     public double getSimilarityWith(SearchCharacter searchCharacter) {
         double[] otherPercentages = searchCharacter.segmentPercentages;
-        double[] differences = new double[8];
+        double[] differences = new double[8 + 9];
         for (int i = 0; i < 8; i++) {
             differences[i] = Math.max(this.segmentPercentages[i], otherPercentages[i]) - Math.min(otherPercentages[i], this.segmentPercentages[i]);
         }
 
         return 1 - Arrays.stream(differences).average().getAsDouble();
     }
-
+*/
     public char getKnownChar() {
         return knownChar;
     }
