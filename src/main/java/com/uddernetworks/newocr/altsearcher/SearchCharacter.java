@@ -151,11 +151,14 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     public void applySections() {
+//        System.out.println("===========================");
+//        Main.printOut(this.values);
         AtomicInteger index = new AtomicInteger();
         Main.getHorizontalHalf(this.values)
                 .flatMap(Main::getVerticalHalf)
                 .forEach(section -> {
                     int i = index.getAndIncrement();
+                    if (section == null) return;
                     Main.getDiagonal(section, i == 1 || i == 2).forEach(this::addSegment);
                 });
 
@@ -169,8 +172,10 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 //        System.out.println("\n");
 
         Main.getHorizontalThird(this.values).forEach(values ->
-                Main.getVerticalThird(values).forEach(nineth ->
-                        addSegment(nineth, nineth.length * nineth[0].length)));
+                Main.getVerticalThird(values).forEach(nineth -> {
+                    if (nineth == null) return;
+                    addSegment(nineth, nineth.length * nineth[0].length);
+                }));
     }
 
     public void analyzeSlices() {
@@ -197,17 +202,18 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public double[] getSegmentPercentages() {
         return this.segmentPercentages;
     }
-/*
-    public double getSimilarityWith(SearchCharacter searchCharacter) {
-        double[] otherPercentages = searchCharacter.segmentPercentages;
-        double[] differences = new double[8 + 9];
-        for (int i = 0; i < 8; i++) {
-            differences[i] = Math.max(this.segmentPercentages[i], otherPercentages[i]) - Math.min(otherPercentages[i], this.segmentPercentages[i]);
-        }
 
-        return 1 - Arrays.stream(differences).average().getAsDouble();
-    }
-*/
+    /*
+        public double getSimilarityWith(SearchCharacter searchCharacter) {
+            double[] otherPercentages = searchCharacter.segmentPercentages;
+            double[] differences = new double[8 + 9];
+            for (int i = 0; i < 8; i++) {
+                differences[i] = Math.max(this.segmentPercentages[i], otherPercentages[i]) - Math.min(otherPercentages[i], this.segmentPercentages[i]);
+            }
+
+            return 1 - Arrays.stream(differences).average().getAsDouble();
+        }
+    */
     public char getKnownChar() {
         return knownChar;
     }

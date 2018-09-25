@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 public class Main {
 
     public static double AFFECT_BACKWARDS = 1D; // Originally 2
+    public static final boolean ALL_INPUTS_EQUAL = true;
 
     private static Histogram first;
     private static char letter = 'a';
@@ -33,20 +34,20 @@ public class Main {
     public static void main(String[] args) throws IOException { // alphabet48
 
         for (int i = 0; i < 100; i++) {
-            letter = 'a';
+            letter = '!';
             trainedCharacterData = new ArrayList<>();
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
-//            System.out.println("Generating features...");
+            System.out.println("Generating features...");
             long start = System.currentTimeMillis();
-            generateFeatures(new File("E:\\NewOCR\\input.png"));
+            generateFeatures(new File("E:\\NewOCR\\training.png"));
 //        generateFeatures(new File("E:\\NewOCR\\letter.png"));
-//            System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
+            System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
 
 
 //        System.exit(0);
 //        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\lipsum_lower.png"));
 //        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\alphabet72.png"));
-            BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\shit.png"));
+            BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\letter.png"));
             boolean[][] values = createGrid(input);
             List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -107,15 +108,15 @@ public class Main {
                     line.forEach(searchCharacter -> {
 //                    System.out.print(getCharacterFor(searchCharacter));
                         Pair<Character, Double> pair = getCharacterFor(searchCharacter);
-                        if (pair == null) {
-                            percentages.add(0D);
-                            System.out.print('?');
-                            result.append('?');
-                        } else {
-                            percentages.add(pair.getValue());
-                            System.out.print(pair.getKey());
-                            result.append(pair.getKey());
-                        }
+//                        if (pair == null) {
+//                            percentages.add(0D);
+//                            System.out.print('?');
+//                            result.append('?');
+//                        } else {
+//                            percentages.add(pair.getValue());
+//                            System.out.print(pair.getKey());
+//                            result.append(pair.getKey());
+//                        }
                     });
 
                     searchCharacters.removeAll(line);
@@ -123,15 +124,24 @@ public class Main {
             }
 
 //            if (!result.toString().equals("abcdefghijklmnopqrstuvwxyz")) {
-            if (!result.toString().trim().equals("dsfjhsdfknefiusjfdlkneoiwejdmsdkljfoweoijfmosuehrmseoruimnhurdignidousenmfiuerfjnseiufhosjiefnisdurofjmsdrofjsieorjfcmsrojifsmefjiosdrefmrnsehoimzapyoiyluknjvmxbchdneywtqraesdzcsgfcbdhfjrueikdhs")) {
-                System.out.println("Not equals! Got: \n\t" + result);
+//            if (!result.toString().trim().equals("dsfjhsdfknefiusjfdlkneoiwejdmsdkljfoweoijfmosuehrmseoruimnhurdignidousenmfiuerfjnseiufhosjiefnisdurofjmsdrofjsieorjfcmsrojifsmefjiosdrefmrnsehoimzapyoiyluknjvmxbchdneywtqraesdzcsgfcbdhfjrueikdhs")) {
+//                System.out.println("Not equals! Got: \n\t" + result);
 
 //                System.exit(0);
+//            }
+
+            System.out.println(result);
+
+            OptionalDouble averageOptional = percentages.stream().mapToDouble(t -> t).average();
+            if (!averageOptional.isPresent()) {
+                System.out.println("No average found");
+                System.exit(0);
             }
 
-            double average = percentages.stream().mapToDouble(t -> t).average().getAsDouble();
+            double average = averageOptional.getAsDouble();
             System.out.println("\nAverage: " + average);
 
+            System.exit(0);
             averageToBack.put(average, AFFECT_BACKWARDS);
 
             searchCharacters = searchCharactersCopy;
@@ -168,10 +178,11 @@ public class Main {
         rewriteImage(temp, input);
         input = temp;
 
+//        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
+
+
         filter(input);
         toGrid(input, values);
-
-//        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
 
 //        printOut(values);
 
@@ -199,7 +210,7 @@ public class Main {
             }
         }
 
-        IntStream.range('a', 'z' + 1).forEach(letter -> trainedCharacterData.add(new TrainedCharacterData((char) letter)));
+        IntStream.range('!', '~' + 1).forEach(letter -> trainedCharacterData.add(new TrainedCharacterData((char) letter)));
 
         BufferedImage finalInput = input;
         searchCharacters.stream().sorted().forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
@@ -211,17 +222,19 @@ public class Main {
             if (!line.isEmpty()) {
                 line.forEach(searchCharacter -> {
                     char current = Main.letter++;
-                    if (Main.letter > 'z') Main.letter = 'a';
+                    if (Main.letter > '~') Main.letter = '!';
                     searchCharacter.setKnownChar(current);
 
                     TrainedCharacterData trainedCharacterData = getTrainedData(current);
                     trainedCharacterData.setHasDot(searchCharacter.hasDot());
-                    trainedCharacterData.recalculateTo(searchCharacter.getSegmentPercentages());
+                    trainedCharacterData.recalculateTo(searchCharacter);
                 });
 
                 searchCharacters.removeAll(line);
             }
         }
+
+        trainedCharacterData.forEach(TrainedCharacterData::finishRecalculations);
 
 //        trainedCharacterData.forEach(TrainedCharacterData::preformRecalculations);
 
@@ -246,7 +259,8 @@ public class Main {
             results.put(characterData.getValue(), similarity);
         }
 
-//        System.out.println("Closest is '" + answer + "' with a similarity of " + percent.format(answerSimilarity * 100) + "% \t\tOther: " + sortByValue(results));
+        System.out.println("Closest is '" + answer + "' with a similarity of " + percent.format(answerSimilarity * 100) + "% \t\tOther: " + sortByValue(results));
+        System.out.println("Unknown: " + ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight()) + " known: " + answer.getSizeRatio());
 //        System.out.print(answer);
 //        if (answer == null) return ' ';
 //        return answer.getValue();
@@ -347,6 +361,9 @@ public class Main {
     }
 
     public static Stream<boolean[][]> getVerticalHalf(boolean[][] values) {
+        if (values.length == 0) return Stream.of(null, null);
+//        System.out.println("Splitting into left and right:");
+//        Main.printOut(values);
         int leftHeight = values[0].length / 2;
         int rightHeight = values[0].length - leftHeight;
 
@@ -372,6 +389,7 @@ public class Main {
     }
 
     public static Stream<boolean[][]> getVerticalThird(boolean[][] values) {
+        if (values.length == 0) return Stream.of(null, null, null);
         int leftHeight = values[0].length / 3;
         int middleHeight = values[0].length - leftHeight * 2;
         int rightHeight = leftHeight;
@@ -648,6 +666,7 @@ public class Main {
     public static boolean isBlack(BufferedImage image, int x, int y) {
         try {
             Color pixel = new Color(image.getRGB(x, y));
+//            System.out.println(pixel);
             return (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3 < 128;
         } catch (ArrayIndexOutOfBoundsException e) {
             return true;

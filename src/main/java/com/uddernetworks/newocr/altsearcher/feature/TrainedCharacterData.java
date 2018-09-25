@@ -3,13 +3,16 @@ package com.uddernetworks.newocr.altsearcher.feature;
 import com.uddernetworks.newocr.altsearcher.Main;
 import com.uddernetworks.newocr.altsearcher.SearchCharacter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class TrainedCharacterData {
 
     private char value;
     private boolean hasDot;
     private double[] segmentPercentages;
+    private double sizeRatio = -1; //        Width / Height
 
     public TrainedCharacterData(char value) {
         this.value = value;
@@ -35,19 +38,54 @@ public class TrainedCharacterData {
         this.hasDot = hasDot;
     }
 
-    public void recalculateTo(double[] segmentPercentages) {
-        if (this.segmentPercentages == null) {
-            this.segmentPercentages = segmentPercentages;
-            return;
-        }
+    public double getSizeRatio() {
+        return sizeRatio;
+    }
 
-        for (int i = 0; i < segmentPercentages.length; i++) {
-            this.segmentPercentages[i] += (segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS; // Default 2
+    private List<double[]> recalculatingList = new ArrayList<>();
+    private List<Double> recalculatingWidths = new ArrayList<>();
+    private List<Double> recalculatingHeights = new ArrayList<>();
+
+    public void recalculateTo(SearchCharacter searchCharacter) {
+        double[] segmentPercentages = searchCharacter.getSegmentPercentages();
+//        if (this.segmentPercentages == null) {
+//            this.segmentPercentages = segmentPercentages;
+//            return;
+//        }
+
+//        double[] temp = new double[segmentPercentages.length]
+        if (!Main.ALL_INPUTS_EQUAL) {
+            for (int i = 0; i < segmentPercentages.length; i++) {
+                this.segmentPercentages[i] += (segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS; // Default 2
 //            System.out.println((segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS);
 //            System.out.println("Changed by " + ((segmentPercentages[i] - this.segmentPercentages[i]) / 2));
+            }
+        } else {
+//            System.out.println("segmentPercentages = " + segmentPercentages.length);
+            recalculatingList.add(segmentPercentages);
+            if (searchCharacter.getWidth() != 0 && searchCharacter.getHeight() != 0) {
+//                System.out.println(searchCharacter.getWidth() + " / " + searchCharacter.getHeight());
+//                recalculatingRatios.add((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight());
+                recalculatingWidths.add((double) searchCharacter.getWidth());
+                recalculatingHeights.add((double) searchCharacter.getHeight());
+            }
         }
 
+
 //        System.out.println(Arrays.toString(this.segmentPercentages));
+    }
+
+    public void finishRecalculations() {
+        if (!Main.ALL_INPUTS_EQUAL) return;
+
+        this.segmentPercentages = new double[8 + 9];
+        for (int i = 0; i < 8 + 9; i++) {
+            int finalI = i;
+            this.segmentPercentages[i] = recalculatingList.stream().mapToDouble(t -> t[finalI]).average().getAsDouble();
+        }
+
+        this.sizeRatio = recalculatingWidths.stream().mapToDouble(t -> t).average().getAsDouble() / recalculatingHeights.stream().mapToDouble(t -> t).average().getAsDouble();
+//        System.out.println("sizeRatio = " + sizeRatio);
     }
 
     public double getSimilarityWith(SearchCharacter searchCharacter) {
@@ -57,7 +95,12 @@ public class TrainedCharacterData {
             differences[i] = Math.max(this.segmentPercentages[i], otherPercentages[i]) - Math.min(otherPercentages[i], this.segmentPercentages[i]);
         }
 
-        return 1 - Arrays.stream(differences).average().getAsDouble();
+        double checkingRatio = ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight());
+        double ratioDifference = Math.max(checkingRatio, this.sizeRatio) - Math.min(checkingRatio, this.sizeRatio);
+        System.out.println(value + "] " + Math.max(checkingRatio, this.sizeRatio) + " - " + Math.min(checkingRatio, this.sizeRatio));
+
+//        return 1 - Arrays.stream(differences).average().getAsDouble() + ratioDifference / 2;
+        return ratioDifference;
     }
 
     @Override
