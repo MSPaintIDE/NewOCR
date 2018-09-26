@@ -2,6 +2,7 @@ package com.uddernetworks.newocr.altsearcher.feature;
 
 import com.uddernetworks.newocr.altsearcher.Main;
 import com.uddernetworks.newocr.altsearcher.SearchCharacter;
+import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,7 +89,7 @@ public class TrainedCharacterData {
 //        System.out.println("sizeRatio = " + sizeRatio);
     }
 
-    public double getSimilarityWith(SearchCharacter searchCharacter) {
+    public Pair<Double, Double> getSimilarityWith(SearchCharacter searchCharacter) {
         double[] otherPercentages = searchCharacter.getSegmentPercentages();
         double[] differences = new double[8 + 9];
         for (int i = 0; i < 8 + 9; i++) {
@@ -97,10 +98,11 @@ public class TrainedCharacterData {
 
         double checkingRatio = ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight());
         double ratioDifference = Math.max(checkingRatio, this.sizeRatio) - Math.min(checkingRatio, this.sizeRatio);
-        System.out.println(value + "] " + Math.max(checkingRatio, this.sizeRatio) + " - " + Math.min(checkingRatio, this.sizeRatio));
+//        System.out.println(value + "] " + Math.max(checkingRatio, this.sizeRatio) + " - " + Math.min(checkingRatio, this.sizeRatio));
+//        System.out.println(value + "] " + ratioDifference);
 
-//        return 1 - Arrays.stream(differences).average().getAsDouble() + ratioDifference / 2;
-        return ratioDifference;
+        return new Pair<>(1 - Arrays.stream(differences).average().getAsDouble(), ratioDifference); // / ratioDifference
+//        return ratioDifference;
     }
 
     @Override

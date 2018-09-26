@@ -8,6 +8,9 @@ import java.io.IOException;
 
 public class TrainGenerator {
 
+    private static final int UPPER_FONT_BOUND = 90;
+    private static final int LOWER_FONT_BOUND = 40;
+
     public static void main(String[] args) {
         BufferedImage image = new BufferedImage(1500, 500, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = image.createGraphics();
@@ -25,7 +28,7 @@ public class TrainGenerator {
         int newHeight = 100;
 
         int size2 = 92;
-        for (int i = 0; i < 92 - 12; i++) {
+        for (int i = 0; i < UPPER_FONT_BOUND - LOWER_FONT_BOUND; i++) {
             newHeight += size2 + 1;
         }
 
@@ -42,9 +45,9 @@ public class TrainGenerator {
         RenderingHints rh = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics.setRenderingHints(rh);
 
-        int size = 92;
-        int offset = 92;
-        for (int i = 0; i < 92 - 12; i++) {
+        int size = UPPER_FONT_BOUND;
+        int offset = UPPER_FONT_BOUND;
+        for (int i = 0; i < UPPER_FONT_BOUND - LOWER_FONT_BOUND; i++) {
 //        for (int i = 0; i < linesList.size(); i++) {
 //            graphics.drawString(linesList.get(i), 0, 100);
             drawLine(graphics, message, offset, size);

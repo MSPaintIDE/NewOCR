@@ -7,6 +7,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -107,7 +108,7 @@ public class Main {
 //                System.out.println(line);
                     line.forEach(searchCharacter -> {
 //                    System.out.print(getCharacterFor(searchCharacter));
-                        Pair<Character, Double> pair = getCharacterFor(searchCharacter);
+                        CharData charData = getCharacterFor(searchCharacter);
 //                        if (pair == null) {
 //                            percentages.add(0D);
 //                            System.out.print('?');
@@ -219,11 +220,17 @@ public class Main {
         for (int y = 0; y < input.getHeight(); y++) {
             List<SearchCharacter> line = findCharacterAtY(y, searchCharacters);
 
+            System.out.println("line = " + line);
+
             if (!line.isEmpty()) {
                 line.forEach(searchCharacter -> {
                     char current = Main.letter++;
                     if (Main.letter > '~') Main.letter = '!';
                     searchCharacter.setKnownChar(current);
+
+                    try {
+                        makeImage(searchCharacter.getValues(), "output\\charcater_" + current);
+                    } catch (Exception ignore) {}
 
                     TrainedCharacterData trainedCharacterData = getTrainedData(current);
                     trainedCharacterData.setHasDot(searchCharacter.hasDot());
@@ -245,29 +252,71 @@ public class Main {
 //        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
     }
 
-    private static Pair<Character, Double> getCharacterFor(SearchCharacter searchCharacter) {
+    static class CharData implements Comparable<CharData> {
+        private TrainedCharacterData characterData;
+        private double similarity;
+        private double ratioDifference;
+
+        public CharData(TrainedCharacterData characterData, double similarity, double ratioDifference) {
+            this.characterData = characterData;
+            this.similarity = similarity;
+            this.ratioDifference = ratioDifference;
+        }
+
+        public TrainedCharacterData getCharacterData() {
+            return characterData;
+        }
+
+        public double getSimilarity() {
+            return similarity;
+        }
+
+        public double getRatioDifference() {
+            return ratioDifference;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + this.characterData + "|" + percent.format(similarity * 100) + "|" + percent.format(ratioDifference * 100) + "]";
+        }
+
+        @Override
+        public int compareTo(CharData charData) {
+            return Double.compare(this.similarity, charData.similarity);
+        }
+    }
+
+    private static CharData getCharacterFor(SearchCharacter searchCharacter) {
         Map<Character, Double> results = new HashMap<>();
-        double answerSimilarity = -1;
-        TrainedCharacterData answer = null;
+//        double answerSimilarity = -1;
+//        TrainedCharacterData answer = null;
+        List<CharData> charDataList = new ArrayList<>();
         for (TrainedCharacterData characterData : trainedCharacterData) {
-            double similarity = characterData.getSimilarityWith(searchCharacter);
-            if (similarity > answerSimilarity && characterData.hasDot() == searchCharacter.hasDot()) {
-                answerSimilarity = similarity;
-                answer = characterData;
+            Pair<Double, Double> pair = characterData.getSimilarityWith(searchCharacter);
+            double similarity = pair.getKey();
+//            if (similarity > answerSimilarity && characterData.hasDot() == searchCharacter.hasDot()) {
+//                answerSimilarity = similarity;
+//                answer = characterData;
+//            }
+
+            if (characterData.hasDot() == searchCharacter.hasDot()) {
+                charDataList.add(new CharData(characterData, pair.getKey(), pair.getValue()));
             }
 
             results.put(characterData.getValue(), similarity);
         }
 
-        System.out.println("Closest is '" + answer + "' with a similarity of " + percent.format(answerSimilarity * 100) + "% \t\tOther: " + sortByValue(results));
-        System.out.println("Unknown: " + ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight()) + " known: " + answer.getSizeRatio());
-//        System.out.print(answer);
-//        if (answer == null) return ' ';
-//        return answer.getValue();
-//        System.out.println("searchCharacter = " + searchCharacter);
-//        System.out.println("answer = " + answer);
-        if (answer == null) return null;
-        return new Pair<>(answer.getValue(), answerSimilarity);
+        Collections.sort(charDataList);
+        Collections.reverse(charDataList);
+
+        System.out.println("answers = " + charDataList);
+
+        CharData answer = charDataList.get(0);
+
+        System.out.println("Closest is '" + answer.getCharacterData() + "' with a similarity of " + percent.format(answer.getSimilarity() * 100) + "% \t\tOther: " + sortByValue(results));
+//        System.out.println("Unknown: " + ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight()) + " known: " + answer);
+
+        return answer;
     }
 
     private static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
@@ -316,7 +365,7 @@ public class Main {
 
             ImageIO.write(image, "png", new File("E:\\NewOCR\\" + name + ".png"));
         } catch (IOException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
     }
 
