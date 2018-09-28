@@ -42,7 +42,8 @@ public class Main {
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
-            generateFeatures(new File("E:\\NewOCR\\training.png"));
+//            generateFeatures(new File("E:\\NewOCR\\training.png"));
+            generateFeatures(new File("E:\\NewOCR\\pecent.png"));
 //        generateFeatures(new File("E:\\NewOCR\\letter.png"));
             System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
 
@@ -204,6 +205,14 @@ public class Main {
 
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
                     if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) continue;
+
+                    Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
+                    if (possibleDot.isPresent()) {
+                        combine(possibleDot.get(), searchCharacter, coordinates);
+                        searchCharacters.remove(searchCharacter);
+                        continue;
+                    }
+
                     searchCharacter.applySections();
                     searchCharacter.analyzeSlices();
 
@@ -222,17 +231,25 @@ public class Main {
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
+
+//                    searchCharacter.drawTo(input);
                 }
             }
         }
 
+//        searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo());
+        System.out.println("CHARS: " + searchCharacters.size());
+
         IntStream.range('!', '~' + 1).forEach(letter -> trainedCharacterData.add(new TrainedCharacterData((char) letter)));
 
-        int maxWidth = searchCharacters.stream().mapToInt(SearchCharacter::getHeight).max().getAsInt();
+//        int maxWidth = searchCharacters.stream().mapToInt(SearchCharacter::getHeight).max().getAsInt();
 
         BufferedImage finalInput = input;
         searchCharacters.stream().sorted().forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
         Collections.sort(searchCharacters);
+
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+        System.exit(0);
 
         System.out.println("searchCharacters = " + searchCharacters.size());
 
@@ -266,6 +283,8 @@ public class Main {
             }
         }
 
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+
         trainedCharacterData.forEach(TrainedCharacterData::finishRecalculations);
 
 //        trainedCharacterData.forEach(TrainedCharacterData::preformRecalculations);
@@ -274,7 +293,7 @@ public class Main {
 
         System.out.println(searchCharacters.size() + " characters found");
 
-//        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
     }
 
     static class CharData implements Comparable<CharData> {
@@ -584,6 +603,12 @@ public class Main {
         }
 
         return false;
+    }
+
+    private static Optional<SearchCharacter> getDotInPercent(SearchCharacter baseCharacter, List<SearchCharacter> searchCharacters) {
+        return searchCharacters.stream()
+                .filter(searchCharacter -> searchCharacter.isOverlaping(baseCharacter))
+                .findFirst();
     }
 
     private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates) {
