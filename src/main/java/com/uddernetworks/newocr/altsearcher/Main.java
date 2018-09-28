@@ -42,8 +42,8 @@ public class Main {
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
-//            generateFeatures(new File("E:\\NewOCR\\training.png"));
-            generateFeatures(new File("E:\\NewOCR\\pecent.png"));
+            generateFeatures(new File("E:\\NewOCR\\training.png"));
+//            generateFeatures(new File("E:\\NewOCR\\pecent.png"));
 //        generateFeatures(new File("E:\\NewOCR\\letter.png"));
             System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
 
@@ -205,10 +205,11 @@ public class Main {
 
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
                     if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) continue;
+                    if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) continue;
 
                     Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
                     if (possibleDot.isPresent()) {
-                        combine(possibleDot.get(), searchCharacter, coordinates);
+                        combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
                         searchCharacters.remove(searchCharacter);
                         continue;
                     }
@@ -585,7 +586,7 @@ public class Main {
         if (!dotCharacter.isProbablyDot()) return false;
         SearchCharacter baseCharacter = getDotOverLetter(searchCharacters, dotCharacter).orElse(null);
         if (baseCharacter != null) {
-            combine(baseCharacter, dotCharacter, coordinates);
+            combine(baseCharacter, dotCharacter, coordinates, CombineMethod.DOT);
             return true;
         }
 
@@ -594,11 +595,20 @@ public class Main {
 
     private static boolean doPercentStuff(SearchCharacter percentDotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         if (!percentDotCharacter.isProbablyCircleOfPercent()) return false;
-        System.out.println("IS PROBABLY PERCENT DOT");
         SearchCharacter baseCharacter = getBaseForPercent(searchCharacters, percentDotCharacter).orElse(null);
         if (baseCharacter != null) {
-            System.out.println("Combining!");
-            combine(baseCharacter, percentDotCharacter, coordinates);
+            combine(baseCharacter, percentDotCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static boolean doApostropheStuff(SearchCharacter rightApostrophe, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
+        if (!rightApostrophe.isProbablyApostraphe()) return false;
+        SearchCharacter leftApostrophe = getLeftApostrophe(searchCharacters, rightApostrophe).orElse(null);
+        if (leftApostrophe != null) {
+            combine(leftApostrophe, rightApostrophe, coordinates, CombineMethod.APOSTROPHE);
             return true;
         }
 
@@ -611,7 +621,7 @@ public class Main {
                 .findFirst();
     }
 
-    private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates) {
+    private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates, CombineMethod combineMethod) {
         int minX = Math.min(baseCharacter.getX(), adding.getX());
         int minY = Math.min(baseCharacter.getY(), adding.getY());
         int maxX = Math.max(baseCharacter.getX() + baseCharacter.getWidth(), adding.getX() + adding.getWidth());
@@ -621,10 +631,36 @@ public class Main {
         baseCharacter.setX(minX);
         baseCharacter.setY(minY);
 
-        System.out.println((adding.getY() + (adding.getHeight() / 2)) + " < " + (baseCharacter.getY() + (baseCharacter.getHeight() / 2)));
-        baseCharacter.addPercentageCircle(coordinates, adding.getY() + (adding.getHeight() / 2) < baseCharacter.getY() + (baseCharacter.getHeight() / 2));
+        switch (combineMethod) {
+            case DOT:
+                maxX = baseCharacter.getX() + baseCharacter.getWidth();
+                maxY = baseCharacter.getY() + baseCharacter.getHeight();
+                baseCharacter.setHeight(maxY - adding.getY());
+                baseCharacter.setY(adding.getY());
+
+                int dotMaxX = adding.getX() + adding.getWidth();
+
+                if (dotMaxX > maxX) {
+                    baseCharacter.setWidth(dotMaxX - baseCharacter.getX());
+                }
+
+                baseCharacter.addDot(coordinates);
+                break;
+            case PERCENTAGE_CIRCLE:
+                baseCharacter.addPercentageCircle(coordinates, adding.getY() + (adding.getHeight() / 2) < baseCharacter.getY() + (baseCharacter.getHeight() / 2));
+                break;
+            case APOSTROPHE:
+                baseCharacter.addPercentageCircle(coordinates, false);
+                break;
+        }
 
         coordinates.clear();
+    }
+
+    enum CombineMethod {
+        DOT,
+        PERCENTAGE_CIRCLE,
+        APOSTROPHE
     }
 
 /*
@@ -743,6 +779,20 @@ public class Main {
     public static Optional<SearchCharacter> getBaseForPercent(List<SearchCharacter> characters, SearchCharacter circleOfPercent) {
         return characters.parallelStream()
                 .filter(searchCharacter -> searchCharacter.isOverlaping(circleOfPercent))
+                .findFirst();
+    }
+
+    private static Optional<SearchCharacter> getLeftApostrophe(List<SearchCharacter> characters, SearchCharacter rightApostrophe) {
+        return characters.parallelStream()
+                .filter(SearchCharacter::isProbablyApostraphe)
+                .filter(character -> character.getY() == rightApostrophe.getY())
+                .filter(character -> {
+                    double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
+                    double acceptedDiff = ((double) rightApostrophe.getWidth());
+                    System.out.println("xDiff = " + xDiff);
+                    System.out.println("acceptedDiff = " + acceptedDiff);
+                    return xDiff < acceptedDiff;
+                })
                 .findFirst();
     }
 

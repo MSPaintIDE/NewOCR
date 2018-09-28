@@ -57,6 +57,11 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         return ratio <= 0.9 && ratio >= 0.7;
     }
 
+    public boolean isProbablyApostraphe() {
+        double ratio = (double) width / (double) height;
+        return (ratio <= 0.45 && ratio >= 0.3) || (width == 1 && (height == 4 || height == 5));
+    }
+
     public void addDot(List<Map.Entry<Integer, Integer>> dotCoordinates) {
         boolean[][] values = new boolean[this.height + 1][];
         for (int i = 0; i < values.length; i++) values[i] = new boolean[width + 1];
