@@ -7,7 +7,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -43,6 +42,7 @@ public class Main {
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
             generateFeatures(new File("E:\\NewOCR\\training.png"));
+//            generateFeatures(new File("E:\\NewOCR\\testshittttt.png"));
 //            generateFeatures(new File("E:\\NewOCR\\pecent.png"));
 //        generateFeatures(new File("E:\\NewOCR\\letter.png"));
             System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
@@ -208,6 +208,13 @@ public class Main {
                     if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) continue;
 
                     Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
+                    if (possibleDot.isPresent()) {
+                        combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE);
+                        searchCharacters.remove(searchCharacter);
+                        continue;
+                    }
+
+                    possibleDot = getDotNearLetter(searchCharacters, searchCharacter);
                     if (possibleDot.isPresent()) {
                         combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
                         searchCharacters.remove(searchCharacter);
@@ -464,8 +471,6 @@ public class Main {
 
     public static Stream<boolean[][]> getVerticalHalf(boolean[][] values) {
         if (values.length == 0) return Stream.of(null, null);
-//        System.out.println("Splitting into left and right:");
-//        Main.printOut(values);
         int leftHeight = values[0].length / 2;
         int rightHeight = values[0].length - leftHeight;
 
@@ -584,7 +589,7 @@ public class Main {
 
     private static boolean doDotStuff(SearchCharacter dotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         if (!dotCharacter.isProbablyDot()) return false;
-        SearchCharacter baseCharacter = getDotOverLetter(searchCharacters, dotCharacter).orElse(null);
+        SearchCharacter baseCharacter = getDotNearLetter(searchCharacters, dotCharacter).orElse(null);
         if (baseCharacter != null) {
             combine(baseCharacter, dotCharacter, coordinates, CombineMethod.DOT);
             return true;
@@ -613,12 +618,6 @@ public class Main {
         }
 
         return false;
-    }
-
-    private static Optional<SearchCharacter> getDotInPercent(SearchCharacter baseCharacter, List<SearchCharacter> searchCharacters) {
-        return searchCharacters.stream()
-                .filter(searchCharacter -> searchCharacter.isOverlaping(baseCharacter))
-                .findFirst();
     }
 
     private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates, CombineMethod combineMethod) {
@@ -710,7 +709,7 @@ public class Main {
                     SearchCharacter dotCharacter = new SearchCharacter(coordinates);
 
                     if (dotCharacter.isProbablyDot()) {
-                        SearchCharacter baseCharacter = getDotOverLetter(searchCharcaters, dotCharacter).orElse(null);
+                        SearchCharacter baseCharacter = getDotNearLetter(searchCharcaters, dotCharacter).orElse(null);
                         if (baseCharacter != null) {
                             int maxX = baseCharacter.getX() + baseCharacter.getWidth();
                             int maxY = baseCharacter.getY() + baseCharacter.getHeight();
@@ -761,14 +760,26 @@ public class Main {
     }
 */
 
-    public static Optional<SearchCharacter> getDotOverLetter(List<SearchCharacter> characters, SearchCharacter searchCharacter) {
-        int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2) + 2;
+    public static Optional<SearchCharacter> getDotNearLetter(List<SearchCharacter> characters, SearchCharacter searchCharacter) {
+//        int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2) + 2;
+//        int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2);
+//        int belowHeight = searchCharacter.getY() + (searchCharacter.getHeight() * 2);
         return characters.parallelStream()
-                .filter(character -> character.getX() <= searchCharacter.getX() && character.getX() + character.getWidth() + 1 >= searchCharacter.getX() + searchCharacter.getWidth())
+//                .filter(character -> character.getX() <= searchCharacter.getX() && character.getX() + character.getWidth() + 1 >= searchCharacter.getX() + searchCharacter.getWidth())
+                .filter(character -> character.isInXBounds(searchCharacter.getWidth() / 2 + searchCharacter.getX()))
                 .filter(character -> {
-                    int mod = -1;
-                    for (int i = 0; i < 3; i++) {
-                        if (below + (mod++) == character.getY()) return true;
+                    int below = Math.max(searchCharacter.getY(), character.getY()) + (Math.min(searchCharacter.getHeight(), character.getHeight()) * 2);
+                    int belowHeight = below + Math.min(searchCharacter.getHeight(), character.getHeight());
+//                    int oddVarying = character.getHeight() / 2;
+//                    oddVarying -= oddVarying % 2 != 0 ? 1 : 0;
+                    System.out.println("below = " + below);
+                    System.out.println("belowHeight = " + belowHeight);
+                    int mod = Math.min(character.getHeight(), searchCharacter.getHeight()) * 2;
+                    System.out.println("=========================");
+                    for (int i = 0; i < Math.max(character.getHeight(), searchCharacter.getHeight()) * 4; i++) {
+                        System.out.println((below + (mod)));
+                        if (below + (mod--) == character.getY()
+                            || belowHeight + mod == character.getY()) return true;
                     }
 
                     return false;
@@ -789,8 +800,6 @@ public class Main {
                 .filter(character -> {
                     double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
                     double acceptedDiff = ((double) rightApostrophe.getWidth());
-                    System.out.println("xDiff = " + xDiff);
-                    System.out.println("acceptedDiff = " + acceptedDiff);
                     return xDiff < acceptedDiff;
                 })
                 .findFirst();

@@ -162,14 +162,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     public boolean isOverlaping(SearchCharacter searchCharacter) {
-//        if (this.x > searchCharacter.x + searchCharacter.width || searchCharacter.x > this.x + this.width)
-//            return false;
-
-        // If one rectangle is above other
-//        if (this.y < searchCharacter.y + searchCharacter.height || searchCharacter.y < this.y + this.height)
-//            return false;
-
-//        return true;
         if (isInBounds(searchCharacter.getX(), searchCharacter.getY())) return true;
         if (isInBounds(searchCharacter.getX(), searchCharacter.getY() + searchCharacter.getHeight())) return true;
         if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), searchCharacter.getY())) return true;
@@ -180,6 +172,11 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public boolean isInYBounds(int y) {
         return y <= this.y + this.height
                 && y >= this.y;
+    }
+
+    public boolean isInXBounds(int x) {
+        return x <= this.x + this.width
+                && x >= this.x;
     }
 
     public void addFeature(Feature feature) {
