@@ -52,6 +52,11 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
                 || width == height - 1;
     }
 
+    public boolean isProbablyCircleOfPercent() {
+        double ratio = (double) width / (double) height;
+        return ratio <= 0.9 && ratio >= 0.7;
+    }
+
     public void addDot(List<Map.Entry<Integer, Integer>> dotCoordinates) {
         boolean[][] values = new boolean[this.height + 1][];
         for (int i = 0; i < values.length; i++) values[i] = new boolean[width + 1];
@@ -60,6 +65,23 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
         for (int y = 0; y < this.values.length; y++) {
             System.arraycopy(this.values[y], 0, values[y + yOffset], 0, this.values[0].length);
+        }
+
+        dotCoordinates.forEach(entry -> values[entry.getValue() - this.y][entry.getKey() - this.x] = true);
+
+        this.values = values;
+        this.hasDot = true;
+    }
+
+    public void addPercentageCircle(List<Map.Entry<Integer, Integer>> dotCoordinates, boolean left) {
+        boolean[][] values = new boolean[this.height + 1][];
+        for (int i = 0; i < values.length; i++) values[i] = new boolean[width + 1];
+
+        int yOffset = this.height - this.values.length + 1;
+
+        int offset = left ? Math.abs(width + 1 - this.values[0].length) : 0;
+        for (int y = 0; y < this.values.length; y++) {
+            System.arraycopy(this.values[y], 0, values[y + yOffset], offset, this.values[0].length);
         }
 
         dotCoordinates.forEach(entry -> values[entry.getValue() - this.y][entry.getKey() - this.x] = true);
@@ -132,6 +154,22 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
                 && x >= this.x
                 && y <= this.y + this.height
                 && y >= this.y;
+    }
+
+    public boolean isOverlaping(SearchCharacter searchCharacter) {
+//        if (this.x > searchCharacter.x + searchCharacter.width || searchCharacter.x > this.x + this.width)
+//            return false;
+
+        // If one rectangle is above other
+//        if (this.y < searchCharacter.y + searchCharacter.height || searchCharacter.y < this.y + this.height)
+//            return false;
+
+//        return true;
+        if (isInBounds(searchCharacter.getX(), searchCharacter.getY())) return true;
+        if (isInBounds(searchCharacter.getX(), searchCharacter.getY() + searchCharacter.getHeight())) return true;
+        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), searchCharacter.getY())) return true;
+        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), searchCharacter.getY() + searchCharacter.getHeight())) return true;
+        return false;
     }
 
     public boolean isInYBounds(int y) {

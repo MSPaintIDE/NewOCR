@@ -28,6 +28,8 @@ public class Main {
     private static List<TrainedCharacterData> trainedCharacterData = new ArrayList<>();
     private static double[] segmentPercentages;
 
+    private static int testIndex = 0;
+
     private static SortedMap<Double, Double> averageToBack = new TreeMap<>();
 
     private static DecimalFormat percent = new DecimalFormat(".##");
@@ -191,6 +193,8 @@ public class Main {
 
         List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
 
+        testIndex = 0;
+
         for (int y = input.getHeight(); 0 <= --y; ) {
             for (int x = 0; x < input.getWidth(); x++) {
                 searchImage.scanFrom(x, y, coordinates);
@@ -199,11 +203,22 @@ public class Main {
                     SearchCharacter searchCharacter = new SearchCharacter(coordinates);
 
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
+                    if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) continue;
                     searchCharacter.applySections();
                     searchCharacter.analyzeSlices();
 
                     segmentPercentages = searchCharacter.getSegmentPercentages();
 //                    System.out.println("Trained segmentPercentages = " + Arrays.toString(segmentPercentages));
+
+//                    try {
+//                        if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
+//                            makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
+//                        }
+//                        System.out.println(searchCharacter.getY());
+//                        testIndex++;
+//                    } catch (Exception ignore) {
+////                        ignore.printStackTrace();
+//                    }
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
@@ -213,14 +228,19 @@ public class Main {
 
         IntStream.range('!', '~' + 1).forEach(letter -> trainedCharacterData.add(new TrainedCharacterData((char) letter)));
 
+        int maxWidth = searchCharacters.stream().mapToInt(SearchCharacter::getHeight).max().getAsInt();
+
         BufferedImage finalInput = input;
         searchCharacters.stream().sorted().forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
+        Collections.sort(searchCharacters);
+
+        System.out.println("searchCharacters = " + searchCharacters.size());
 
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
         for (int y = 0; y < input.getHeight(); y++) {
             List<SearchCharacter> line = findCharacterAtY(y, searchCharacters);
 
-            System.out.println("line = " + line);
+//            System.out.println("line = " + line.size());
 
             if (!line.isEmpty()) {
                 line.forEach(searchCharacter -> {
@@ -229,7 +249,11 @@ public class Main {
                     searchCharacter.setKnownChar(current);
 
                     try {
-                        makeImage(searchCharacter.getValues(), "output\\charcater_" + current);
+                        if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
+                            makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
+                        }
+//                        System.out.println(searchCharacter.getY());
+                        testIndex++;
                     } catch (Exception ignore) {}
 
                     TrainedCharacterData trainedCharacterData = getTrainedData(current);
@@ -238,6 +262,7 @@ public class Main {
                 });
 
                 searchCharacters.removeAll(line);
+//                System.exit(0);
             }
         }
 
@@ -337,6 +362,10 @@ public class Main {
     }
 
     private static List<SearchCharacter> findCharacterAtY(int y, List<SearchCharacter> searchCharacters) {
+        return findCharacterAtY(y, searchCharacters, -1);
+    }
+
+    private static List<SearchCharacter> findCharacterAtY(int y, List<SearchCharacter> searchCharacters, int addY) {
         Optional<SearchCharacter> optionalSearchCharacter = searchCharacters
                 .stream()
                 .filter(searchCharacter -> searchCharacter.isInYBounds(y))
@@ -344,7 +373,11 @@ public class Main {
 
         if (!optionalSearchCharacter.isPresent()) return new ArrayList<>();
         SearchCharacter betterYCharacter = optionalSearchCharacter.get();
-        int betterY = betterYCharacter.getY() + betterYCharacter.getHeight() / 2;
+//        System.out.println("(" + betterYCharacter.getX() + ", " + betterYCharacter.getY() + ") WH: " + betterYCharacter.getWidth() + "/" + betterYCharacter.getHeight());
+//        System.out.println("Before: " + betterYCharacter.getHeight());
+        int betterY = addY == -1 ? betterYCharacter.getY() + betterYCharacter.getHeight() / 2 : addY;
+//        System.out.println("Adding: " + (betterYCharacter.getHeight() / 2));
+//        System.out.println("After: " + betterY);
 
         return searchCharacters
                 .stream()
@@ -533,24 +566,40 @@ public class Main {
         if (!dotCharacter.isProbablyDot()) return false;
         SearchCharacter baseCharacter = getDotOverLetter(searchCharacters, dotCharacter).orElse(null);
         if (baseCharacter != null) {
-            int maxX = baseCharacter.getX() + baseCharacter.getWidth();
-            int maxY = baseCharacter.getY() + baseCharacter.getHeight();
-            baseCharacter.setHeight(maxY - dotCharacter.getY());
-            baseCharacter.setY(dotCharacter.getY());
-
-            int dotMaxX = dotCharacter.getX() + dotCharacter.getWidth();
-
-            if (dotMaxX > maxX) {
-                baseCharacter.setWidth(dotMaxX - baseCharacter.getX());
-            }
-
-            baseCharacter.addDot(coordinates);
-
-            coordinates.clear();
+            combine(baseCharacter, dotCharacter, coordinates);
             return true;
         }
 
         return false;
+    }
+
+    private static boolean doPercentStuff(SearchCharacter percentDotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
+        if (!percentDotCharacter.isProbablyCircleOfPercent()) return false;
+        System.out.println("IS PROBABLY PERCENT DOT");
+        SearchCharacter baseCharacter = getBaseForPercent(searchCharacters, percentDotCharacter).orElse(null);
+        if (baseCharacter != null) {
+            System.out.println("Combining!");
+            combine(baseCharacter, percentDotCharacter, coordinates);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates) {
+        int minX = Math.min(baseCharacter.getX(), adding.getX());
+        int minY = Math.min(baseCharacter.getY(), adding.getY());
+        int maxX = Math.max(baseCharacter.getX() + baseCharacter.getWidth(), adding.getX() + adding.getWidth());
+        int maxY = Math.max(baseCharacter.getY() + baseCharacter.getHeight(), adding.getY() + adding.getHeight());
+        baseCharacter.setWidth(maxX - minX);
+        baseCharacter.setHeight(maxY - minY);
+        baseCharacter.setX(minX);
+        baseCharacter.setY(minY);
+
+        System.out.println((adding.getY() + (adding.getHeight() / 2)) + " < " + (baseCharacter.getY() + (baseCharacter.getHeight() / 2)));
+        baseCharacter.addPercentageCircle(coordinates, adding.getY() + (adding.getHeight() / 2) < baseCharacter.getY() + (baseCharacter.getHeight() / 2));
+
+        coordinates.clear();
     }
 
 /*
@@ -663,6 +712,12 @@ public class Main {
 
                     return false;
                 })
+                .findFirst();
+    }
+
+    public static Optional<SearchCharacter> getBaseForPercent(List<SearchCharacter> characters, SearchCharacter circleOfPercent) {
+        return characters.parallelStream()
+                .filter(searchCharacter -> searchCharacter.isOverlaping(circleOfPercent))
                 .findFirst();
     }
 

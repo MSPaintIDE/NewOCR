@@ -9,13 +9,13 @@ import java.io.IOException;
 public class TrainGenerator {
 
     private static final int UPPER_FONT_BOUND = 90;
-    private static final int LOWER_FONT_BOUND = 40;
+    private static final int LOWER_FONT_BOUND = 89;
 
     public static void main(String[] args) {
         BufferedImage image = new BufferedImage(1500, 500, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = image.createGraphics();
 
-        String message = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjijklmnopqrstuvwxyz{|}~";
+        String message = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~";
 
         RenderingHints rht = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics.setRenderingHints(rht);
