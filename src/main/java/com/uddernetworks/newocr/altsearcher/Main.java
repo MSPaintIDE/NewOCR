@@ -19,6 +19,8 @@ public class Main {
 
     public static double AFFECT_BACKWARDS = 1D; // Originally 2
     public static final boolean ALL_INPUTS_EQUAL = true;
+    public static final boolean DRAW_PROBES = true;
+    public static final boolean DRAW_FULL_PROBES = true;
 
     private static Histogram first;
     private static char letter = 'a';
@@ -230,12 +232,12 @@ public class Main {
                     }
 
                     // For ! or ?
-//                    possibleDot = getDotUnderLetter(searchCharacters, searchCharacter);
-//                    if (possibleDot.isPresent()) {
-//                        combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
-//                        searchCharacters.remove(searchCharacter);
-//                        continue;
-//                    }
+                    possibleDot = getDotUnderLetter(searchCharacters, searchCharacter);
+                    if (possibleDot.isPresent()) {
+                        combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
+                        searchCharacters.remove(searchCharacter);
+                        continue;
+                    }
 
 //                    if (searchCharacter.isProbablyColon()) {
 //                        System.out.println("Found part of a colon");
@@ -800,36 +802,21 @@ public class Main {
     }
 */
 
-//    public static Optional<SearchCharacter> getBaseOfDot(List<SearchCharacter> characters, SearchCharacter searchCharacter, int threshhold) {
-//        return getDotNearLetter(characters, searchCharacter);
-//    }
-
     public static Optional<SearchCharacter> getBaseOfDot(List<SearchCharacter> characters, SearchCharacter dotCharacter) {
         return characters.parallelStream()
                 .filter(character -> !character.equals(dotCharacter))
                 .filter(character -> !character.hasDot())
                 .filter(character -> character.isInBounds(dotCharacter.getX() + (dotCharacter.getWidth() / 2), character.getY() + 4))
-//                .filter(character -> dotCharacter.isInBounds(character.getX() + (character.getWidth() / 2), character.getY() + (character.getHeight() * 2)))
                 .filter(character -> character.getHeight() > dotCharacter.getHeight() * 2)
                 .filter(baseCharacter -> {
-                    testImageShit.setRGB(dotCharacter.getX() + (dotCharacter.getWidth() / 2), baseCharacter.getY() + 4, Color.RED.getRGB());
-//                    if (dotCharacter.isInBounds(baseCharacter.getX() + (baseCharacter.getWidth() / 2), dotCharacter.getY() + (dotCharacter.getHeight() / 2))) {
-//                        System.out.println("Is in bounds!");
-//                    }
-
-//                    System.out.println("Got");
                     int below = dotCharacter.getY() + (dotCharacter.getHeight() * 2);
-                    int halfHeight = dotCharacter.getHeight();
-//                    if (halfHeight % 2 != 0) halfHeight--;
-
-                    int mod = -halfHeight;
+                    int mod = -dotCharacter.getHeight();
                     boolean got = false;
                     for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
-//                        System.out.println(((below + mod)) + " == " + baseCharacter.getY());
-                        testImageShit.setRGB(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.RED.getRGB());
+                        if (DRAW_PROBES) testImageShit.setRGB(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.RED.getRGB());
                         if (below + (mod++) == baseCharacter.getY()) {
-                            return true;
-//                            got = true;
+                            if (!DRAW_FULL_PROBES) return true;
+                            got = true;
                         }
                     }
 
@@ -839,18 +826,26 @@ public class Main {
     }
 
     // For ! or ?
-    public static Optional<SearchCharacter> getDotUnderLetter(List<SearchCharacter> characters, SearchCharacter searchCharacter) {
-        int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2) + 2;
+    public static Optional<SearchCharacter> getDotUnderLetter(List<SearchCharacter> characters, SearchCharacter baseCharacter) {
         return characters.parallelStream()
-//                .filter(SearchCharacter::isProbablyDot)
-                .filter(character -> character.getX() <= searchCharacter.getX() && character.getX() + character.getWidth() + 1 >= searchCharacter.getX() + searchCharacter.getWidth())
-                .filter(character -> {
-                    int mod = -1;
-                    for (int i = 0; i < 3; i++) {
-                        if (below + (mod++) == character.getY()) return true;
+                .filter(character -> !character.equals(baseCharacter))
+                .filter(character -> !character.hasDot())
+                .filter(SearchCharacter::isProbablyDot)
+                .filter(character -> baseCharacter.isInBounds(character.getX() + (character.getWidth() / 2), baseCharacter.getY() + 4))
+                .filter(character -> baseCharacter.getHeight() > character.getHeight() * 2)
+                .filter(dotCharacter -> {
+                    int below = dotCharacter.getY() - dotCharacter.getHeight();
+                    int mod = dotCharacter.getHeight();
+                    boolean got = false;
+                    for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
+                        if (DRAW_PROBES) testImageShit.setRGB(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.BLUE.getRGB());
+                        if (below + (mod--) == baseCharacter.getY() + baseCharacter.getHeight()) {
+                            if (!DRAW_FULL_PROBES) return true;
+                            got = true;
+                        }
                     }
 
-                    return false;
+                    return got;
                 })
                 .findFirst();
     }
