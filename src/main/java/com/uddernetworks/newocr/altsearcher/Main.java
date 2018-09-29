@@ -33,6 +33,8 @@ public class Main {
 
     private static DecimalFormat percent = new DecimalFormat(".##");
 
+    private static BufferedImage testImageShit;
+
     public static void main(String[] args) throws IOException { // alphabet48
 
         for (int i = 0; i < 100; i++) {
@@ -41,6 +43,7 @@ public class Main {
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
+//            generateFeatures(new File("E:\\NewOCR\\ij.png"));
             generateFeatures(new File("E:\\NewOCR\\training.png"));
 //            generateFeatures(new File("E:\\NewOCR\\testshittttt.png"));
 //            generateFeatures(new File("E:\\NewOCR\\pecent.png"));
@@ -182,13 +185,14 @@ public class Main {
         rewriteImage(temp, input);
         input = temp;
 
-//        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
 
 
         filter(input);
         toGrid(input, values);
 
 //        printOut(values);
+        Main.testImageShit = input;
 
         SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
 
@@ -206,6 +210,7 @@ public class Main {
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
                     if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) continue;
                     if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) continue;
+//                    if (doColonStuff(searchCharacter, coordinates, searchCharacters)) continue;
 
                     Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
                     if (possibleDot.isPresent()) {
@@ -214,12 +219,37 @@ public class Main {
                         continue;
                     }
 
-                    possibleDot = getDotNearLetter(searchCharacters, searchCharacter);
-                    if (possibleDot.isPresent()) {
-                        combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
-                        searchCharacters.remove(searchCharacter);
-                        continue;
+                    if (searchCharacter.isProbablyDot() && !searchCharacter.hasDot()) {
+                        possibleDot = getBaseOfDot(searchCharacters, searchCharacter);
+                        System.out.println("possibleDot = " + possibleDot);
+                        if (possibleDot.isPresent()) {
+                            combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
+                            searchCharacters.remove(searchCharacter);
+                            continue;
+                        }
                     }
+
+                    // For ! or ?
+//                    possibleDot = getDotUnderLetter(searchCharacters, searchCharacter);
+//                    if (possibleDot.isPresent()) {
+//                        combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
+//                        searchCharacters.remove(searchCharacter);
+//                        continue;
+//                    }
+
+//                    if (searchCharacter.isProbablyColon()) {
+//                        System.out.println("Found part of a colon");
+//                        possibleDot = getDotNearLetter(searchCharacters, searchCharacter, 0, SearchCharacter::isProbablyColon);
+//                        if (possibleDot.isPresent()) {
+//                            System.out.println("PRESENT!");
+//                            combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON);
+//                            searchCharacters.remove(searchCharacter);
+//                            continue;
+//                        }
+//                    }
+
+                    System.out.println("===== END =====");
+
 
                     searchCharacter.applySections();
                     searchCharacter.analyzeSlices();
@@ -227,15 +257,15 @@ public class Main {
                     segmentPercentages = searchCharacter.getSegmentPercentages();
 //                    System.out.println("Trained segmentPercentages = " + Arrays.toString(segmentPercentages));
 
-//                    try {
-//                        if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
-//                            makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
-//                        }
-//                        System.out.println(searchCharacter.getY());
-//                        testIndex++;
-//                    } catch (Exception ignore) {
-////                        ignore.printStackTrace();
-//                    }
+                    try {
+                        if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
+                            makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
+                        }
+                        System.out.println(searchCharacter.getY());
+                        testIndex++;
+                    } catch (Exception ignore) {
+//                        ignore.printStackTrace();
+                    }
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
@@ -279,7 +309,8 @@ public class Main {
                         }
 //                        System.out.println(searchCharacter.getY());
                         testIndex++;
-                    } catch (Exception ignore) {}
+                    } catch (Exception ignore) {
+                    }
 
                     TrainedCharacterData trainedCharacterData = getTrainedData(current);
                     trainedCharacterData.setHasDot(searchCharacter.hasDot());
@@ -400,11 +431,7 @@ public class Main {
 
         if (!optionalSearchCharacter.isPresent()) return new ArrayList<>();
         SearchCharacter betterYCharacter = optionalSearchCharacter.get();
-//        System.out.println("(" + betterYCharacter.getX() + ", " + betterYCharacter.getY() + ") WH: " + betterYCharacter.getWidth() + "/" + betterYCharacter.getHeight());
-//        System.out.println("Before: " + betterYCharacter.getHeight());
         int betterY = addY == -1 ? betterYCharacter.getY() + betterYCharacter.getHeight() / 2 : addY;
-//        System.out.println("Adding: " + (betterYCharacter.getHeight() / 2));
-//        System.out.println("After: " + betterY);
 
         return searchCharacters
                 .stream()
@@ -589,9 +616,20 @@ public class Main {
 
     private static boolean doDotStuff(SearchCharacter dotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         if (!dotCharacter.isProbablyDot()) return false;
-        SearchCharacter baseCharacter = getDotNearLetter(searchCharacters, dotCharacter).orElse(null);
+        SearchCharacter baseCharacter = getBaseOfDot(searchCharacters, dotCharacter).orElse(null);
         if (baseCharacter != null) {
             combine(baseCharacter, dotCharacter, coordinates, CombineMethod.DOT);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static boolean doColonStuff(SearchCharacter dotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
+        if (!dotCharacter.isProbablyColon()) return false;
+        SearchCharacter baseCharacter = getDotUnderLetter(searchCharacters, dotCharacter).orElse(null);
+        if (baseCharacter != null) {
+            combine(baseCharacter, dotCharacter, coordinates, CombineMethod.COLON);
             return true;
         }
 
@@ -632,6 +670,7 @@ public class Main {
 
         switch (combineMethod) {
             case DOT:
+            case COLON:
                 maxX = baseCharacter.getX() + baseCharacter.getWidth();
                 maxY = baseCharacter.getY() + baseCharacter.getHeight();
                 baseCharacter.setHeight(maxY - adding.getY());
@@ -658,6 +697,7 @@ public class Main {
 
     enum CombineMethod {
         DOT,
+        COLON,
         PERCENTAGE_CIRCLE,
         APOSTROPHE
     }
@@ -760,26 +800,54 @@ public class Main {
     }
 */
 
-    public static Optional<SearchCharacter> getDotNearLetter(List<SearchCharacter> characters, SearchCharacter searchCharacter) {
-//        int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2) + 2;
-//        int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2);
-//        int belowHeight = searchCharacter.getY() + (searchCharacter.getHeight() * 2);
+//    public static Optional<SearchCharacter> getBaseOfDot(List<SearchCharacter> characters, SearchCharacter searchCharacter, int threshhold) {
+//        return getDotNearLetter(characters, searchCharacter);
+//    }
+
+    public static Optional<SearchCharacter> getBaseOfDot(List<SearchCharacter> characters, SearchCharacter dotCharacter) {
         return characters.parallelStream()
-//                .filter(character -> character.getX() <= searchCharacter.getX() && character.getX() + character.getWidth() + 1 >= searchCharacter.getX() + searchCharacter.getWidth())
-                .filter(character -> character.isInXBounds(searchCharacter.getWidth() / 2 + searchCharacter.getX()))
+                .filter(character -> !character.equals(dotCharacter))
+                .filter(character -> !character.hasDot())
+                .filter(character -> character.isInBounds(dotCharacter.getX() + (dotCharacter.getWidth() / 2), character.getY() + 4))
+//                .filter(character -> dotCharacter.isInBounds(character.getX() + (character.getWidth() / 2), character.getY() + (character.getHeight() * 2)))
+                .filter(character -> character.getHeight() > dotCharacter.getHeight() * 2)
+                .filter(baseCharacter -> {
+                    testImageShit.setRGB(dotCharacter.getX() + (dotCharacter.getWidth() / 2), baseCharacter.getY() + 4, Color.RED.getRGB());
+//                    if (dotCharacter.isInBounds(baseCharacter.getX() + (baseCharacter.getWidth() / 2), dotCharacter.getY() + (dotCharacter.getHeight() / 2))) {
+//                        System.out.println("Is in bounds!");
+//                    }
+
+//                    System.out.println("Got");
+                    int below = dotCharacter.getY() + (dotCharacter.getHeight() * 2);
+                    int halfHeight = dotCharacter.getHeight();
+//                    if (halfHeight % 2 != 0) halfHeight--;
+
+                    int mod = -halfHeight;
+                    boolean got = false;
+                    for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
+//                        System.out.println(((below + mod)) + " == " + baseCharacter.getY());
+                        testImageShit.setRGB(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.RED.getRGB());
+                        if (below + (mod++) == baseCharacter.getY()) {
+                            return true;
+//                            got = true;
+                        }
+                    }
+
+                    return got;
+                })
+                .findFirst();
+    }
+
+    // For ! or ?
+    public static Optional<SearchCharacter> getDotUnderLetter(List<SearchCharacter> characters, SearchCharacter searchCharacter) {
+        int below = searchCharacter.getY() + (searchCharacter.getHeight() * 2) + 2;
+        return characters.parallelStream()
+//                .filter(SearchCharacter::isProbablyDot)
+                .filter(character -> character.getX() <= searchCharacter.getX() && character.getX() + character.getWidth() + 1 >= searchCharacter.getX() + searchCharacter.getWidth())
                 .filter(character -> {
-                    int below = Math.max(searchCharacter.getY(), character.getY()) + (Math.min(searchCharacter.getHeight(), character.getHeight()) * 2);
-                    int belowHeight = below + Math.min(searchCharacter.getHeight(), character.getHeight());
-//                    int oddVarying = character.getHeight() / 2;
-//                    oddVarying -= oddVarying % 2 != 0 ? 1 : 0;
-                    System.out.println("below = " + below);
-                    System.out.println("belowHeight = " + belowHeight);
-                    int mod = Math.min(character.getHeight(), searchCharacter.getHeight()) * 2;
-                    System.out.println("=========================");
-                    for (int i = 0; i < Math.max(character.getHeight(), searchCharacter.getHeight()) * 4; i++) {
-                        System.out.println((below + (mod)));
-                        if (below + (mod--) == character.getY()
-                            || belowHeight + mod == character.getY()) return true;
+                    int mod = -1;
+                    for (int i = 0; i < 3; i++) {
+                        if (below + (mod++) == character.getY()) return true;
                     }
 
                     return false;
@@ -797,6 +865,7 @@ public class Main {
         return characters.parallelStream()
                 .filter(SearchCharacter::isProbablyApostraphe)
                 .filter(character -> character.getY() == rightApostrophe.getY())
+                .filter(character -> character.getWidth() == rightApostrophe.getWidth() && character.getHeight() == rightApostrophe.getHeight())
                 .filter(character -> {
                     double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
                     double acceptedDiff = ((double) rightApostrophe.getWidth());

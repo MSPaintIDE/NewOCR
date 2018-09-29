@@ -47,9 +47,15 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     public boolean isProbablyDot() {
-        return width == height
-                || width - 1 == height
-                || width == height - 1;
+//        return width == height
+//                || width - 1 == height
+//                || width == height - 1;
+        int diff = Math.max(width, height) - Math.min(width, height);
+        System.out.println("diff = " + diff);
+        return diff <= 2;
+//        double ratio = (double) Math.min(width, height) / (double) Math.max(width, height);
+//        double ratio = (double) width / (double) height;
+//        return (ratio >= 0.9);
     }
 
     public boolean isProbablyCircleOfPercent() {
@@ -60,6 +66,15 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public boolean isProbablyApostraphe() {
         double ratio = (double) width / (double) height;
         return (ratio <= 0.45 && ratio >= 0.3) || (width == 1 && (height == 4 || height == 5));
+    }
+
+    public boolean isProbablyColon() {
+        double ratio = (double) width / (double) height;
+        return (ratio <= 0.9 && ratio >= 0.8)
+                || ((width == 3 && height == 3)
+                || (width == 2 && height == 3)
+                || (width == 2 && height == 2)
+                || (width == 1 || height == 2));
     }
 
     public void addDot(List<Map.Entry<Integer, Integer>> dotCoordinates) {
@@ -175,8 +190,13 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     public boolean isInXBounds(int x) {
-        return x <= this.x + this.width
-                && x >= this.x;
+        if (x <= this.x + this.width
+                && x >= this.x) {
+            return true;
+        } else {
+            System.out.println(x + " is not between " + this.x + " and " + (this.x + this.width) + " (" + this.width  + ")");
+            return false;
+        }
     }
 
     public void addFeature(Feature feature) {
