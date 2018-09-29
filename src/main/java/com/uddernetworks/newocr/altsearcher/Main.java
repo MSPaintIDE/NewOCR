@@ -223,7 +223,7 @@ public class Main {
 
                     if (searchCharacter.isProbablyDot() && !searchCharacter.hasDot()) {
                         possibleDot = getBaseOfDot(searchCharacters, searchCharacter);
-                        System.out.println("possibleDot = " + possibleDot);
+//                        System.out.println("possibleDot = " + possibleDot);
                         if (possibleDot.isPresent()) {
                             combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
                             searchCharacters.remove(searchCharacter);
@@ -239,7 +239,7 @@ public class Main {
                         continue;
                     }
 
-                    if (searchCharacter.isProbablyApostraphe()) {
+                    if (searchCharacter.isProbablyApostraphe() && !searchCharacter.hasDot()) {
                         possibleDot = getLeftApostrophe(searchCharacters, searchCharacter);
                         if (possibleDot.isPresent()) {
                             combine(searchCharacter, possibleDot.get(), coordinates, CombineMethod.APOSTROPHE);
@@ -248,16 +248,17 @@ public class Main {
                         }
                     }
 
-//                    if (searchCharacter.isProbablyColon()) {
-//                        System.out.println("Found part of a colon");
-//                        possibleDot = getDotNearLetter(searchCharacters, searchCharacter, 0, SearchCharacter::isProbablyColon);
-//                        if (possibleDot.isPresent()) {
-//                            System.out.println("PRESENT!");
-//                            combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON);
-//                            searchCharacters.remove(searchCharacter);
-//                            continue;
-//                        }
-//                    }
+                    System.out.println("Is colon: " + searchCharacter.isProbablyColon());
+                    if (searchCharacter.isProbablyColon() && isAllBlack(searchCharacter) && !searchCharacter.hasDot()) {
+                        System.out.println("Found part of a colon");
+                        possibleDot = getBottomColon(searchCharacters, searchCharacter);
+                        if (possibleDot.isPresent()) {
+                            System.out.println("PRESENT!");
+                            combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON);
+                            searchCharacters.remove(searchCharacter);
+                            continue;
+                        }
+                    }
 
                     System.out.println("===== END =====");
 
@@ -268,15 +269,15 @@ public class Main {
                     segmentPercentages = searchCharacter.getSegmentPercentages();
 //                    System.out.println("Trained segmentPercentages = " + Arrays.toString(segmentPercentages));
 
-                    try {
-                        if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
-                            makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
-                        }
-                        System.out.println(searchCharacter.getY());
-                        testIndex++;
-                    } catch (Exception ignore) {
-//                        ignore.printStackTrace();
-                    }
+//                    try {
+//                        if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
+//                            makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
+//                        }
+//                        System.out.println(searchCharacter.getY());
+//                        testIndex++;
+//                    } catch (Exception ignore) {
+////                        ignore.printStackTrace();
+//                    }
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
@@ -822,7 +823,7 @@ public class Main {
                     int mod = -dotCharacter.getHeight();
                     boolean got = false;
                     for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
-                        if (DRAW_PROBES) testImageShit.setRGB(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.RED.getRGB());
+                        if (DRAW_PROBES) drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.RED);
                         if (below + (mod++) == baseCharacter.getY()) {
                             if (!DRAW_FULL_PROBES) return true;
                             got = true;
@@ -847,7 +848,7 @@ public class Main {
                     int mod = dotCharacter.getHeight();
                     boolean got = false;
                     for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
-                        if (DRAW_PROBES) testImageShit.setRGB(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.BLUE.getRGB());
+                        if (DRAW_PROBES) drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.BLUE);
                         if (below + (mod--) == baseCharacter.getY() + baseCharacter.getHeight()) {
                             if (!DRAW_FULL_PROBES) return true;
                             got = true;
@@ -857,6 +858,52 @@ public class Main {
                     return got;
                 })
                 .findFirst();
+    }
+
+    // : or ;
+    public static Optional<SearchCharacter> getBottomColon(List<SearchCharacter> characters, SearchCharacter topDot) {
+        return characters.stream()
+                .filter(character -> !character.equals(topDot))
+                .filter(character -> !character.hasDot())
+//                .filter(character -> character.isProbablyDot() || character.isProbablyApostraphe())
+//                .filter(character -> topDot.getHeight() == character.getHeight() && topDot.getWidth() == character.getWidth())
+                .filter(character -> topDot.isInXBounds(character.getX() + (character.getWidth() / 2)))
+//                .filter(Main::isAllBlack)
+                .filter(character -> {
+                    double ratio = (double) topDot.getHeight() / (double) character.getHeight();
+                    return (ratio >= 0.4 && ratio <= 0.5) || (topDot.getHeight() == character.getHeight() && topDot.getWidth() == character.getWidth());
+                })
+                .filter(dotCharacter -> {
+                    int below = dotCharacter.getY() - dotCharacter.getHeight() * 2;
+                    int mod = dotCharacter.getHeight() * 2;
+                    boolean got = false;
+                    for (int i = 0; i < dotCharacter.getHeight() * 3; i++) {
+                        if (DRAW_PROBES) drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.GREEN);
+                        if (below + (mod--) == topDot.getY() + topDot.getHeight()) {
+                            if (!DRAW_FULL_PROBES) return true;
+                            got = true;
+                        }
+                    }
+
+                    return got;
+                })
+                .findFirst();
+    }
+
+    private static void drawGuides(int x, int y, Color color) {
+        if (x < 0 || y < 0) return;
+        if (x >= testImageShit.getWidth() || y >= testImageShit.getWidth()) return;
+        testImageShit.setRGB(x, y, color.getRGB());
+    }
+
+    private static boolean isAllBlack(SearchCharacter searchCharacter) {
+        for (boolean[] row : searchCharacter.getValues()) {
+            for (boolean bool : row) {
+                if (!bool) return false;
+            }
+        }
+
+        return true;
     }
 
     public static Optional<SearchCharacter> getBaseForPercent(List<SearchCharacter> characters, SearchCharacter circleOfPercent) {

@@ -48,11 +48,12 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public boolean isProbablyDot() {
         int diff = Math.max(width, height) - Math.min(width, height);
-        return diff <= 2;
+//        System.out.println("diff = " + diff);
+        return diff <= 3;
     }
 
     public boolean isProbablyCircleOfPercent() {
-        double ratio = (double) width / (double) height;
+        double ratio = (double) width + 1 / (double) height + 1;
         return ratio <= 0.9 && ratio >= 0.7;
     }
 
@@ -62,12 +63,15 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     public boolean isProbablyColon() {
-        double ratio = (double) width / (double) height;
-        return (ratio <= 0.9 && ratio >= 0.8)
+        double ratio = (width + 1D) / (height + 1D);
+        System.out.println("ratio " + ratio + " <= 0.9D is: " + (ratio <= 0.9D));
+
+//        System.out.println("ratio = " + ratio + " (" + width + "/" + height + ") " + (ratio <= 0.9D) + " and " + (ratio >= 0.8D));
+        return (ratio <= 0.9D && ratio >= 0.8D)
                 || ((width == 3 && height == 3)
-                || (width == 2 && height == 3)
-                || (width == 2 && height == 2)
-                || (width == 1 || height == 2));
+                    || (width == 2 && height == 3)
+                    || (width == 2 && height == 2)
+                    || (width == 1 || height == 2));
     }
 
     public void addDot(List<Map.Entry<Integer, Integer>> dotCoordinates) {
