@@ -239,6 +239,15 @@ public class Main {
                         continue;
                     }
 
+                    if (searchCharacter.isProbablyApostraphe()) {
+                        possibleDot = getLeftApostrophe(searchCharacters, searchCharacter);
+                        if (possibleDot.isPresent()) {
+                            combine(searchCharacter, possibleDot.get(), coordinates, CombineMethod.APOSTROPHE);
+                            searchCharacters.remove(searchCharacter);
+                            continue;
+                        }
+                    }
+
 //                    if (searchCharacter.isProbablyColon()) {
 //                        System.out.println("Found part of a colon");
 //                        possibleDot = getDotNearLetter(searchCharacters, searchCharacter, 0, SearchCharacter::isProbablyColon);
@@ -863,7 +872,7 @@ public class Main {
                 .filter(character -> character.getWidth() == rightApostrophe.getWidth() && character.getHeight() == rightApostrophe.getHeight())
                 .filter(character -> {
                     double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
-                    double acceptedDiff = ((double) rightApostrophe.getWidth());
+                    double acceptedDiff = ((double) rightApostrophe.getWidth()) * 1.2;
                     return xDiff < acceptedDiff;
                 })
                 .findFirst();
