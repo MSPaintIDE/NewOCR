@@ -9,7 +9,7 @@ import java.io.IOException;
 public class TrainGenerator {
 
     private static final int UPPER_FONT_BOUND = 90;
-    private static final int LOWER_FONT_BOUND = 70;
+    private static final int LOWER_FONT_BOUND = 20;
 
     public static void main(String[] args) {
         BufferedImage image = new BufferedImage(1500, 500, BufferedImage.TYPE_INT_ARGB);

@@ -59,15 +59,17 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public boolean isProbablyApostraphe() {
         double ratio = (double) width / (double) height;
-        return (ratio <= 0.45 && ratio >= 0.3) || (width == 1 && (height == 4 || height == 5));
+        return (ratio <= 0.4 && ratio >= 0.1) || (width == 1 && (height == 4 || height == 5));
     }
 
     public boolean isProbablyColon() {
-        double ratio = (width + 1D) / (height + 1D);
-        System.out.println("ratio " + ratio + " <= 0.9D is: " + (ratio <= 0.9D));
+        double ratio = (Math.min(this.width, this.height) + 1D) / (Math.max(this.width, this.height) + 1D);
+//        System.out.println("ratio = " + ratio);
+//        System.out.println("ratio " + ratio + " <= 0.9D is: " + (ratio <= 0.9D));
 
-//        System.out.println("ratio = " + ratio + " (" + width + "/" + height + ") " + (ratio <= 0.9D) + " and " + (ratio >= 0.8D));
-        return (ratio <= 0.9D && ratio >= 0.8D)
+//        System.out.println("ratio = " + ratio + " (" + (width + 1) + "/" + (height + 1) + ") " + (ratio <= 0.9D) + " and " + (ratio >= 0.8D));
+        return (ratio <= 1D && ratio >= 0.8D)
+                || (height * 4 < width)
                 || ((width == 3 && height == 3)
                     || (width == 2 && height == 3)
                     || (width == 2 && height == 2)
@@ -191,7 +193,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
                 && x >= this.x) {
             return true;
         } else {
-            System.out.println(x + " is not between " + this.x + " and " + (this.x + this.width) + " (" + this.width  + ")");
+//            System.out.println(x + " is not between " + this.x + " and " + (this.x + this.width) + " (" + this.width  + ")");
             return false;
         }
     }

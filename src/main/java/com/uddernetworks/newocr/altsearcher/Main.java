@@ -46,6 +46,7 @@ public class Main {
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
 //            generateFeatures(new File("E:\\NewOCR\\ij.png"));
+//            generateFeatures(new File("E:\\NewOCR\\tttapos.png"));
             generateFeatures(new File("E:\\NewOCR\\training.png"));
 //            generateFeatures(new File("E:\\NewOCR\\testshittttt.png"));
 //            generateFeatures(new File("E:\\NewOCR\\pecent.png"));
@@ -183,15 +184,14 @@ public class Main {
 
         trainWidth = input.getWidth();
 
-        BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        rewriteImage(temp, input);
-        input = temp;
-
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
-
+//        BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
+//        rewriteImage(temp, input);
+//        input = temp;
 
         filter(input);
         toGrid(input, values);
+
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
 
 //        printOut(values);
         Main.testImageShit = input;
@@ -240,7 +240,9 @@ public class Main {
                     }
 
                     if (searchCharacter.isProbablyApostraphe() && !searchCharacter.hasDot()) {
+                        System.out.println("Is apos");
                         possibleDot = getLeftApostrophe(searchCharacters, searchCharacter);
+                        System.out.println("possibleDot = " + possibleDot);
                         if (possibleDot.isPresent()) {
                             combine(searchCharacter, possibleDot.get(), coordinates, CombineMethod.APOSTROPHE);
                             searchCharacters.remove(searchCharacter);
@@ -281,8 +283,6 @@ public class Main {
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
-
-//                    searchCharacter.drawTo(input);
                 }
             }
         }
@@ -871,9 +871,10 @@ public class Main {
 //                .filter(Main::isAllBlack)
                 .filter(character -> {
                     double ratio = (double) topDot.getHeight() / (double) character.getHeight();
-                    return (ratio >= 0.4 && ratio <= 0.5) || (topDot.getHeight() == character.getHeight() && topDot.getWidth() == character.getWidth());
+                    return (ratio >= 0.3 && ratio <= 0.5) || (topDot.getHeight() == character.getHeight() && topDot.getWidth() == character.getWidth());
                 })
                 .filter(dotCharacter -> {
+                    System.out.println("Bottom");
                     int below = dotCharacter.getY() - dotCharacter.getHeight() * 2;
                     int mod = dotCharacter.getHeight() * 2;
                     boolean got = false;
@@ -919,7 +920,10 @@ public class Main {
                 .filter(character -> character.getWidth() == rightApostrophe.getWidth() && character.getHeight() == rightApostrophe.getHeight())
                 .filter(character -> {
                     double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
-                    double acceptedDiff = ((double) rightApostrophe.getWidth()) * 1.2;
+                    double acceptedDiff = Math.pow((double) rightApostrophe.getWidth(), 1.2);
+                    if (xDiff < acceptedDiff) return true;
+                    xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth() + 4D;
+                    acceptedDiff = Math.pow(((double) rightApostrophe.getWidth() + 4D), 1.5);
                     return xDiff < acceptedDiff;
                 })
                 .findFirst();
@@ -966,7 +970,7 @@ public class Main {
     public static void filter(BufferedImage bufferedImage) {
         for (int y = 0; y < bufferedImage.getHeight(); y++) {
             for (int x = 0; x < bufferedImage.getWidth(); x++) {
-                bufferedImage.setRGB(x, y, isBlack(bufferedImage, x, y) ? Color.BLACK.getRGB() : Color.WHITE.getRGB());
+                bufferedImage.setRGB(x, y, isBlack(bufferedImage, x, y) ? new Color(0, 0, 0, 255).getRGB() : new Color(255, 255, 255, 255).getRGB());
             }
         }
     }
@@ -975,7 +979,7 @@ public class Main {
         try {
             Color pixel = new Color(image.getRGB(x, y));
 //            System.out.println(pixel);
-            return (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3 < 128;
+            return (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3 < 255 * 0.75;
         } catch (ArrayIndexOutOfBoundsException e) {
             return true;
         }
