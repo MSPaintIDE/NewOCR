@@ -14,7 +14,7 @@ public class Main {
     private static int outputIndex = 0;
 
     public static void main(String[] args) throws IOException {
-        input = ImageIO.read(new File("E:\\NewOCR\\testfggggg.png"));
+        input = ImageIO.read(new File("E:\\NewOCR\\training.png"));
         values = createGrid(input);
 
         // Pre-filter
@@ -36,9 +36,9 @@ public class Main {
 
 
         ParsingImage parsingImage = new ParsingImage(input, values);
-//        parsingImage.parseLines();
-//        parsingImage.graphLines();
-        parsingImage.getLines().add(new ParsingLine(parsingImage, 3, 21));
+        parsingImage.parseLines();
+        parsingImage.graphLines();
+//        parsingImage.getLines().add(new ParsingLine(parsingImage, 3, 21));
 
         parsingImage.getLines().forEach(ParsingLine::parseCharacterLRB);
 //        parsingImage.getLines().forEach(ParsingLine::graphLR);

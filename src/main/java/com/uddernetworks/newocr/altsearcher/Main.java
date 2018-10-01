@@ -21,9 +21,11 @@ public class Main {
     public static final boolean ALL_INPUTS_EQUAL = true;
     public static final boolean DRAW_PROBES = true;
     public static final boolean DRAW_FULL_PROBES = true;
+    public static final String trainString = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~";
 
     private static Histogram first;
-    private static char letter = 'a';
+    private static int letterIndex = 0;
+//    private static char letter = 'a';
     //    private static Map<Character, SearchCharacter> searchCharacters = new HashMap<>();
     private static int trainWidth = 0;
     private static List<TrainedCharacterData> trainedCharacterData = new ArrayList<>();
@@ -40,7 +42,7 @@ public class Main {
     public static void main(String[] args) throws IOException { // alphabet48
 
         for (int i = 0; i < 100; i++) {
-            letter = '!';
+            letterIndex = 0;
             trainedCharacterData = new ArrayList<>();
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
             System.out.println("Generating features...");
@@ -202,6 +204,8 @@ public class Main {
 
         testIndex = 0;
 
+        List<Double> doubles = new ArrayList<>();
+
         for (int y = input.getHeight(); 0 <= --y; ) {
             for (int x = 0; x < input.getWidth(); x++) {
                 searchImage.scanFrom(x, y, coordinates);
@@ -209,9 +213,13 @@ public class Main {
                 if (coordinates.size() != 0) {
                     SearchCharacter searchCharacter = new SearchCharacter(coordinates);
 
+                    double res = ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight());
+                    doubles.add(res);
+                    System.out.println("\t\t]" + res);
+
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
                     if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) continue;
-                    if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) continue;
+//                    if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) continue;
 //                    if (doColonStuff(searchCharacter, coordinates, searchCharacters)) continue;
 
                     Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
@@ -239,7 +247,7 @@ public class Main {
                         continue;
                     }
 
-                    if (searchCharacter.isProbablyApostraphe() && !searchCharacter.hasDot()) {
+                    /*if (searchCharacter.isProbablyApostraphe() && !searchCharacter.hasDot()) {
                         System.out.println("Is apos");
                         possibleDot = getLeftApostrophe(searchCharacters, searchCharacter);
                         System.out.println("possibleDot = " + possibleDot);
@@ -248,21 +256,21 @@ public class Main {
                             searchCharacters.remove(searchCharacter);
                             continue;
                         }
-                    }
+                    }*/
 
-                    System.out.println("Is colon: " + searchCharacter.isProbablyColon());
+//                    System.out.println("Is colon: " + searchCharacter.isProbablyColon());
                     if (searchCharacter.isProbablyColon() && isAllBlack(searchCharacter) && !searchCharacter.hasDot()) {
-                        System.out.println("Found part of a colon");
+//                        System.out.println("Found part of a colon");
                         possibleDot = getBottomColon(searchCharacters, searchCharacter);
                         if (possibleDot.isPresent()) {
-                            System.out.println("PRESENT!");
+//                            System.out.println("PRESENT!");
                             combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON);
                             searchCharacters.remove(searchCharacter);
                             continue;
                         }
                     }
 
-                    System.out.println("===== END =====");
+//                    System.out.println("===== END =====");
 
 
                     searchCharacter.applySections();
@@ -299,7 +307,7 @@ public class Main {
         Collections.sort(searchCharacters);
 
         ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
-        System.exit(0);
+
 
         System.out.println("searchCharacters = " + searchCharacters.size());
 
@@ -311,8 +319,9 @@ public class Main {
 
             if (!line.isEmpty()) {
                 line.forEach(searchCharacter -> {
-                    char current = Main.letter++;
-                    if (Main.letter > '~') Main.letter = '!';
+//                    char current = Main.letter++;
+                    char current = trainString.charAt(letterIndex++);
+                    if (letterIndex >= trainString.length()) letterIndex = 0;
                     searchCharacter.setKnownChar(current);
 
                     try {
@@ -335,6 +344,8 @@ public class Main {
         }
 
         ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+
+        System.exit(0);
 
         trainedCharacterData.forEach(TrainedCharacterData::finishRecalculations);
 
@@ -445,11 +456,34 @@ public class Main {
         SearchCharacter betterYCharacter = optionalSearchCharacter.get();
         int betterY = addY == -1 ? betterYCharacter.getY() + betterYCharacter.getHeight() / 2 : addY;
 
-        return searchCharacters
+        List<SearchCharacter> temp = searchCharacters
                 .stream()
                 .sorted()
                 .filter(searchCharacter -> searchCharacter.isInYBounds(betterY))
                 .collect(Collectors.toCollection(LinkedList::new));
+
+//        Optional<SearchCharacter> maxOneOptional = temp.stream().sorted(Comparator.comparingInt(SearchCharacter::getHeight)).reduce((first, second) -> second);
+        Optional<SearchCharacter> maxOneOptional = temp.stream().sorted((o1, o2) -> o2.getHeight() - o1.getHeight()).findFirst();
+//        System.out.println("maxOneOptional = " + maxOneOptional.get().getHeight() + " > " + betterYCharacter.getHeight());
+        int otherBetterY = -1;
+        if (maxOneOptional.isPresent()) {
+            SearchCharacter maxOne = maxOneOptional.get();
+            otherBetterY = maxOne.getY() + maxOne.getHeight() / 2;
+            int finalOtherBetterY = otherBetterY;
+            temp = searchCharacters
+                    .stream()
+                    .sorted()
+                    .filter(searchCharacter -> searchCharacter.isInYBounds(betterY) || searchCharacter.isInYBounds(finalOtherBetterY))
+                    .collect(Collectors.toCollection(LinkedList::new));
+        }
+
+        if (!temp.isEmpty()) {
+            for (int x = 0; x < testImageShit.getWidth(); x++) {
+                drawGuides(x, otherBetterY == -1 ? betterY : otherBetterY, Color.GREEN);
+            }
+        }
+
+        return temp;
     }
 
     private static void makeImage(boolean[][] values, String name) {
@@ -659,7 +693,7 @@ public class Main {
         return false;
     }
 
-    private static boolean doApostropheStuff(SearchCharacter rightApostrophe, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
+    /*private static boolean doApostropheStuff(SearchCharacter rightApostrophe, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         if (!rightApostrophe.isProbablyApostraphe()) return false;
         SearchCharacter leftApostrophe = getLeftApostrophe(searchCharacters, rightApostrophe).orElse(null);
         if (leftApostrophe != null) {
@@ -668,7 +702,7 @@ public class Main {
         }
 
         return false;
-    }
+    }*/
 
     private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates, CombineMethod combineMethod) {
         int minX = Math.min(baseCharacter.getX(), adding.getX());
@@ -913,7 +947,7 @@ public class Main {
                 .findFirst();
     }
 
-    private static Optional<SearchCharacter> getLeftApostrophe(List<SearchCharacter> characters, SearchCharacter rightApostrophe) {
+    /*private static Optional<SearchCharacter> getLeftApostrophe(List<SearchCharacter> characters, SearchCharacter rightApostrophe) {
         return characters.parallelStream()
                 .filter(SearchCharacter::isProbablyApostraphe)
                 .filter(character -> character.getY() == rightApostrophe.getY())
@@ -927,7 +961,7 @@ public class Main {
                     return xDiff < acceptedDiff;
                 })
                 .findFirst();
-    }
+    }*/
 
     public static void colorRow(BufferedImage image, Color color, int y, int x, int width) {
         for (int x2 = 0; x2 < width; x2++) {

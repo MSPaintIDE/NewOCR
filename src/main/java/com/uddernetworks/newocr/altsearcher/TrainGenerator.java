@@ -9,13 +9,14 @@ import java.io.IOException;
 public class TrainGenerator {
 
     private static final int UPPER_FONT_BOUND = 90;
-    private static final int LOWER_FONT_BOUND = 20;
+    private static final int LOWER_FONT_BOUND = 89;
 
     public static void main(String[] args) {
         BufferedImage image = new BufferedImage(1500, 500, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = image.createGraphics();
 
-        String message = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~";
+//        String message = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~";
+//        String message = "\"";
 
         RenderingHints rht = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics.setRenderingHints(rht);
@@ -33,7 +34,7 @@ public class TrainGenerator {
         }
 
         System.out.println("newHeight = " + newHeight);
-        image = new BufferedImage(graphics.getFontMetrics().stringWidth(message) + 50, newHeight, BufferedImage.TYPE_INT_ARGB);
+        image = new BufferedImage(graphics.getFontMetrics().stringWidth(Main.trainString) + 50, newHeight, BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = 0; x < image.getWidth(); x++) {
                 image.setRGB(x, y, Color.WHITE.getRGB());
@@ -50,7 +51,7 @@ public class TrainGenerator {
         for (int i = 0; i < UPPER_FONT_BOUND - LOWER_FONT_BOUND; i++) {
 //        for (int i = 0; i < linesList.size(); i++) {
 //            graphics.drawString(linesList.get(i), 0, 100);
-            drawLine(graphics, message, offset, size);
+            drawLine(graphics, Main.trainString, offset, size);
             offset += size + 10;
             size--;
         }

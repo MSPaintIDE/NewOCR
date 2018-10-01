@@ -59,7 +59,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public boolean isProbablyApostraphe() {
         double ratio = (double) width / (double) height;
-        return (ratio <= 0.4 && ratio >= 0.1) || (width == 1 && (height == 4 || height == 5));
+        return (ratio <= 0.375 && ratio >= 0.166) || (width == 1 && (height == 4 || height == 5));
     }
 
     public boolean isProbablyColon() {
