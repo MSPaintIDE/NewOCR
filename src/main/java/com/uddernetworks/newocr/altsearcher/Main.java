@@ -200,6 +200,14 @@ public class Main {
 
         SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
 
+        boolean[][] valuesClone = new boolean[values.length][values[0].length];
+        for (int y = 0; y < values.length; y++) {
+            boolean[] row = new boolean[values[y].length];
+            if (values[y].length >= 0) System.arraycopy(values[y], 0, row, 0, values[y].length);
+
+            valuesClone[y] = row;
+        }
+
         List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
 
         testIndex = 0;
@@ -311,11 +319,17 @@ public class Main {
 
         System.out.println("searchCharacters = " + searchCharacters.size());
 
-        List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
-        for (int y = 0; y < input.getHeight(); y++) {
-            List<SearchCharacter> line = findCharacterAtY(y, searchCharacters);
+//        printOut(valuesClone);
 
-//            System.out.println("line = " + line.size());
+        // topY, bottomY
+        List<Pair<Integer, Integer>> lineBounds = getLineBoundsForTesting(valuesClone);
+        System.out.println("lineBounds = " + lineBounds);
+
+        List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
+        for (Pair<Integer, Integer> lineBound : lineBounds) {
+            List<SearchCharacter> line = findCharacterAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
+
+            System.out.println("line = " + line.size());
 
             if (!line.isEmpty()) {
                 line.forEach(searchCharacter -> {
@@ -438,6 +452,64 @@ public class Main {
         return result;
     }
 
+    private static List<Pair<Integer, Integer>> getLineBoundsForTesting(boolean[][] values) {
+        // topY, bottomY
+        List<Pair<Integer, Integer>> lines = new ArrayList<>();
+
+        int height = 0;
+        for (int y = 0; y < values.length; y++) {
+            if (isRowPopulated(values, y)) {
+                height++;
+            } else if (height > 0) {
+                int heightUntil = 0;
+                int finalSpace = -1;
+
+                // Seeing if the gap under the character is <= the height of the above piece. This is mainly for seeing
+                // if the dot on an 'i' is <= is above the rest of the character the same amount as its height (Making it a proper 'i' in Verdana
+                for (int i = 0; i < height; i++) {
+                    if (y + i >= values.length) {
+                        finalSpace = 0;
+                        break;
+                    }
+
+                    if (isRowPopulated(values, y + i)) {
+                        if (finalSpace == -1) finalSpace = heightUntil;
+                    } else {
+                        heightUntil++;
+                    }
+                }
+
+                if (finalSpace > 0) {
+                    System.out.println("Vertical separation was " + finalSpace + " yet height was " + height);
+                    if (height == finalSpace) {
+                        y += finalSpace;
+                        height += finalSpace;
+                    } else {
+                        lines.add(new Pair<>(y - height, y));
+                        height = 0;
+                    }
+                } else {
+                    lines.add(new Pair<>(y - height, y));
+                    height = 0;
+                }
+            } else {
+                if (height == 0) continue;
+                lines.add(new Pair<>(y - height, y));
+                height = 0;
+            }
+        }
+
+        return lines;
+    }
+
+    private static boolean isRowPopulated(boolean[][] values, int y) {
+        for (int x = 0; x < values[y].length; x++) {
+            if (values[y][x]) return true;
+        }
+
+        return false;
+    }
+
     private static TrainedCharacterData getTrainedData(char cha) {
         return trainedCharacterData.stream().filter(characterData -> characterData.getValue() == cha).findFirst().get();
     }
@@ -462,9 +534,7 @@ public class Main {
                 .filter(searchCharacter -> searchCharacter.isInYBounds(betterY))
                 .collect(Collectors.toCollection(LinkedList::new));
 
-//        Optional<SearchCharacter> maxOneOptional = temp.stream().sorted(Comparator.comparingInt(SearchCharacter::getHeight)).reduce((first, second) -> second);
         Optional<SearchCharacter> maxOneOptional = temp.stream().sorted((o1, o2) -> o2.getHeight() - o1.getHeight()).findFirst();
-//        System.out.println("maxOneOptional = " + maxOneOptional.get().getHeight() + " > " + betterYCharacter.getHeight());
         int otherBetterY = -1;
         if (maxOneOptional.isPresent()) {
             SearchCharacter maxOne = maxOneOptional.get();
@@ -484,6 +554,18 @@ public class Main {
         }
 
         return temp;
+    }
+
+    private static List<SearchCharacter> findCharacterAtLine(int topY, int bottomY, List<SearchCharacter> searchCharacters) {
+        return searchCharacters
+                .stream()
+                .sorted()
+                .filter(searchCharacter -> isWithin(topY, bottomY, searchCharacter.getY()))
+                .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    private static boolean isWithin(int lowerBound, int upperBound, int value) {
+        return lowerBound <= value && value <= upperBound;
     }
 
     private static void makeImage(boolean[][] values, String name) {
@@ -846,7 +928,7 @@ public class Main {
     }
 */
 
-    public static Optional<SearchCharacter> getBaseOfDot(List<SearchCharacter> characters, SearchCharacter dotCharacter) {
+    private static Optional<SearchCharacter> getBaseOfDot(List<SearchCharacter> characters, SearchCharacter dotCharacter) {
         return characters.parallelStream()
                 .filter(character -> !character.equals(dotCharacter))
                 .filter(character -> !character.hasDot())
@@ -870,7 +952,7 @@ public class Main {
     }
 
     // For ! or ?
-    public static Optional<SearchCharacter> getDotUnderLetter(List<SearchCharacter> characters, SearchCharacter baseCharacter) {
+    private static Optional<SearchCharacter> getDotUnderLetter(List<SearchCharacter> characters, SearchCharacter baseCharacter) {
         return characters.parallelStream()
                 .filter(character -> !character.equals(baseCharacter))
                 .filter(character -> !character.hasDot())
@@ -895,14 +977,11 @@ public class Main {
     }
 
     // : or ;
-    public static Optional<SearchCharacter> getBottomColon(List<SearchCharacter> characters, SearchCharacter topDot) {
+    private static Optional<SearchCharacter> getBottomColon(List<SearchCharacter> characters, SearchCharacter topDot) {
         return characters.stream()
                 .filter(character -> !character.equals(topDot))
                 .filter(character -> !character.hasDot())
-//                .filter(character -> character.isProbablyDot() || character.isProbablyApostraphe())
-//                .filter(character -> topDot.getHeight() == character.getHeight() && topDot.getWidth() == character.getWidth())
                 .filter(character -> topDot.isInXBounds(character.getX() + (character.getWidth() / 2)))
-//                .filter(Main::isAllBlack)
                 .filter(character -> {
                     double ratio = (double) topDot.getHeight() / (double) character.getHeight();
                     return (ratio >= 0.3 && ratio <= 0.5) || (topDot.getHeight() == character.getHeight() && topDot.getWidth() == character.getWidth());
@@ -941,27 +1020,11 @@ public class Main {
         return true;
     }
 
-    public static Optional<SearchCharacter> getBaseForPercent(List<SearchCharacter> characters, SearchCharacter circleOfPercent) {
+    private static Optional<SearchCharacter> getBaseForPercent(List<SearchCharacter> characters, SearchCharacter circleOfPercent) {
         return characters.parallelStream()
                 .filter(searchCharacter -> searchCharacter.isOverlaping(circleOfPercent))
                 .findFirst();
     }
-
-    /*private static Optional<SearchCharacter> getLeftApostrophe(List<SearchCharacter> characters, SearchCharacter rightApostrophe) {
-        return characters.parallelStream()
-                .filter(SearchCharacter::isProbablyApostraphe)
-                .filter(character -> character.getY() == rightApostrophe.getY())
-                .filter(character -> character.getWidth() == rightApostrophe.getWidth() && character.getHeight() == rightApostrophe.getHeight())
-                .filter(character -> {
-                    double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
-                    double acceptedDiff = Math.pow((double) rightApostrophe.getWidth(), 1.2);
-                    if (xDiff < acceptedDiff) return true;
-                    xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth() + 4D;
-                    acceptedDiff = Math.pow(((double) rightApostrophe.getWidth() + 4D), 1.5);
-                    return xDiff < acceptedDiff;
-                })
-                .findFirst();
-    }*/
 
     public static void colorRow(BufferedImage image, Color color, int y, int x, int width) {
         for (int x2 = 0; x2 < width; x2++) {
@@ -975,7 +1038,7 @@ public class Main {
         }
     }
 
-    public static boolean[][] createGrid(BufferedImage bufferedImage) {
+    private static boolean[][] createGrid(BufferedImage bufferedImage) {
         boolean[][] values = new boolean[bufferedImage.getHeight()][];
         for (int i = 0; i < values.length; i++) {
             boolean[] row = new boolean[bufferedImage.getWidth()];
@@ -997,11 +1060,7 @@ public class Main {
         }
     }
 
-    public static String fixedLengthString(String string, int length) {
-        return String.format("%1$" + length + "s", string);
-    }
-
-    public static void filter(BufferedImage bufferedImage) {
+    private static void filter(BufferedImage bufferedImage) {
         for (int y = 0; y < bufferedImage.getHeight(); y++) {
             for (int x = 0; x < bufferedImage.getWidth(); x++) {
                 bufferedImage.setRGB(x, y, isBlack(bufferedImage, x, y) ? new Color(0, 0, 0, 255).getRGB() : new Color(255, 255, 255, 255).getRGB());
@@ -1009,7 +1068,7 @@ public class Main {
         }
     }
 
-    public static boolean isBlack(BufferedImage image, int x, int y) {
+    private static boolean isBlack(BufferedImage image, int x, int y) {
         try {
             Color pixel = new Color(image.getRGB(x, y));
 //            System.out.println(pixel);
