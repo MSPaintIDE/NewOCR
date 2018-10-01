@@ -6,8 +6,11 @@ import javafx.util.Pair;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
@@ -22,6 +25,7 @@ public class Main {
     public static final boolean DRAW_PROBES = true;
     public static final boolean DRAW_FULL_PROBES = true;
     public static final String trainString = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~";
+    private static DatabaseManager databaseManager;
 
     private static Histogram first;
     private static int letterIndex = 0;
@@ -39,10 +43,28 @@ public class Main {
 
     private static BufferedImage testImageShit;
 
-    public static void main(String[] args) throws IOException { // alphabet48
+    public static void main(String[] args) throws IOException, ClassNotFoundException { // alphabet48
+        Class.forName("org.sqlite.JDBC");
+        databaseManager = new DatabaseManager();
 
-        for (int i = 0; i < 100; i++) {
-            letterIndex = 0;
+        Arrays.asList("letters.sql", "sectionData.sql").parallelStream().forEach(table -> {
+            try {
+                URL url = Main.class.getClassLoader().getResource(table);
+                String tables = new BufferedReader(new InputStreamReader(url.openStream())).lines().collect(Collectors.joining("\n"));
+                try (Connection connection = databaseManager.getDataSource().getConnection();
+                     PreparedStatement statement = connection.prepareStatement(tables)) {
+
+                    statement.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+//        for (int i = 0; i < 100; i++) {
+//            letterIndex = 0;
             trainedCharacterData = new ArrayList<>();
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
             System.out.println("Generating features...");
@@ -164,8 +186,8 @@ public class Main {
 //            System.out.println(searchCharacters.size() + " characters found");
 
 
-            AFFECT_BACKWARDS += 0.3D;
-        }
+//            AFFECT_BACKWARDS += 0.3D;
+//        }
 
         List<Map.Entry<Double, Double>> entries = new ArrayList<>(averageToBack.entrySet());
         Collections.reverse(entries);
@@ -333,7 +355,6 @@ public class Main {
 
             if (!line.isEmpty()) {
                 line.forEach(searchCharacter -> {
-//                    char current = Main.letter++;
                     char current = trainString.charAt(letterIndex++);
                     if (letterIndex >= trainString.length()) letterIndex = 0;
                     searchCharacter.setKnownChar(current);
@@ -342,10 +363,8 @@ public class Main {
                         if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
                             makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
                         }
-//                        System.out.println(searchCharacter.getY());
                         testIndex++;
-                    } catch (Exception ignore) {
-                    }
+                    } catch (Exception ignore) {}
 
                     TrainedCharacterData trainedCharacterData = getTrainedData(current);
                     trainedCharacterData.setHasDot(searchCharacter.hasDot());
@@ -353,7 +372,6 @@ public class Main {
                 });
 
                 searchCharacters.removeAll(line);
-//                System.exit(0);
             }
         }
 
