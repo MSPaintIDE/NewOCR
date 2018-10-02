@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -64,7 +65,7 @@ public class DatabaseManager {
         executor.execute(() -> {
             try (Connection connection = dataSource.getConnection();
                 PreparedStatement createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
-                createLetterEntry.setString(1, String.valueOf(letter));
+                createLetterEntry.setInt(1, letter);
                 createLetterEntry.setDouble(2, averageWidth);
                 createLetterEntry.setDouble(3, averageHeight);
                 createLetterEntry.setInt(4, minFontSize);
@@ -80,14 +81,15 @@ public class DatabaseManager {
 
     public void clearLetterSegments(char letter, Runnable callback) {
         executor.execute(() -> {
-            try (Connection connection = dataSource.getConnection();
-                 PreparedStatement clearLetterSegments = connection.prepareStatement(this.clearLetterSegments)) {
-                clearLetterSegments.setString(1, String.valueOf(letter));
-                clearLetterSegments.setString(2, String.valueOf(letter));
-                clearLetterSegments.executeUpdate();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            Arrays.asList("letters", "sectionData").forEach(table -> {
+                try (Connection connection = dataSource.getConnection();
+                     PreparedStatement clearLetterSegments = connection.prepareStatement(String.format(this.clearLetterSegments, table))) {
+                    clearLetterSegments.setInt(1, letter);
+                    clearLetterSegments.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            });
 
             if (callback != null) callback.run();
         });
@@ -98,7 +100,7 @@ public class DatabaseManager {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement addLetterSegment = connection.prepareStatement(this.addLetterSegment)) {
                 for (int i = 0; i < segments.length; i++) {
-                    addLetterSegment.setString(1, String.valueOf(letter));
+                    addLetterSegment.setInt(1, letter);
                     addLetterSegment.setInt(2, i);
                     addLetterSegment.setDouble(3, segments[i]);
                     addLetterSegment.executeUpdate();

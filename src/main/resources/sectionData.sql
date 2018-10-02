@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS `sectionData` (
-  letter CHARACTER,
+  letter INTEGER,
   sectionIndex INTEGER,
-  data INTEGER
+  data DECIMAL
 );
