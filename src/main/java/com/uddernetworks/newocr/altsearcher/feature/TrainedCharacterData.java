@@ -91,10 +91,10 @@ public class TrainedCharacterData {
         }
 
         OptionalDouble widthAverageOptional = recalculatingWidths.stream().mapToDouble(t -> t).average();
-        this.widthAverage = widthAverageOptional.isPresent() ? widthAverageOptional.getAsDouble() : 0;
+        this.widthAverage = widthAverageOptional.isPresent() ? widthAverageOptional.getAsDouble() : 0D;
 
         OptionalDouble heightAverageOptional = recalculatingHeights.stream().mapToDouble(t -> t).average();
-        this.heightAverage = heightAverageOptional.isPresent() ? heightAverageOptional.getAsDouble() : 0;
+        this.heightAverage = heightAverageOptional.isPresent() ? heightAverageOptional.getAsDouble() : 0D;
 
 //        this.heightAverage = recalculatingHeights.stream().mapToDouble(t -> t).average().getAsDouble();
         this.sizeRatio = this.heightAverage != 0 ? this.widthAverage / this.heightAverage : 0;

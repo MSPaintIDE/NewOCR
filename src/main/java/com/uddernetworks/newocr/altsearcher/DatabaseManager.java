@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -61,8 +62,8 @@ public class DatabaseManager {
         return this.dataSource;
     }
 
-    public void createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, Runnable callback) {
-        executor.execute(() -> {
+    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize) {
+        return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
                 PreparedStatement createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
                 createLetterEntry.setInt(1, letter);
@@ -74,29 +75,23 @@ public class DatabaseManager {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-
-            if (callback != null) callback.run();
         });
     }
 
-    public void clearLetterSegments(char letter, Runnable callback) {
-        executor.execute(() -> {
-            Arrays.asList("letters", "sectionData").forEach(table -> {
-                try (Connection connection = dataSource.getConnection();
-                     PreparedStatement clearLetterSegments = connection.prepareStatement(String.format(this.clearLetterSegments, table))) {
-                    clearLetterSegments.setInt(1, letter);
-                    clearLetterSegments.executeUpdate();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            });
-
-            if (callback != null) callback.run();
-        });
+    public Future clearLetterSegments(char letter) {
+        return executor.submit(() -> Arrays.asList("letters", "sectionData").forEach(table -> {
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement clearLetterSegments = connection.prepareStatement(String.format(this.clearLetterSegments, table))) {
+                clearLetterSegments.setInt(1, letter);
+                clearLetterSegments.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }));
     }
 
-    public void addLetterSegments(char letter, double[] segments, Runnable callback) {
-        executor.execute(() -> {
+    public Future addLetterSegments(char letter, double[] segments) {
+        return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement addLetterSegment = connection.prepareStatement(this.addLetterSegment)) {
                 for (int i = 0; i < segments.length; i++) {
@@ -108,8 +103,6 @@ public class DatabaseManager {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-
-            if (callback != null) callback.run();
         });
     }
 }

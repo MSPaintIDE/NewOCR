@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -350,6 +351,10 @@ public class Main {
             }
         }
 
+        searchCharacters = searchCharactersCopy;
+
+        System.out.println(searchCharacters.size() + " characters found");
+
         long start = System.currentTimeMillis();
         System.out.println("Writing output...");
         ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
@@ -360,33 +365,22 @@ public class Main {
 
         trainedCharacterData.forEach(TrainedCharacterData::finishRecalculations);
 
-        AtomicBoolean finished = new AtomicBoolean(false);
-
-        long finalStart = start;
         trainedCharacterData.forEach(databaseTrainedCharacter -> {
             char letter = databaseTrainedCharacter.getValue();
 
-            databaseManager.clearLetterSegments(letter, () -> {
-                databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), TrainGenerator.LOWER_FONT_BOUND, TrainGenerator.UPPER_FONT_BOUND, () -> {
-                    databaseManager.addLetterSegments(letter, databaseTrainedCharacter.getSegmentPercentages(), () -> {
-                        finished.set(true);
-                        System.out.println("Finished in " + (System.currentTimeMillis() - finalStart) + "ms");
-                    });
-                });
-            });
+            Future databaseFuture = databaseManager.clearLetterSegments(letter);
+            while (!databaseFuture.isDone()) {}
+
+            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), TrainGenerator.LOWER_FONT_BOUND, TrainGenerator.UPPER_FONT_BOUND);
+            while (!databaseFuture.isDone()) {}
+
+            databaseFuture = databaseManager.addLetterSegments(letter, databaseTrainedCharacter.getSegmentPercentages());
+            while(!databaseFuture.isDone()) {}
         });
 
-        while (!finished.get()) Thread.sleep(500);
-
-        System.out.println("Exiting...");
-
-        System.exit(0);
+        System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
 
 //        trainedCharacterData.forEach(TrainedCharacterData::preformRecalculations);
-
-        searchCharacters = searchCharactersCopy;
-
-        System.out.println(searchCharacters.size() + " characters found");
 
         ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
     }
