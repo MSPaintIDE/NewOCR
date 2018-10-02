@@ -7,11 +7,14 @@ import javafx.util.Pair;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.OptionalDouble;
 
 public class TrainedCharacterData {
 
     private char value;
     private boolean hasDot;
+    private double widthAverage;
+    private double heightAverage;
     private double[] segmentPercentages;
     private double sizeRatio = -1; //        Width / Height
 
@@ -55,13 +58,13 @@ public class TrainedCharacterData {
 //        }
 
 //        double[] temp = new double[segmentPercentages.length]
-        if (!Main.ALL_INPUTS_EQUAL) {
-            for (int i = 0; i < segmentPercentages.length; i++) {
-                this.segmentPercentages[i] += (segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS; // Default 2
-//            System.out.println((segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS);
-//            System.out.println("Changed by " + ((segmentPercentages[i] - this.segmentPercentages[i]) / 2));
-            }
-        } else {
+//        if (!Main.ALL_INPUTS_EQUAL) {
+//            for (int i = 0; i < segmentPercentages.length; i++) {
+//                this.segmentPercentages[i] += (segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS; // Default 2
+////            System.out.println((segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS);
+////            System.out.println("Changed by " + ((segmentPercentages[i] - this.segmentPercentages[i]) / 2));
+//            }
+//        } else {
 //            System.out.println("segmentPercentages = " + segmentPercentages.length);
             recalculatingList.add(segmentPercentages);
             if (searchCharacter.getWidth() != 0 && searchCharacter.getHeight() != 0) {
@@ -70,22 +73,31 @@ public class TrainedCharacterData {
                 recalculatingWidths.add((double) searchCharacter.getWidth());
                 recalculatingHeights.add((double) searchCharacter.getHeight());
             }
-        }
+//        }
 
 
 //        System.out.println(Arrays.toString(this.segmentPercentages));
     }
 
     public void finishRecalculations() {
-        if (!Main.ALL_INPUTS_EQUAL) return;
+//        if (!Main.ALL_INPUTS_EQUAL) return;
 
         this.segmentPercentages = new double[8 + 9];
         for (int i = 0; i < 8 + 9; i++) {
             int finalI = i;
-            this.segmentPercentages[i] = recalculatingList.stream().mapToDouble(t -> t[finalI]).average().getAsDouble();
+//            this.segmentPercentages[i] = recalculatingList.stream().mapToDouble(t -> t[finalI]).average();
+            OptionalDouble optionalDouble = recalculatingList.stream().mapToDouble(t -> t[finalI]).average();
+            this.segmentPercentages[i] = optionalDouble.isPresent() ? optionalDouble.getAsDouble() : 0;
         }
 
-        this.sizeRatio = recalculatingWidths.stream().mapToDouble(t -> t).average().getAsDouble() / recalculatingHeights.stream().mapToDouble(t -> t).average().getAsDouble();
+        OptionalDouble widthAverageOptional = recalculatingWidths.stream().mapToDouble(t -> t).average();
+        this.widthAverage = widthAverageOptional.isPresent() ? widthAverageOptional.getAsDouble() : 0;
+
+        OptionalDouble heightAverageOptional = recalculatingHeights.stream().mapToDouble(t -> t).average();
+        this.heightAverage = heightAverageOptional.isPresent() ? heightAverageOptional.getAsDouble() : 0;
+
+//        this.heightAverage = recalculatingHeights.stream().mapToDouble(t -> t).average().getAsDouble();
+        this.sizeRatio = this.heightAverage != 0 ? this.widthAverage / this.heightAverage : 0;
 //        System.out.println("sizeRatio = " + sizeRatio);
     }
 
@@ -103,6 +115,14 @@ public class TrainedCharacterData {
 
         return new Pair<>(1 - Arrays.stream(differences).average().getAsDouble(), ratioDifference); // / ratioDifference
 //        return ratioDifference;
+    }
+
+    public double getWidthAverage() {
+        return widthAverage;
+    }
+
+    public double getHeightAverage() {
+        return heightAverage;
     }
 
     @Override

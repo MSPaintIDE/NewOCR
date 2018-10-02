@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -43,9 +44,9 @@ public class Main {
 
     private static BufferedImage testImageShit;
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException { // alphabet48
-        Class.forName("org.sqlite.JDBC");
-        databaseManager = new DatabaseManager();
+    public static void main(String[] args) throws IOException, ClassNotFoundException, SQLException, InterruptedException { // alphabet48
+//        Class.forName("org.sqlite.JDBC");
+        databaseManager = new DatabaseManager(args[0], args[1], args[2]);
 
         Arrays.asList("letters.sql", "sectionData.sql").parallelStream().forEach(table -> {
             try {
@@ -62,6 +63,8 @@ public class Main {
                 e.printStackTrace();
             }
         });
+
+        databaseManager.initializeStatements();
 
 //        for (int i = 0; i < 100; i++) {
 //            letterIndex = 0;
@@ -200,7 +203,7 @@ public class Main {
 //        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
     }
 
-    public static void generateFeatures(File file) throws IOException {
+    public static void generateFeatures(File file) throws IOException, InterruptedException {
         BufferedImage input = ImageIO.read(file); // Full alphabet in 72 font
 //        BufferedImage histogramVisual = new BufferedImage(500, 2000, BufferedImage.TYPE_INT_ARGB);
         boolean[][] values = createGrid(input);
@@ -249,8 +252,6 @@ public class Main {
 
                     if (doDotStuff(searchCharacter, coordinates, searchCharacters)) continue;
                     if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) continue;
-//                    if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) continue;
-//                    if (doColonStuff(searchCharacter, coordinates, searchCharacters)) continue;
 
                     Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
                     if (possibleDot.isPresent()) {
@@ -277,47 +278,21 @@ public class Main {
                         continue;
                     }
 
-                    /*if (searchCharacter.isProbablyApostraphe() && !searchCharacter.hasDot()) {
-                        System.out.println("Is apos");
-                        possibleDot = getLeftApostrophe(searchCharacters, searchCharacter);
-                        System.out.println("possibleDot = " + possibleDot);
-                        if (possibleDot.isPresent()) {
-                            combine(searchCharacter, possibleDot.get(), coordinates, CombineMethod.APOSTROPHE);
-                            searchCharacters.remove(searchCharacter);
-                            continue;
-                        }
-                    }*/
-
-//                    System.out.println("Is colon: " + searchCharacter.isProbablyColon());
                     if (searchCharacter.isProbablyColon() && isAllBlack(searchCharacter) && !searchCharacter.hasDot()) {
-//                        System.out.println("Found part of a colon");
                         possibleDot = getBottomColon(searchCharacters, searchCharacter);
                         if (possibleDot.isPresent()) {
-//                            System.out.println("PRESENT!");
                             combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON);
                             searchCharacters.remove(searchCharacter);
                             continue;
                         }
                     }
 
-//                    System.out.println("===== END =====");
-
-
                     searchCharacter.applySections();
                     searchCharacter.analyzeSlices();
 
                     segmentPercentages = searchCharacter.getSegmentPercentages();
-//                    System.out.println("Trained segmentPercentages = " + Arrays.toString(segmentPercentages));
 
-//                    try {
-//                        if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
-//                            makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
-//                        }
-//                        System.out.println(searchCharacter.getY());
-//                        testIndex++;
-//                    } catch (Exception ignore) {
-////                        ignore.printStackTrace();
-//                    }
+
 
                     searchCharacters.add(searchCharacter);
                     coordinates.clear();
@@ -359,12 +334,12 @@ public class Main {
                     if (letterIndex >= trainString.length()) letterIndex = 0;
                     searchCharacter.setKnownChar(current);
 
-                    try {
-                        if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
-                            makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
-                        }
-                        testIndex++;
-                    } catch (Exception ignore) {}
+//                    try {
+//                        if (!new File("E:\\NewOCR\\" + ("output\\charcater_" + testIndex) + ".png").exists()) {
+//                            makeImage(searchCharacter.getValues(), "output\\charcater_" + testIndex);
+//                        }
+//                        testIndex++;
+//                    } catch (Exception ignore) {}
 
                     TrainedCharacterData trainedCharacterData = getTrainedData(current);
                     trainedCharacterData.setHasDot(searchCharacter.hasDot());
@@ -375,11 +350,37 @@ public class Main {
             }
         }
 
+        long start = System.currentTimeMillis();
+        System.out.println("Writing output...");
         ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+        System.out.println("Wrote output in " + (System.currentTimeMillis() - start) + "ms");
 
-        System.exit(0);
+        System.out.println("Writing data to database...");
+        start = System.currentTimeMillis();
 
         trainedCharacterData.forEach(TrainedCharacterData::finishRecalculations);
+
+        AtomicBoolean finished = new AtomicBoolean(false);
+
+        long finalStart = start;
+        trainedCharacterData.forEach(databaseTrainedCharacter -> {
+            char letter = databaseTrainedCharacter.getValue();
+
+            databaseManager.clearLetterSegments(letter, () -> {
+                databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), TrainGenerator.LOWER_FONT_BOUND, TrainGenerator.UPPER_FONT_BOUND, () -> {
+                    databaseManager.addLetterSegments(letter, databaseTrainedCharacter.getSegmentPercentages(), () -> {
+                        finished.set(true);
+                        System.out.println("Finished in " + (System.currentTimeMillis() - finalStart) + "ms");
+                    });
+                });
+            });
+        });
+
+        while (!finished.get()) Thread.sleep(500);
+
+        System.out.println("Exiting...");
+
+        System.exit(0);
 
 //        trainedCharacterData.forEach(TrainedCharacterData::preformRecalculations);
 
