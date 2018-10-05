@@ -9,8 +9,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -24,6 +25,8 @@ public class DatabaseManager {
     private String createLetterEntry;
     private String clearLetterSegments;
     private String addLetterSegment;
+    private String selectSegments;
+    private String selectAllSegments;
 
     public DatabaseManager(String url, String username, String password) {
         HikariConfig config = new HikariConfig();
@@ -42,6 +45,8 @@ public class DatabaseManager {
         this.createLetterEntry = getQuery("createLetterEntry");
         this.clearLetterSegments = getQuery("clearLetterSegments");
         this.addLetterSegment = getQuery("addLetterSegment");
+        this.selectSegments = getQuery("selectSegments");
+        this.selectAllSegments = getQuery("selectAllSegments");
     }
 
     private String getQuery(String name) throws IOException {
@@ -103,6 +108,57 @@ public class DatabaseManager {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+        });
+    }
+
+    public Future<double[]> getCharacterSegments(char character) {
+        return executor.submit(() -> {
+            double[] doubles = new double[16];
+            Arrays.fill(doubles, 0);
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement selectSegments = connection.prepareStatement(this.selectSegments)) {
+                selectSegments.setInt(1, character);
+
+                ResultSet resultSet = selectSegments.executeQuery();
+
+                while (resultSet.next()) {
+                    int sectionIndex = resultSet.getInt("sectionIndex");
+                    double data = resultSet.getDouble("data");
+
+                    doubles[sectionIndex] = data;
+                }
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            return doubles;
+        });
+    }
+
+    public Future<Map<Character, double[]>> getAllCharacterSegments() {
+        return executor.submit(() -> {
+            Map<Character, double[]> ret = new HashMap<>();
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement selectSegments = connection.prepareStatement(this.selectAllSegments)) {
+
+                ResultSet resultSet = selectSegments.executeQuery();
+
+                while (resultSet.next()) {
+                    char letter = resultSet.getString("sectionIndex").charAt(0);
+                    int sectionIndex = resultSet.getInt("sectionIndex");
+                    double data = resultSet.getDouble("data");
+
+                    ret.putIfAbsent(letter, new double[16]);
+                    ret.get(letter)[sectionIndex] = data;
+                }
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            return ret;
         });
     }
 }

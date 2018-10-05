@@ -1,0 +1,1 @@
+SELECT CHAR(letter) AS 'letter', sectionIndex, data FROM `sectionData` ORDER BY letter, sectionIndex;
