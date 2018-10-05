@@ -81,7 +81,7 @@ public class Main {
             System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
         }
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\letter.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HW.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -108,40 +108,10 @@ public class Main {
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
 
         searchCharacters.forEach(searchCharacter -> {
-            CharData charData = getCharacterFor(searchCharacter);
+            char found = getCharacterFor(searchCharacter);
+//            result.append(found);
 //            System.out.println("charData = " + charData.getCharacterData().getValue());
         });
-
-//        for (int y = 0; y < input.getHeight(); y++) {
-//            List<SearchCharacter> line = findCharacterAtY(y, searchCharacters);
-//
-//            if (!line.isEmpty()) {
-////                System.out.println("");
-////                System.out.println(line);
-//                line.forEach(searchCharacter -> {
-////                    System.out.print(getCharacterFor(searchCharacter));
-//                    CharData charData = getCharacterFor(searchCharacter);
-////                        if (pair == null) {
-////                            percentages.add(0D);
-////                            System.out.print('?');
-////                            result.append('?');
-////                        } else {
-////                            percentages.add(pair.getValue());
-////                            System.out.print(pair.getKey());
-////                            result.append(pair.getKey());
-////                        }
-//                });
-//
-//                searchCharacters.removeAll(line);
-//            }
-//        }
-
-//            if (!result.toString().equals("abcdefghijklmnopqrstuvwxyz")) {
-//            if (!result.toString().trim().equals("dsfjhsdfknefiusjfdlkneoiwejdmsdkljfoweoijfmosuehrmseoruimnhurdignidousenmfiuerfjnseiufhosjiefnisdurofjmsdrofjsieorjfcmsrojifsmefjiosdrefmrnsehoimzapyoiyluknjvmxbchdneywtqraesdzcsgfcbdhfjrueikdhs")) {
-//                System.out.println("Not equals! Got: \n\t" + result);
-
-//                System.exit(0);
-//            }
 
         System.out.println(result);
 
@@ -410,13 +380,16 @@ public class Main {
         return false;
     }
 
-    private static CharData getCharacterFor(SearchCharacter searchCharacter) {
+    private static char getCharacterFor(SearchCharacter searchCharacter) {
         Map<Character, Double> diffs = new HashMap<>(); // The lower value the better
 
         try {
             Map<Character, double[]> data = databaseManager.getAllCharacterSegments().get();
+//            System.out.println("data = " + data);
 
+            Map<Character, Double> finalDiffs = diffs;
             data.forEach((character, doubles) -> {
+//                System.out.println("character = " + character);
                 double[] charDifference = getDifferencesFrom(searchCharacter.getSegmentPercentages(), doubles);
 
                 double value = 1;
@@ -424,7 +397,7 @@ public class Main {
                     value = Arrays.stream(charDifference).average().getAsDouble();
                 }
 
-                diffs.put(character, value);
+                finalDiffs.put(character, value);
             });
 
         } catch (InterruptedException | ExecutionException e) {
@@ -432,16 +405,21 @@ public class Main {
         }
 
 
-        sortByValue(diffs);
+        diffs = sortByValue(diffs);
 
-        System.out.println("answers = " + diffs);
+        LinkedList<Map.Entry<Character, Double>> entries = diffs.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toCollection(LinkedList::new));
+//        System.out.println("First: " + entries.getFirst().getKey());
+
+//        System.out.print(entries.getFirst().getKey());
+
+//        System.out.println("answers = " + diffs);
 
 //        CharData answer = charDataList.get(0);
 
 //        System.out.println("Closest is '" + answer.getCharacterData() + "' with a similarity of " + percent.format(answer.getSimilarity() * 100) + "% \t\tOther: " + sortByValue(results));
 //        System.out.println("Unknown: " + ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight()) + " known: " + answer);
 
-        return null;
+        return entries.getFirst().getKey();
     }
 
     private static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {

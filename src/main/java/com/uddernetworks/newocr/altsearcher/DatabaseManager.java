@@ -146,11 +146,11 @@ public class DatabaseManager {
                 ResultSet resultSet = selectSegments.executeQuery();
 
                 while (resultSet.next()) {
-                    char letter = resultSet.getString("sectionIndex").charAt(0);
+                    char letter = resultSet.getString("letter").charAt(0);
                     int sectionIndex = resultSet.getInt("sectionIndex");
                     double data = resultSet.getDouble("data");
 
-                    ret.putIfAbsent(letter, new double[16]);
+                    ret.putIfAbsent(letter, new double[17]);
                     ret.get(letter)[sectionIndex] = data;
                 }
 
