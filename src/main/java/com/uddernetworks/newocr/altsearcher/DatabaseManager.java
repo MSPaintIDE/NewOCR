@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,9 @@ public class DatabaseManager {
     private String addLetterSegment;
     private String selectSegments;
     private String selectAllSegments;
+    private String getLetterEntry;
+
+    private final AtomicReference<List<DatabaseCharacter>> databaseCharacterCache = new AtomicReference<>();
 
     public DatabaseManager(String url, String username, String password) {
         HikariConfig config = new HikariConfig();
@@ -47,6 +51,7 @@ public class DatabaseManager {
         this.addLetterSegment = getQuery("addLetterSegment");
         this.selectSegments = getQuery("selectSegments");
         this.selectAllSegments = getQuery("selectAllSegments");
+        this.getLetterEntry = getQuery("getLetterEntry");
     }
 
     private String getQuery(String name) throws IOException {
@@ -67,7 +72,7 @@ public class DatabaseManager {
         return this.dataSource;
     }
 
-    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize) {
+    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double center) {
         return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
                 PreparedStatement createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
@@ -76,6 +81,7 @@ public class DatabaseManager {
                 createLetterEntry.setDouble(3, averageHeight);
                 createLetterEntry.setInt(4, minFontSize);
                 createLetterEntry.setInt(5, maxFontSize);
+                createLetterEntry.setDouble(6, center);
                 createLetterEntry.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -136,9 +142,11 @@ public class DatabaseManager {
         });
     }
 
-    public Future<Map<Character, double[]>> getAllCharacterSegments() {
+    public Future<List<DatabaseCharacter>> getAllCharacterSegments() {
         return executor.submit(() -> {
-            Map<Character, double[]> ret = new HashMap<>();
+            if (this.databaseCharacterCache.get() != null && !this.databaseCharacterCache.get().isEmpty()) return this.databaseCharacterCache.get();
+
+            List<DatabaseCharacter> databaseCharacters = new ArrayList<>();
 
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement selectSegments = connection.prepareStatement(this.selectAllSegments)) {
@@ -150,15 +158,44 @@ public class DatabaseManager {
                     int sectionIndex = resultSet.getInt("sectionIndex");
                     double data = resultSet.getDouble("data");
 
-                    ret.putIfAbsent(letter, new double[17]);
-                    ret.get(letter)[sectionIndex] = data;
+                    DatabaseCharacter databaseCharacter = getDatabaseCharacter(databaseCharacters, letter, newDatabaseCharacter -> {
+                        try (PreparedStatement getLetterEntry = connection.prepareCall(this.getLetterEntry)) {
+                            getLetterEntry.setInt(1, letter);
+                            ResultSet resultSet1 = getLetterEntry.executeQuery();
+
+                            if (!resultSet1.next()) return;
+
+                            double avgWidth = resultSet1.getDouble("avgWidth");
+                            double avgHeight = resultSet1.getDouble("avgHeight");
+                            int minFontSize = resultSet1.getInt("minFontSize");
+                            int maxFontSize = resultSet1.getInt("maxFontSize");
+                            double center = resultSet1.getInt("center");
+
+                            newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
+                            newDatabaseCharacter.setCenter((int) center);
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                    });
+
+                    databaseCharacter.addDataPoint(sectionIndex, data);
+                    databaseCharacters.add(databaseCharacter);
                 }
 
             } catch (SQLException e) {
                 e.printStackTrace();
             }
 
-            return ret;
+            this.databaseCharacterCache.set(databaseCharacters);
+            return this.databaseCharacterCache.get();
+        });
+    }
+
+    private DatabaseCharacter getDatabaseCharacter(List<DatabaseCharacter> databaseCharacters, char letter, Consumer<DatabaseCharacter> onCreate) {
+        return databaseCharacters.stream().filter(cha -> cha.getLetter() == letter).findFirst().orElseGet(() -> {
+            DatabaseCharacter databaseCharacter = new DatabaseCharacter(letter);
+            onCreate.accept(databaseCharacter);
+            return databaseCharacter;
         });
     }
 }

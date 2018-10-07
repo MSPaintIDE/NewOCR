@@ -1,0 +1,1 @@
+SELECT avgWidth, avgHeight, minFontSize, maxFontSize, center FROM `letters` WHERE letter = ?;

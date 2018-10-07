@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -46,7 +47,7 @@ public class Main {
 
     private static BufferedImage testImageShit;
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException, SQLException, InterruptedException { // alphabet48
+    public static void main(String[] args) throws IOException, InterruptedException { // alphabet48
         databaseManager = new DatabaseManager(args[0], args[1], args[2]);
 
         Scanner scanner = new Scanner(System.in);
@@ -102,18 +103,51 @@ public class Main {
             }
         }
 
+        System.out.println("Got letters?");
+
         List<Double> percentages = new ArrayList<>();
-        StringBuilder result = new StringBuilder();
 
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
+        List<DatabaseCharacter> found = searchCharacters.stream()
+                .map(Main::getCharacterFor)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
-        searchCharacters.forEach(searchCharacter -> {
-            char found = getCharacterFor(searchCharacter);
-//            result.append(found);
-//            System.out.println("charData = " + charData.getCharacterData().getValue());
-        });
+        Map<Integer, List<DatabaseCharacter>> lines = new LinkedHashMap<>();
 
-        System.out.println(result);
+        System.out.println("lines = " + lines);
+
+        found = found.stream()
+                .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
+                .collect(Collectors.toList());
+
+        System.out.println("111");
+        found.forEach(databaseCharacter -> System.out.println(databaseCharacter.getLetter() + " = [" + databaseCharacter.getX()));
+        System.out.println("222");
+
+        // Ordering
+
+        found.stream()
+                .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
+                .forEach(databaseCharacter -> {
+                    double threashold = Math.max(databaseCharacter.getAvgHeight() / 10, 2D);
+                    int center = lines.keySet()
+                            .stream()
+                            .filter(y -> isWithin(y, databaseCharacter.getCenterExact(), threashold)).findFirst().orElseGet(() -> {
+                                lines.put(databaseCharacter.getCenterExact(), new LinkedList<>());
+                                return databaseCharacter.getCenterExact();
+                    });
+
+                    System.out.println("databaseCharacter = " + databaseCharacter);
+
+                    lines.get(center).add(databaseCharacter);
+                });
+
+        // End ordering
+
+        System.out.println("lines = " + lines);
+
+        lines.forEach((center, line) -> line.forEach(System.out::println));
 
         OptionalDouble averageOptional = percentages.stream().mapToDouble(t -> t).average();
         if (!averageOptional.isPresent()) {
@@ -235,6 +269,7 @@ public class Main {
                     TrainedCharacterData trainedCharacterData = getTrainedData(current);
                     trainedCharacterData.setHasDot(searchCharacter.hasDot());
                     trainedCharacterData.recalculateTo(searchCharacter);
+                    trainedCharacterData.recalculateCenter(((double) lineBound.getKey() - (double) lineBound.getValue()) / 2D);
                 });
 
                 searchCharacters.removeAll(line);
@@ -262,7 +297,7 @@ public class Main {
             while (!databaseFuture.isDone()) {
             }
 
-            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), TrainGenerator.LOWER_FONT_BOUND, TrainGenerator.UPPER_FONT_BOUND);
+            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), TrainGenerator.LOWER_FONT_BOUND, TrainGenerator.UPPER_FONT_BOUND, databaseTrainedCharacter.getCenter());
             while (!databaseFuture.isDone()) {
             }
 
@@ -278,38 +313,9 @@ public class Main {
         ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
     }
 
-    static class CharData implements Comparable<CharData> {
-        private TrainedCharacterData characterData;
-        private double similarity;
-        private double ratioDifference;
-
-        public CharData(TrainedCharacterData characterData, double similarity, double ratioDifference) {
-            this.characterData = characterData;
-            this.similarity = similarity;
-            this.ratioDifference = ratioDifference;
-        }
-
-        public TrainedCharacterData getCharacterData() {
-            return characterData;
-        }
-
-        public double getSimilarity() {
-            return similarity;
-        }
-
-        public double getRatioDifference() {
-            return ratioDifference;
-        }
-
-        @Override
-        public String toString() {
-            return "[" + this.characterData + "|" + percent.format(similarity * 100) + "|" + percent.format(ratioDifference * 100) + "]";
-        }
-
-        @Override
-        public int compareTo(CharData charData) {
-            return Double.compare(this.similarity, charData.similarity);
-        }
+    private static boolean isWithin(int one, int two, double within) {
+        double diff = Math.max((double) one, (double) two) - Math.min((double) one, (double) two);
+        return diff <= within;
     }
 
     private static double[] getDifferencesFrom(double[] input1, double[] input2) {
@@ -380,24 +386,28 @@ public class Main {
         return false;
     }
 
-    private static char getCharacterFor(SearchCharacter searchCharacter) {
-        Map<Character, Double> diffs = new HashMap<>(); // The lower value the better
+    private static DatabaseCharacter getCharacterFor(SearchCharacter searchCharacter) {
+        Map<DatabaseCharacter, Double> diffs = new HashMap<>(); // The lower value the better
 
         try {
-            Map<Character, double[]> data = databaseManager.getAllCharacterSegments().get();
+            List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments().get());
 //            System.out.println("data = " + data);
 
-            Map<Character, Double> finalDiffs = diffs;
-            data.forEach((character, doubles) -> {
+            Map<DatabaseCharacter, Double> finalDiffs = diffs;
+            data.parallelStream().forEach(character -> {
 //                System.out.println("character = " + character);
-                double[] charDifference = getDifferencesFrom(searchCharacter.getSegmentPercentages(), doubles);
+                double[] charDifference = getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData());
 
                 double value = 1;
                 if (AVERAGE_DIFF) {
                     value = Arrays.stream(charDifference).average().getAsDouble();
                 }
 
-                finalDiffs.put(character, value);
+                DatabaseCharacter using = character.copy();
+                using.setX(searchCharacter.getX());
+                using.setCenterExact(searchCharacter.getY() + using.getCenter());
+
+                finalDiffs.put(using, value);
             });
 
         } catch (InterruptedException | ExecutionException e) {
@@ -407,7 +417,7 @@ public class Main {
 
         diffs = sortByValue(diffs);
 
-        LinkedList<Map.Entry<Character, Double>> entries = diffs.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toCollection(LinkedList::new));
+        LinkedList<Map.Entry<DatabaseCharacter, Double>> entries = diffs.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toCollection(LinkedList::new));
 //        System.out.println("First: " + entries.getFirst().getKey());
 
 //        System.out.print(entries.getFirst().getKey());
@@ -419,7 +429,8 @@ public class Main {
 //        System.out.println("Closest is '" + answer.getCharacterData() + "' with a similarity of " + percent.format(answer.getSimilarity() * 100) + "% \t\tOther: " + sortByValue(results));
 //        System.out.println("Unknown: " + ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight()) + " known: " + answer);
 
-        return entries.getFirst().getKey();
+        System.out.println("Got one");
+        return entries.isEmpty() ? null : entries.getFirst().getKey();
     }
 
     private static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {

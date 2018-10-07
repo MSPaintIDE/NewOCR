@@ -1,6 +1,5 @@
 package com.uddernetworks.newocr.altsearcher.feature;
 
-import com.uddernetworks.newocr.altsearcher.Main;
 import com.uddernetworks.newocr.altsearcher.SearchCharacter;
 import javafx.util.Pair;
 
@@ -16,6 +15,7 @@ public class TrainedCharacterData {
     private double widthAverage;
     private double heightAverage;
     private double[] segmentPercentages;
+    private double center;
     private double sizeRatio = -1; //        Width / Height
 
     public TrainedCharacterData(char value) {
@@ -49,6 +49,7 @@ public class TrainedCharacterData {
     private List<double[]> recalculatingList = new ArrayList<>();
     private List<Double> recalculatingWidths = new ArrayList<>();
     private List<Double> recalculatingHeights = new ArrayList<>();
+    private List<Double> recalculatingCenters = new ArrayList<>();
 
     public void recalculateTo(SearchCharacter searchCharacter) {
         double[] segmentPercentages = searchCharacter.getSegmentPercentages();
@@ -85,7 +86,6 @@ public class TrainedCharacterData {
         this.segmentPercentages = new double[8 + 9];
         for (int i = 0; i < 8 + 9; i++) {
             int finalI = i;
-//            this.segmentPercentages[i] = recalculatingList.stream().mapToDouble(t -> t[finalI]).average();
             OptionalDouble optionalDouble = recalculatingList.stream().mapToDouble(t -> t[finalI]).average();
             this.segmentPercentages[i] = optionalDouble.isPresent() ? optionalDouble.getAsDouble() : 0;
         }
@@ -96,9 +96,9 @@ public class TrainedCharacterData {
         OptionalDouble heightAverageOptional = recalculatingHeights.stream().mapToDouble(t -> t).average();
         this.heightAverage = heightAverageOptional.isPresent() ? heightAverageOptional.getAsDouble() : 0D;
 
-//        this.heightAverage = recalculatingHeights.stream().mapToDouble(t -> t).average().getAsDouble();
         this.sizeRatio = this.heightAverage != 0 ? this.widthAverage / this.heightAverage : 0;
-//        System.out.println("sizeRatio = " + sizeRatio);
+
+        this.center = this.recalculatingCenters.stream().mapToDouble(t -> t).average().orElse(0);
     }
 
     public Pair<Double, Double> getSimilarityWith(SearchCharacter searchCharacter) {
@@ -125,8 +125,16 @@ public class TrainedCharacterData {
         return heightAverage;
     }
 
+    public double getCenter() {
+        return center;
+    }
+
     @Override
     public String toString() {
         return String.valueOf(value);
+    }
+
+    public void recalculateCenter(double center) {
+        recalculatingCenters.add(center);
     }
 }
