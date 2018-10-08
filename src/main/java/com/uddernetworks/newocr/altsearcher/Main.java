@@ -79,7 +79,7 @@ public class Main {
         System.out.println("Do you want to train? yes/no");
 
         String inputLine = scanner.nextLine();
-        if (inputLine.equalsIgnoreCase("yes") || inputLine.equalsIgnoreCase("y") && false) {
+        if (inputLine.equalsIgnoreCase("yes") || inputLine.equalsIgnoreCase("y")) {
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
@@ -135,21 +135,24 @@ public class Main {
         found.stream()
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
                 .forEach(databaseCharacter -> {
-                    double threashold = Math.max(databaseCharacter.getAvgHeight() / 2, 2D);
 //                    System.out.println("threashold = " + threashold);
 
-                    System.out.println("========================================== [" + databaseCharacter.getLetter() + "] Exact center: " + ((int) (databaseCharacter.getY() - databaseCharacter.getCenter())) + " (" + databaseCharacter.getY() + " - " + databaseCharacter.getCenter() + ")");
+//                    System.out.println("========================================== [" + databaseCharacter.getLetter() + "] Exact center: " + ((int) (databaseCharacter.getY() - databaseCharacter.getCenter())) + " (" + databaseCharacter.getY() + " - " + databaseCharacter.getCenter() + ")");
                     System.out.println(lines.keySet());
+
+                    double centerDiff = (databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter()) / 2 + databaseCharacter.getMinCenter();
+//                    double threashold = Math.max(databaseCharacter.getAvgHeight() / 2, 2D);
+                    double threashold = Math.max(centerDiff * 1.5D, 2D);
 
                     int center = lines.keySet()
                             .stream()
-                            .filter(y -> isWithin(y, (int) (databaseCharacter.getY() - databaseCharacter.getCenter()), threashold)).findFirst().orElseGet(() -> {
-//                                System.out.println("----------------------- Creating at: " + (databaseCharacter.getY() - databaseCharacter.getCenter()));
-                                lines.put((int) (databaseCharacter.getY() - databaseCharacter.getCenter()), new LinkedList<>());
-                                return (int) (databaseCharacter.getY() - databaseCharacter.getCenter());
+                            .filter(y -> isWithin(y, (int) (databaseCharacter.getY() - centerDiff), threashold)).findFirst().orElseGet(() -> {
+                                System.out.println("-------------------------- Creating at: " + (databaseCharacter.getY() - centerDiff));
+                                lines.put((int) (databaseCharacter.getY() - centerDiff), new LinkedList<>());
+                                return (int) (databaseCharacter.getY() - centerDiff);
                             });
 
-//                    System.out.println("----------------------- center = " + center);
+                    System.out.println("----------------------- center = " + center);
                     lines.get(center).add(databaseCharacter);
                 });
 
@@ -326,7 +329,7 @@ public class Main {
             while (!databaseFuture.isDone()) {
             }
 
-            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getCenter());
+            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter());
             while (!databaseFuture.isDone()) {
             }
 

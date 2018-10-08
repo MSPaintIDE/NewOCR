@@ -15,7 +15,8 @@ public class TrainedCharacterData {
     private double widthAverage;
     private double heightAverage;
     private double[] segmentPercentages;
-    private double center;
+    private double minCenter = -1;
+    private double maxCenter = -1;
     private double sizeRatio = -1; //        Width / Height
 
     public TrainedCharacterData(char value) {
@@ -98,7 +99,7 @@ public class TrainedCharacterData {
 
         this.sizeRatio = this.heightAverage != 0 ? this.widthAverage / this.heightAverage : 0;
 
-        this.center = this.recalculatingCenters.stream().mapToDouble(t -> t).average().orElse(0);
+//        this.center = this.recalculatingCenters.stream().mapToDouble(t -> t).average().orElse(0);
     }
 
     public Pair<Double, Double> getSimilarityWith(SearchCharacter searchCharacter) {
@@ -125,9 +126,9 @@ public class TrainedCharacterData {
         return heightAverage;
     }
 
-    public double getCenter() {
-        return center;
-    }
+//    public double getCenter() {
+//        return center;
+//    }
 
     @Override
     public String toString() {
@@ -135,6 +136,20 @@ public class TrainedCharacterData {
     }
 
     public void recalculateCenter(double center) {
-        recalculatingCenters.add(center);
+        if (minCenter == -1 && maxCenter == -1) {
+            minCenter = center;
+            maxCenter = center;
+        } else {
+            if (center > maxCenter) maxCenter = center;
+            if (center < minCenter) minCenter = center;
+        }
+    }
+
+    public double getMinCenter() {
+        return minCenter;
+    }
+
+    public double getMaxCenter() {
+        return maxCenter;
     }
 }

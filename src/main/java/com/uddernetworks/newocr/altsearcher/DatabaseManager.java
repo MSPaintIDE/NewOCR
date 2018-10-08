@@ -72,7 +72,7 @@ public class DatabaseManager {
         return this.dataSource;
     }
 
-    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double center) {
+    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter) {
         return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
                 PreparedStatement createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
@@ -81,7 +81,8 @@ public class DatabaseManager {
                 createLetterEntry.setDouble(3, averageHeight);
                 createLetterEntry.setInt(4, minFontSize);
                 createLetterEntry.setInt(5, maxFontSize);
-                createLetterEntry.setDouble(6, center);
+                createLetterEntry.setDouble(6, minCenter);
+                createLetterEntry.setDouble(7, maxCenter);
                 createLetterEntry.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -175,10 +176,12 @@ public class DatabaseManager {
                             double avgHeight = resultSet1.getDouble("avgHeight");
                             int minFontSize = resultSet1.getInt("minFontSize");
                             int maxFontSize = resultSet1.getInt("maxFontSize");
-                            double center = resultSet1.getDouble("center");
+                            double minCenter = resultSet1.getDouble("minCenter");
+                            double maxCenter = resultSet1.getDouble("maxCenter");
 
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
-                            newDatabaseCharacter.setCenter(center);
+                            newDatabaseCharacter.setMinCenter(minCenter);
+                            newDatabaseCharacter.setMaxCenter(maxCenter);
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }

@@ -7,7 +7,8 @@ public class DatabaseCharacter {
     private double avgHeight;
     private int minFontSize;
     private int maxFontSize;
-    private double center; // Pixels from the top
+    private double minCenter; // Pixels from the top
+    private double maxCenter; // Pixels from the top
 
     private int x;
     private int y;
@@ -68,13 +69,13 @@ public class DatabaseCharacter {
         this.maxFontSize = maxFontSize;
     }
 
-    public double getCenter() {
-        return center;
-    }
-
-    public void setCenter(double center) {
-        this.center = center;
-    }
+//    public double getCenter() {
+//        return center;
+//    }
+//
+//    public void setCenter(double center) {
+//        this.center = center;
+//    }
 
     public int getX() {
         return x;
@@ -107,12 +108,29 @@ public class DatabaseCharacter {
         copy.avgHeight = this.avgHeight;
         copy.minFontSize = this.minFontSize;
         copy.maxFontSize = this.maxFontSize;
-        copy.center = this.center;
+        copy.minCenter = this.minCenter;
+        copy.maxCenter = this.maxCenter;
         return copy;
     }
 
     @Override
     public String toString() {
         return String.valueOf(this.letter);
+    }
+
+    public void setMinCenter(double minCenter) {
+        this.minCenter = minCenter;
+    }
+
+    public void setMaxCenter(double maxCenter) {
+        this.maxCenter = maxCenter;
+    }
+
+    public double getMinCenter() {
+        return minCenter;
+    }
+
+    public double getMaxCenter() {
+        return maxCenter;
     }
 }
