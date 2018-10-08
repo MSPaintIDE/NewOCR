@@ -1,1 +1,1 @@
-INSERT INTO `sectionData` VALUES (?, ?, ?);
+INSERT INTO `sectionData` VALUES (?, ?, ?, ?, ?);

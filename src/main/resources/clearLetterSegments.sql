@@ -1,1 +1,1 @@
-DELETE FROM `%s` WHERE `letter` = ?;
+DELETE FROM `%s` WHERE `letter` = ? AND minFontSize = ? AND maxFontSize = ?;

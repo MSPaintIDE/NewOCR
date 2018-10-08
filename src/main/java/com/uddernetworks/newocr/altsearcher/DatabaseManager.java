@@ -30,7 +30,7 @@ public class DatabaseManager {
     private String selectAllSegments;
     private String getLetterEntry;
 
-    private final AtomicReference<List<DatabaseCharacter>> databaseCharacterCache = new AtomicReference<>();
+    private final AtomicReference<Map<Integer, List<DatabaseCharacter>>> databaseCharacterCache = new AtomicReference<>(new HashMap<>());
 
     public DatabaseManager(String url, String username, String password) {
         HikariConfig config = new HikariConfig();
@@ -89,11 +89,13 @@ public class DatabaseManager {
         });
     }
 
-    public Future clearLetterSegments(char letter) {
+    public Future clearLetterSegments(char letter, int minFontSize, int maxFontSize) {
         return executor.submit(() -> Arrays.asList("letters", "sectionData").forEach(table -> {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement clearLetterSegments = connection.prepareStatement(String.format(this.clearLetterSegments, table))) {
                 clearLetterSegments.setInt(1, letter);
+                clearLetterSegments.setInt(2, minFontSize);
+                clearLetterSegments.setInt(3, maxFontSize);
                 clearLetterSegments.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -101,14 +103,16 @@ public class DatabaseManager {
         }));
     }
 
-    public Future addLetterSegments(char letter, double[] segments) {
+    public Future addLetterSegments(char letter, int minFontSize, int maxFontSize, double[] segments) {
         return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement addLetterSegment = connection.prepareStatement(this.addLetterSegment)) {
                 for (int i = 0; i < segments.length; i++) {
                     addLetterSegment.setInt(1, letter);
-                    addLetterSegment.setInt(2, i);
-                    addLetterSegment.setDouble(3, segments[i]);
+                    addLetterSegment.setInt(2, minFontSize);
+                    addLetterSegment.setInt(3, maxFontSize);
+                    addLetterSegment.setInt(4, i);
+                    addLetterSegment.setDouble(5, segments[i]);
                     addLetterSegment.executeUpdate();
                 }
             } catch (SQLException e) {
@@ -142,14 +146,16 @@ public class DatabaseManager {
         });
     }
 
-    public Future<List<DatabaseCharacter>> getAllCharacterSegments() {
+    public Future<List<DatabaseCharacter>> getAllCharacterSegments(int fontSize) {
         return executor.submit(() -> {
-            if (this.databaseCharacterCache.get() != null && !this.databaseCharacterCache.get().isEmpty()) return this.databaseCharacterCache.get();
+            if (this.databaseCharacterCache.get().get(fontSize) != null && !this.databaseCharacterCache.get().get(fontSize).isEmpty()) return this.databaseCharacterCache.get().get(fontSize);
 
             List<DatabaseCharacter> databaseCharacters = new ArrayList<>();
 
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement selectSegments = connection.prepareStatement(this.selectAllSegments)) {
+                selectSegments.setInt(1, fontSize);
+                selectSegments.setInt(2, fontSize);
 
                 ResultSet resultSet = selectSegments.executeQuery();
 
@@ -186,8 +192,8 @@ public class DatabaseManager {
                 e.printStackTrace();
             }
 
-            this.databaseCharacterCache.set(databaseCharacters);
-            return this.databaseCharacterCache.get();
+            this.databaseCharacterCache.get().put(fontSize, databaseCharacters);
+            return databaseCharacters;
         });
     }
 
