@@ -7,9 +7,10 @@ public class DatabaseCharacter {
     private double avgHeight;
     private int minFontSize;
     private int maxFontSize;
-    private int center; // Pixels from the top
+    private double center; // Pixels from the top
 
     private int x;
+    private int y;
     private int centerExact;
 
     public DatabaseCharacter(char letter) {
@@ -67,11 +68,11 @@ public class DatabaseCharacter {
         this.maxFontSize = maxFontSize;
     }
 
-    public int getCenter() {
+    public double getCenter() {
         return center;
     }
 
-    public void setCenter(int center) {
+    public void setCenter(double center) {
         this.center = center;
     }
 
@@ -81,6 +82,14 @@ public class DatabaseCharacter {
 
     public void setX(int x) {
         this.x = x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public void setY(int y) {
+        this.y = y;
     }
 
     public int getCenterExact() {

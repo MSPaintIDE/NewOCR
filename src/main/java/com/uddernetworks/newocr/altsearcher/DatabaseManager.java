@@ -175,10 +175,10 @@ public class DatabaseManager {
                             double avgHeight = resultSet1.getDouble("avgHeight");
                             int minFontSize = resultSet1.getInt("minFontSize");
                             int maxFontSize = resultSet1.getInt("maxFontSize");
-                            double center = resultSet1.getInt("center");
+                            double center = resultSet1.getDouble("center");
 
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
-                            newDatabaseCharacter.setCenter((int) center);
+                            newDatabaseCharacter.setCenter(center);
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }

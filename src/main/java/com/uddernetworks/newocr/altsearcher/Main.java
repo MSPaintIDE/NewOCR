@@ -79,7 +79,7 @@ public class Main {
         System.out.println("Do you want to train? yes/no");
 
         String inputLine = scanner.nextLine();
-        if (inputLine.equalsIgnoreCase("yes") || inputLine.equalsIgnoreCase("y")) {
+        if (inputLine.equalsIgnoreCase("yes") || inputLine.equalsIgnoreCase("y") && false) {
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
@@ -108,7 +108,7 @@ public class Main {
             }
         }
 
-        System.out.println("Got letters?");
+//        System.out.println("Got letters?");
 
         List<Double> percentages = new ArrayList<>();
 
@@ -126,23 +126,30 @@ public class Main {
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
                 .collect(Collectors.toList());
 
-        System.out.println("111");
-        found.forEach(databaseCharacter -> System.out.println(databaseCharacter.getLetter() + " = [" + databaseCharacter.getX()));
-        System.out.println("222");
+//        System.out.println("111");
+//        found.forEach(databaseCharacter -> System.out.println(databaseCharacter.getLetter() + " = [" + databaseCharacter.getX()));
+//        System.out.println("222");
 
         // Ordering
 
         found.stream()
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
                 .forEach(databaseCharacter -> {
-                    double threashold = Math.max(databaseCharacter.getAvgHeight() / 10, 2D);
+                    double threashold = Math.max(databaseCharacter.getAvgHeight() / 2, 2D);
+//                    System.out.println("threashold = " + threashold);
+
+                    System.out.println("========================================== [" + databaseCharacter.getLetter() + "] Exact center: " + ((int) (databaseCharacter.getY() - databaseCharacter.getCenter())) + " (" + databaseCharacter.getY() + " - " + databaseCharacter.getCenter() + ")");
+                    System.out.println(lines.keySet());
+
                     int center = lines.keySet()
                             .stream()
-                            .filter(y -> isWithin(y, databaseCharacter.getCenterExact(), threashold)).findFirst().orElseGet(() -> {
-                                lines.put(databaseCharacter.getCenterExact(), new LinkedList<>());
-                                return databaseCharacter.getCenterExact();
+                            .filter(y -> isWithin(y, (int) (databaseCharacter.getY() - databaseCharacter.getCenter()), threashold)).findFirst().orElseGet(() -> {
+//                                System.out.println("----------------------- Creating at: " + (databaseCharacter.getY() - databaseCharacter.getCenter()));
+                                lines.put((int) (databaseCharacter.getY() - databaseCharacter.getCenter()), new LinkedList<>());
+                                return (int) (databaseCharacter.getY() - databaseCharacter.getCenter());
                             });
 
+//                    System.out.println("----------------------- center = " + center);
                     lines.get(center).add(databaseCharacter);
                 });
 
@@ -287,7 +294,8 @@ public class Main {
                     TrainedCharacterData trainedCharacterData = getTrainedData(current, trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null)));
                     trainedCharacterData.setHasDot(searchCharacter.hasDot());
                     trainedCharacterData.recalculateTo(searchCharacter);
-                    trainedCharacterData.recalculateCenter(((double) lineBound.getKey() - (double) lineBound.getValue()) / 2D);
+                    trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey());
+//                    trainedCharacterData.recalculateCenter((((double) lineBound.getValue() - (double) lineBound.getKey()) / 2D) - ((double) lineBound.getKey() - (double) searchCharacter.getY()));
                 });
 
                 searchCharacters.removeAll(line);
@@ -322,16 +330,12 @@ public class Main {
             while (!databaseFuture.isDone()) {
             }
 
-//            if (fontBounds.getMinFont() != 21) {
-                System.out.println("Min: " + fontBounds.getMinFont() + " Max: " + fontBounds.getMaxFont() + " (" + letter + ")");
-//            }
-
             databaseFuture = databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
             while (!databaseFuture.isDone()) {
             }
         }));
 
-        System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
+//        System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
 
 //        trainedCharacterData.forEach(TrainedCharacterData::preformRecalculations);
 
@@ -428,7 +432,8 @@ public class Main {
 
                 DatabaseCharacter using = character.copy();
                 using.setX(searchCharacter.getX());
-                using.setCenterExact(searchCharacter.getY() + using.getCenter());
+                using.setY(searchCharacter.getY());
+//                using.setCenterExact(searchCharacter.getY() + using.getCenter());
 
                 diffs.put(using, value);
             });
@@ -438,7 +443,7 @@ public class Main {
         }
 
 
-        System.out.println("diffs = " + diffs);
+//        System.out.println("diffs = " + diffs);
 
         LinkedList<Map.Entry<DatabaseCharacter, Double>> entries = sortByValue(diffs)
                 .entrySet()
@@ -446,7 +451,7 @@ public class Main {
                 .sorted(Map.Entry.comparingByValue())
                 .collect(Collectors.toCollection(LinkedList::new));
 
-        System.out.println("Got one: " + entries);
+//        System.out.println("Got one: " + entries);
         return entries.isEmpty() ? null : entries.getFirst().getKey();
     }
 
