@@ -16,7 +16,6 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -120,7 +119,7 @@ public class Main {
 
         Map<Integer, List<DatabaseCharacter>> lines = new LinkedHashMap<>();
 
-        System.out.println("lines = " + lines);
+//        System.out.println("lines = " + lines);
 
         found = found.stream()
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
@@ -138,7 +137,7 @@ public class Main {
 //                    System.out.println("threashold = " + threashold);
 
 //                    System.out.println("========================================== [" + databaseCharacter.getLetter() + "] Exact center: " + ((int) (databaseCharacter.getY() - databaseCharacter.getCenter())) + " (" + databaseCharacter.getY() + " - " + databaseCharacter.getCenter() + ")");
-                    System.out.println(lines.keySet());
+//                    System.out.println(lines.keySet());
 
                     double centerDiff = (databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter()) / 2 + databaseCharacter.getMinCenter();
 //                    double threashold = Math.max(databaseCharacter.getAvgHeight() / 2, 2D);
@@ -147,12 +146,13 @@ public class Main {
                     int center = lines.keySet()
                             .stream()
                             .filter(y -> isWithin(y, (int) (databaseCharacter.getY() - centerDiff), threashold)).findFirst().orElseGet(() -> {
-                                System.out.println("-------------------------- Creating at: " + (databaseCharacter.getY() - centerDiff));
                                 lines.put((int) (databaseCharacter.getY() - centerDiff), new LinkedList<>());
                                 return (int) (databaseCharacter.getY() - centerDiff);
                             });
 
-                    System.out.println("----------------------- center = " + center);
+                    double ratio = databaseCharacter.getAvgWidth() / databaseCharacter.getAvgHeight();
+                    System.out.println("Database ratio: " + ratio + " Real: " + databaseCharacter.getRatio() + " database:" + databaseCharacter.getAvgWidth() + " / " + databaseCharacter.getAvgHeight());
+
                     lines.get(center).add(databaseCharacter);
                 });
 
@@ -160,7 +160,7 @@ public class Main {
 
         System.out.println("lines = " + lines);
 
-        lines.forEach((center, line) -> line.forEach(System.out::println));
+        lines.forEach((center, line) -> System.out.println(line));
 
         OptionalDouble averageOptional = percentages.stream().mapToDouble(t -> t).average();
         if (!averageOptional.isPresent()) {
@@ -436,6 +436,7 @@ public class Main {
                 DatabaseCharacter using = character.copy();
                 using.setX(searchCharacter.getX());
                 using.setY(searchCharacter.getY());
+                using.setRatio(((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()));
 //                using.setCenterExact(searchCharacter.getY() + using.getCenter());
 
                 diffs.put(using, value);

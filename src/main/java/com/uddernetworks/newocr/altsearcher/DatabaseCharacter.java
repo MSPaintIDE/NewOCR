@@ -12,7 +12,7 @@ public class DatabaseCharacter {
 
     private int x;
     private int y;
-    private int centerExact;
+    private double ratio;
 
     public DatabaseCharacter(char letter) {
         this.letter = letter;
@@ -93,14 +93,6 @@ public class DatabaseCharacter {
         this.y = y;
     }
 
-    public int getCenterExact() {
-        return centerExact;
-    }
-
-    public void setCenterExact(int centerExact) {
-        this.centerExact = centerExact;
-    }
-
     public DatabaseCharacter copy() {
         DatabaseCharacter copy = new DatabaseCharacter(this.letter);
         copy.data = this.data;
@@ -132,5 +124,13 @@ public class DatabaseCharacter {
 
     public double getMaxCenter() {
         return maxCenter;
+    }
+
+    public void setRatio(double ratio) {
+        this.ratio = ratio;
+    }
+
+    public double getRatio() {
+        return ratio;
     }
 }
