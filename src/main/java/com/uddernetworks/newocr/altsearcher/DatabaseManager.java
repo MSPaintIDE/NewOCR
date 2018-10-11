@@ -30,7 +30,7 @@ public class DatabaseManager {
     private String selectAllSegments;
     private String getLetterEntry;
 
-    private final AtomicReference<Map<Integer, List<DatabaseCharacter>>> databaseCharacterCache = new AtomicReference<>(new HashMap<>());
+    private final AtomicReference<Map<Main.FontBounds, List<DatabaseCharacter>>> databaseCharacterCache = new AtomicReference<>(new HashMap<>());
 
     public DatabaseManager(String url, String username, String password) {
         HikariConfig config = new HikariConfig();
@@ -147,16 +147,16 @@ public class DatabaseManager {
         });
     }
 
-    public Future<List<DatabaseCharacter>> getAllCharacterSegments(int fontSize) {
+    public Future<List<DatabaseCharacter>> getAllCharacterSegments(Main.FontBounds fontBounds) {
         return executor.submit(() -> {
-            if (this.databaseCharacterCache.get().get(fontSize) != null && !this.databaseCharacterCache.get().get(fontSize).isEmpty()) return this.databaseCharacterCache.get().get(fontSize);
+            if (this.databaseCharacterCache.get().get(fontBounds) != null && !this.databaseCharacterCache.get().get(fontBounds).isEmpty()) return this.databaseCharacterCache.get().get(fontBounds);
 
             List<DatabaseCharacter> databaseCharacters = new ArrayList<>();
 
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement selectSegments = connection.prepareStatement(this.selectAllSegments)) {
-                selectSegments.setInt(1, fontSize);
-                selectSegments.setInt(2, fontSize);
+                selectSegments.setInt(1, fontBounds.getMinFont());
+                selectSegments.setInt(2, fontBounds.getMaxFont());
 
                 ResultSet resultSet = selectSegments.executeQuery();
 
@@ -188,14 +188,14 @@ public class DatabaseManager {
                     });
 
                     databaseCharacter.addDataPoint(sectionIndex, data);
-                    databaseCharacters.add(databaseCharacter);
+                    if (!databaseCharacters.contains(databaseCharacter)) databaseCharacters.add(databaseCharacter);
                 }
 
             } catch (SQLException e) {
                 e.printStackTrace();
             }
 
-            this.databaseCharacterCache.get().put(fontSize, databaseCharacters);
+            this.databaseCharacterCache.get().put(fontBounds, databaseCharacters);
             return databaseCharacters;
         });
     }

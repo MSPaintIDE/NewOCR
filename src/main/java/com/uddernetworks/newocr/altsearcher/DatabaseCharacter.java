@@ -133,4 +133,9 @@ public class DatabaseCharacter {
     public double getRatio() {
         return ratio;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof DatabaseCharacter && ((DatabaseCharacter) obj).letter == this.letter;
+    }
 }

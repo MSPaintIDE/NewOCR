@@ -418,11 +418,15 @@ public class Main {
         return false;
     }
 
+    private static FontBounds matchNearestFontSize(int fontSize) {
+        return Arrays.stream(FONT_BOUNDS).filter(fontBounds -> fontBounds.isInbetween(fontSize)).findFirst().get();
+    }
+
     private static DatabaseCharacter getCharacterFor(SearchCharacter searchCharacter) {
         Map<DatabaseCharacter, Double> diffs = new HashMap<>(); // The lower value the better
 
         try {
-            List<DatabaseCharacter> data = databaseManager.getAllCharacterSegments(searchCharacter.getHeight()).get();
+            List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments(matchNearestFontSize(searchCharacter.getHeight())).get());
 //            System.out.println(searchCharacter.getHeight() + "] data = " + data);
 
             data.parallelStream().forEach(character -> {
@@ -449,20 +453,21 @@ public class Main {
 
 //        System.out.println("diffs = " + diffs);
 
-        LinkedList<Map.Entry<DatabaseCharacter, Double>> entries = sortByValue(diffs)
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByValue())
-                .collect(Collectors.toCollection(LinkedList::new));
+        LinkedList<Map.Entry<DatabaseCharacter, Double>> entries = new LinkedList<>(sortByValue(diffs)
+                .entrySet());
 
 //        System.out.println("Got one: " + entries);
-        return entries.isEmpty() ? null : entries.getFirst().getKey();
+
+
+        System.out.println(entries);
+        System.out.println("\n");
+        return entries.isEmpty() ? null : entries.getFirst().getKey(); // 017458380571894187 before 04165299523632378
     }
 
     private static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
         List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
         list.sort(Map.Entry.comparingByValue());
-        Collections.reverse(list);
+//        Collections.reverse(list);
 
         Map<K, V> result = new LinkedHashMap<>();
         for (Map.Entry<K, V> entry : list) {
