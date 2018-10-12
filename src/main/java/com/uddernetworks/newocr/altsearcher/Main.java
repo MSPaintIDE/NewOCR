@@ -30,6 +30,14 @@ public class Main {
             new FontBounds(31, 100),
     };
 
+    private static final Color[] TEMP = new Color[] {
+            Color.RED,
+            Color.GREEN,
+            Color.BLUE
+    };
+
+    private static int inc = 0;
+
     public static final boolean ALL_INPUTS_EQUAL = true;
     public static final boolean AVERAGE_DIFF = true; // true for average, false for max and min
     public static final boolean DRAW_PROBES = true;
@@ -249,19 +257,27 @@ public class Main {
 //        int maxWidth = searchCharacters.stream().mapToInt(SearchCharacter::getHeight).max().getAsInt();
 
         BufferedImage finalInput = input;
-        searchCharacters.stream().sorted().forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
+//        searchCharacters.stream().sorted().forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
         Collections.sort(searchCharacters);
-
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
 
 
         System.out.println("searchCharacters = " + searchCharacters.size());
 
 //        printOut(valuesClone);
 
+        System.out.println("TOTAL CHARACTERS: " + trainString.length());
+
         // topY, bottomY
         List<Pair<Integer, Integer>> lineBounds = getLineBoundsForTesting(valuesClone);
         System.out.println("lineBounds = " + lineBounds);
+
+//        lineBounds.forEach(pair -> {
+//            int topY = pair.getKey();
+//            int bottomY = pair.getValue();
+//            colorRow(finalInput, Color.GREEN, topY, 0, finalInput.getWidth());
+//            colorRow(finalInput, Color.GREEN, bottomY, 0, finalInput.getWidth());
+//        });
+
 
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
         for (Pair<Integer, Integer> lineBound : lineBounds) {
@@ -270,11 +286,20 @@ public class Main {
 //            System.out.println("line = " + line.size());
 
             if (!line.isEmpty()) {
+
+                System.out.println("\t\t\t" + line.size());
+
                 final boolean[] first = {false};
+
+                letterIndex = 0;
+                first[0] = false;
+                inc = 0;
+
                 line.forEach(searchCharacter -> {
                     if (first[0]) {
                         letterIndex = 0;
                         first[0] = false;
+                        inc = 0;
                     }
 
                     char current = trainString.charAt(letterIndex++);
@@ -282,10 +307,15 @@ public class Main {
                     searchCharacter.setKnownChar(current);
 
                     if (current == 'o') {
-                        System.out.println(searchCharacter.getY() + "\t==========\t" + ((double) searchCharacter.getValues().length / (double) searchCharacter.getValues()[0].length)  + " (" + searchCharacter.getValues().length + " / " + searchCharacter.getValues()[0].length);
+//                        System.out.println(searchCharacter.getY() + "\t==========\t" + ((double) searchCharacter.getValues().length / (double) searchCharacter.getValues()[0].length)  + " (" + searchCharacter.getValues().length + " / " + searchCharacter.getValues()[0].length);
 
-//                        makeImage(searchCharacter.getValues(), searchCharacter.getValues().length + " x " + searchCharacter.getValues()[0].length);
+                        makeImage(searchCharacter.getValues(), searchCharacter.getValues().length + " x " + searchCharacter.getValues()[0].length);
+
+
                     }
+
+                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
+                    if (inc >= 3) inc = 0;
 
 //                    searchCharacter.drawTo(input);
 
@@ -304,6 +334,8 @@ public class Main {
                 searchCharacters.removeAll(line);
             }
         }
+
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
 
         searchCharacters = searchCharactersCopy;
 
@@ -866,21 +898,25 @@ public class Main {
                 .filter(character -> !character.equals(dotCharacter))
                 .filter(character -> !character.hasDot())
                 .filter(character -> character.isInBounds(dotCharacter.getX() + (dotCharacter.getWidth() / 2), character.getY() + 4))
-                .filter(character -> character.getHeight() > dotCharacter.getHeight() * 2)
+                .filter(character -> character.getHeight() > dotCharacter.getHeight() * 3)
                 .filter(baseCharacter -> {
                     int below = dotCharacter.getY() + (dotCharacter.getHeight() * 2);
                     int mod = -dotCharacter.getHeight();
-                    boolean got = false;
-                    for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
-                        if (DRAW_PROBES)
-                            drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.RED);
-                        if (below + (mod++) == baseCharacter.getY()) {
-                            if (!DRAW_FULL_PROBES) return true;
-                            got = true;
-                        }
-                    }
+//                    boolean got = false;
+//                    for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
+//                        if (DRAW_PROBES)
+//                            drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.RED);
+//                        if (below + (mod++) == baseCharacter.getY()) {
+//                            if (!DRAW_FULL_PROBES) return true;
+//                            got = true;
+//                        }
+//                    }
 
-                    return got;
+//                    return got;
+
+
+                    return checkDifference(below, baseCharacter.getY(), dotCharacter.getHeight());
+//                    return below > baseCharacter.getY() && below + mod <= baseCharacter.getY();
                 })
                 .findFirst();
     }
@@ -915,7 +951,7 @@ public class Main {
                     int below = dotCharacter.getY() - dotCharacter.getHeight() * 2;
                     int mod = dotCharacter.getHeight() * 2;
 
-                    return checkDifference(below, topDot.getY() + topDot.getHeight(), mod + 1);
+                    return checkDifference(below, topDot.getY() + topDot.getHeight(), mod);
                 })
                 .findFirst();
     }

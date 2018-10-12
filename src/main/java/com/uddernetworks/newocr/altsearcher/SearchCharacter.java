@@ -110,18 +110,22 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     public void drawTo(BufferedImage image) {
+        drawTo(image, Color.MAGENTA);
+    }
+
+    public void drawTo(BufferedImage image, Color color) {
 
         // Top
-        Main.colorRow(image, Color.MAGENTA, y, x, width);
+        Main.colorRow(image, color, y, x, width);
 
         // Bottom
-        Main.colorRow(image, Color.MAGENTA, y + height, x, width + 1);
+        Main.colorRow(image, color, y + height, x, width + 1);
 
         // Left
-        Main.colorColumn(image, Color.MAGENTA, x, y, height);
+        Main.colorColumn(image, color, x, y, height);
 
         // Right
-        Main.colorColumn(image, Color.MAGENTA, x + width, y, height);
+        Main.colorColumn(image, color, x + width, y, height);
     }
 
     public boolean[][] getValues() {
