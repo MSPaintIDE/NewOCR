@@ -52,7 +52,7 @@ public class Main {
 
     private static BufferedImage testImageShit;
 
-    public static void main(String[] args) throws IOException, InterruptedException { // alphabet48
+    public static void main(String[] args) throws IOException { // alphabet48
         databaseManager = new DatabaseManager(args[0], args[1], args[2]);
 
         Scanner scanner = new Scanner(System.in);
@@ -77,14 +77,16 @@ public class Main {
 
         System.out.println("Do you want to train? yes/no");
 
-        String inputLine = scanner.nextLine();
-        if (inputLine.equalsIgnoreCase("yes") || inputLine.equalsIgnoreCase("y")) {
+//        String inputLine = scanner.nextLine();
+//        if (inputLine.equalsIgnoreCase("yes") || inputLine.equalsIgnoreCase("y")) {
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
             generateFeatures(new File("E:\\NewOCR\\training.png"));
             System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
-        }
+
+            System.exit(0);
+//        }
 
         BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HW.png"));
         boolean[][] values = createGrid(input);
@@ -227,9 +229,9 @@ public class Main {
 
         trainWidth = input.getWidth();
 
-//        BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-//        rewriteImage(temp, input);
-//        input = temp;
+        BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        rewriteImage(temp, input);
+        input = temp;
 
         filter(input);
         toGrid(input, values);
@@ -268,7 +270,8 @@ public class Main {
 
 //        int maxWidth = searchCharacters.stream().mapToInt(SearchCharacter::getHeight).max().getAsInt();
 
-        searchCharacters.stream().sorted().forEach(searchCharacter -> searchCharacter.drawTo(input));
+        BufferedImage finalInput = input;
+        searchCharacters.stream().sorted().forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
         Collections.sort(searchCharacters);
 
         ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
@@ -286,19 +289,38 @@ public class Main {
         for (Pair<Integer, Integer> lineBound : lineBounds) {
             List<SearchCharacter> line = findCharacterAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
 
-            System.out.println("line = " + line.size());
+//            System.out.println("line = " + line.size());
 
             if (!line.isEmpty()) {
+                final boolean[] first = {false};
                 line.forEach(searchCharacter -> {
+                    if (first[0]) {
+                        letterIndex = 0;
+                        first[0] = false;
+                    }
+
                     char current = trainString.charAt(letterIndex++);
-                    if (letterIndex >= trainString.length()) letterIndex = 0;
+//                    System.out.print(current);
                     searchCharacter.setKnownChar(current);
+
+                    if (current == 'o') {
+                        System.out.println(searchCharacter.getY() + "\t==========\t" + ((double) searchCharacter.getValues().length / (double) searchCharacter.getValues()[0].length)  + " (" + searchCharacter.getValues().length + " / " + searchCharacter.getValues()[0].length);
+
+//                        makeImage(searchCharacter.getValues(), searchCharacter.getValues().length + " x " + searchCharacter.getValues()[0].length);
+                    }
+
+//                    searchCharacter.drawTo(input);
 
                     TrainedCharacterData trainedCharacterData = getTrainedData(current, trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null)));
                     trainedCharacterData.setHasDot(searchCharacter.hasDot());
                     trainedCharacterData.recalculateTo(searchCharacter);
                     trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey());
 //                    trainedCharacterData.recalculateCenter((((double) lineBound.getValue() - (double) lineBound.getKey()) / 2D) - ((double) lineBound.getKey() - (double) searchCharacter.getY()));
+
+                    if (letterIndex >= trainString.length()) {
+                        letterIndex = 0;
+//                        System.out.println("\n");
+                    }
                 });
 
                 searchCharacters.removeAll(line);
@@ -311,8 +333,10 @@ public class Main {
 
         long start = System.currentTimeMillis();
         System.out.println("Writing output...");
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+//        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
         System.out.println("Wrote output in " + (System.currentTimeMillis() - start) + "ms");
+
+        System.exit(0);
 
         System.out.println("Writing data to database...");
         start = System.currentTimeMillis();
@@ -342,7 +366,7 @@ public class Main {
 
 //        trainedCharacterData.forEach(TrainedCharacterData::preformRecalculations);
 
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+//        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
     }
 
     private static boolean isWithin(int one, int two, double within) {
@@ -458,10 +482,16 @@ public class Main {
 
 //        System.out.println("Got one: " + entries);
 
+        DatabaseCharacter first = entries.removeFirst().getKey();
+        DatabaseCharacter second = entries.removeFirst().getKey();
 
-        System.out.println(entries);
-        System.out.println("\n");
-        return entries.isEmpty() ? null : entries.getFirst().getKey(); // 017458380571894187 before 04165299523632378
+        System.out.println(first.getLetter() + "\t\t" + (first.getAvgWidth() / first.getAvgHeight()) + " vs " + (second.getAvgWidth() / second.getAvgHeight()) + " REAL: " + ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight()));
+        System.out.println("\t\t^ " + searchCharacter.getWidth()  + " x " + searchCharacter.getHeight());
+
+//        System.out.println(entries);
+//        System.out.println("\n");
+//        return entries.isEmpty() ? null : entries.getFirst().getKey(); // 017458380571894187 before 04165299523632378
+        return first; // 017458380571894187 before 04165299523632378
     }
 
     private static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
@@ -591,6 +621,11 @@ public class Main {
 
     private static boolean isWithin(int lowerBound, int upperBound, int value) {
         return lowerBound <= value && value <= upperBound;
+    }
+
+    // Is difference equal to or under
+    private static boolean checkDifference(double num1, double num2, double amount) {
+        return Math.max(num1, num2) - Math.min(num1, num2) <= amount;
     }
 
     private static void makeImage(boolean[][] values, String name) {
@@ -979,6 +1014,7 @@ public class Main {
 
     // For ! or ?
     private static Optional<SearchCharacter> getDotUnderLetter(List<SearchCharacter> characters, SearchCharacter baseCharacter) {
+//        System.out.println("Getting dot");
         return characters.parallelStream()
                 .filter(character -> !character.equals(baseCharacter))
                 .filter(character -> !character.hasDot())
@@ -986,17 +1022,32 @@ public class Main {
                 .filter(character -> baseCharacter.isInBounds(character.getX() + (character.getWidth() / 2), baseCharacter.getY() + 4))
                 .filter(character -> baseCharacter.getHeight() > character.getHeight() * 2)
                 .filter(dotCharacter -> {
+//                    System.out.println("\t\tdotCharacter = " + dotCharacter);
                     int below = dotCharacter.getY() - dotCharacter.getHeight();
                     int mod = dotCharacter.getHeight();
-                    boolean got = false;
-                    for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
-                        if (DRAW_PROBES)
-                            drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.BLUE);
-                        if (below + (mod--) == baseCharacter.getY() + baseCharacter.getHeight()) {
-                            if (!DRAW_FULL_PROBES) return true;
-                            got = true;
-                        }
-                    }
+//                    boolean before = checkDifference(below, baseCharacter.getY() + baseCharacter.getHeight(), mod + 3);
+                    boolean got = checkDifference(below, baseCharacter.getY() + baseCharacter.getHeight(), mod + 2);
+//                    for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
+////                        System.out.println("\t\t" + i + " (" + (below + mod) + " == " + (baseCharacter.getY() + baseCharacter.getHeight()) + ")");
+//                        if (DRAW_PROBES)
+//                            drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.BLUE);
+//                        if (checkDifference(below + (mod--), baseCharacter.getY() + baseCharacter.getHeight(), 2)) {
+//                            if (!DRAW_FULL_PROBES) return true;
+//                            got = true;
+//                        }
+//                    }
+
+
+
+//                    System.out.println("got = " + got);
+
+//                    if (got) {
+//                        if (!before) System.out.println("===========================================================================");
+//                        System.out.println("Got was true, before was: " + before);
+//                    } else if (before) {
+//                        System.out.println("===========================================================================");
+//                        System.out.println("BEFORE false positive");
+//                    }
 
                     return got;
                 })

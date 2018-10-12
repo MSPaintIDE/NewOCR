@@ -298,4 +298,8 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public String toString() {
         return String.valueOf(knownChar);
     }
+
+    public boolean[][] getData() {
+        return values;
+    }
 }
