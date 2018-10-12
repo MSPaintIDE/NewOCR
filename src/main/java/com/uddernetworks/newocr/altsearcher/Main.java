@@ -890,104 +890,6 @@ public class Main {
         APOSTROPHE
     }
 
-/*
-    public static void generateHistograms(File file) throws IOException {
-        BufferedImage input = ImageIO.read(file); // Full alphabet in 72 font
-        BufferedImage histogramVisual = new BufferedImage(500, 2000, BufferedImage.TYPE_INT_ARGB);
-        boolean[][] values = createGrid(input);
-        List<SearchCharacter> searchCharcaters = new ArrayList<>();
-
-        BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-
-        for (int y = 0; y < input.getHeight(); y++) {
-            for (int x = 0; x < input.getWidth(); x++) {
-                temp.setRGB(x, y, input.getRGB(x, y));
-            }
-        }
-
-        input = temp;
-
-        // Pre-filter
-
-        filter(input);
-
-        // End pre-filters
-
-        int arrX = 0;
-        int arrY = 0;
-        for (int y = 0; y < input.getHeight(); y++) {
-            for (int x = 0; x < input.getWidth(); x++) {
-                values[arrY][arrX++] = new Color(input.getRGB(x, y)).equals(Color.BLACK);
-            }
-
-            arrX = 0;
-            arrY++;
-        }
-
-        SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
-
-        List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
-        List<Histogram> unorderedHistograms = new ArrayList<>();
-
-        for (int y = input.getHeight(); 0 <= --y; ) {
-            for (int x = 0; x < input.getWidth(); x++) {
-                searchImage.scanFrom(x, y, coordinates);
-
-                if (coordinates.size() != 0) {
-                    SearchCharacter dotCharacter = new SearchCharacter(coordinates);
-
-                    if (dotCharacter.isProbablyDot()) {
-                        SearchCharacter baseCharacter = getDotNearLetter(searchCharcaters, dotCharacter).orElse(null);
-                        if (baseCharacter != null) {
-                            int maxX = baseCharacter.getX() + baseCharacter.getWidth();
-                            int maxY = baseCharacter.getY() + baseCharacter.getHeight();
-                            baseCharacter.setHeight(maxY - dotCharacter.getY());
-                            baseCharacter.setY(dotCharacter.getY());
-
-                            int dotMaxX = dotCharacter.getX() + dotCharacter.getWidth();
-
-                            if (dotMaxX > maxX) {
-                                baseCharacter.setWidth(dotMaxX - baseCharacter.getX());
-                            }
-
-                            baseCharacter.addDot(coordinates);
-
-                            coordinates.clear();
-                            continue;
-                        }
-                    }
-
-                    Histogram first = new Histogram(dotCharacter.getValues());
-                    dotCharacter.setHistogram(first);
-
-                    if (Main.first == null) {
-                        Main.first = first;
-                    }
-
-                    unorderedHistograms.add(first);
-
-                    searchCharcaters.add(dotCharacter);
-                    coordinates.clear();
-                }
-            }
-        }
-
-        searchCharcaters.stream().sorted().forEach(searchCharacter -> {
-            searchCharacters.put(letter++, searchCharacter.getHistogram());
-
-            searchCharacter.getHistogram().drawTo(histogramVisual, 10, histogramY, Color.RED);
-            histogramY += searchCharacter.getHistogram().getHeight() + 10;
-        });
-
-        BufferedImage finalInput = input;
-        searchCharcaters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
-
-        System.out.println(searchCharcaters.size() + " characters found");
-
-        ImageIO.write(histogramVisual, "png", new File("E:\\NewOCR\\histogramvisual.png"));
-    }
-*/
-
     private static Optional<SearchCharacter> getBaseOfDot(List<SearchCharacter> characters, SearchCharacter dotCharacter) {
         return characters.parallelStream()
                 .filter(character -> !character.equals(dotCharacter))
@@ -1068,15 +970,17 @@ public class Main {
 //                    System.out.println("Bottom");
                     int below = dotCharacter.getY() - dotCharacter.getHeight() * 2;
                     int mod = dotCharacter.getHeight() * 2;
-                    boolean got = false;
-                    for (int i = 0; i < dotCharacter.getHeight() * 3; i++) {
-                        if (DRAW_PROBES)
-                            drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.GREEN);
-                        if (below + (mod--) == topDot.getY() + topDot.getHeight()) {
-                            if (!DRAW_FULL_PROBES) return true;
-                            got = true;
-                        }
-                    }
+//                    boolean got = false;
+//                    for (int i = 0; i < dotCharacter.getHeight() * 3; i++) {
+//                        if (DRAW_PROBES)
+//                            drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.GREEN);
+//                        if (below + (mod--) == topDot.getY() + topDot.getHeight()) {
+//                            if (!DRAW_FULL_PROBES) return true;
+//                            got = true;
+//                        }
+//                    }
+
+                    boolean got = checkDifference(below, topDot.getY() + topDot.getHeight(), mod + 1);
 
                     return got;
                 })
