@@ -30,7 +30,7 @@ public class DatabaseManager {
     private String selectAllSegments;
     private String getLetterEntry;
 
-    private final AtomicReference<Map<Main.FontBounds, List<DatabaseCharacter>>> databaseCharacterCache = new AtomicReference<>(new HashMap<>());
+    private final AtomicReference<Map<FontBounds, List<DatabaseCharacter>>> databaseCharacterCache = new AtomicReference<>(new HashMap<>());
 
     public DatabaseManager(String url, String username, String password) {
         HikariConfig config = new HikariConfig();
@@ -147,7 +147,7 @@ public class DatabaseManager {
         });
     }
 
-    public Future<List<DatabaseCharacter>> getAllCharacterSegments(Main.FontBounds fontBounds) {
+    public Future<List<DatabaseCharacter>> getAllCharacterSegments(FontBounds fontBounds) {
         return executor.submit(() -> {
             if (this.databaseCharacterCache.get().get(fontBounds) != null && !this.databaseCharacterCache.get().get(fontBounds).isEmpty()) return this.databaseCharacterCache.get().get(fontBounds);
 

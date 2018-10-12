@@ -198,28 +198,6 @@ public class Main {
 //        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
     }
 
-    static class FontBounds {
-        private int minFont;
-        private int maxFont;
-
-        public FontBounds(int minFont, int maxFont) {
-            this.minFont = minFont;
-            this.maxFont = maxFont;
-        }
-
-        public int getMinFont() {
-            return minFont;
-        }
-
-        public int getMaxFont() {
-            return maxFont;
-        }
-
-        public boolean isInbetween(int font) {
-            return minFont <= font && font <= maxFont;
-        }
-    }
-
     public static void generateFeatures(File file) throws IOException {
         Map<FontBounds, List<TrainedCharacterData>> trainedCharacterDataList = new HashMap<>();
         Arrays.stream(FONT_BOUNDS).forEach(fontBounds -> trainedCharacterDataList.put(fontBounds, new ArrayList<>()));
@@ -535,7 +513,7 @@ public class Main {
                 }
 
                 if (finalSpace > 0) {
-                    System.out.println("Vertical separation was " + finalSpace + " yet height was " + height);
+//                    System.out.println("Vertical separation was " + finalSpace + " yet height was " + height);
                     if (height == finalSpace) {
                         y += finalSpace;
                         height += finalSpace;
@@ -883,13 +861,6 @@ public class Main {
         coordinates.clear();
     }
 
-    enum CombineMethod {
-        DOT,
-        COLON,
-        PERCENTAGE_CIRCLE,
-        APOSTROPHE
-    }
-
     private static Optional<SearchCharacter> getBaseOfDot(List<SearchCharacter> characters, SearchCharacter dotCharacter) {
         return characters.parallelStream()
                 .filter(character -> !character.equals(dotCharacter))
@@ -916,7 +887,6 @@ public class Main {
 
     // For ! or ?
     private static Optional<SearchCharacter> getDotUnderLetter(List<SearchCharacter> characters, SearchCharacter baseCharacter) {
-//        System.out.println("Getting dot");
         return characters.parallelStream()
                 .filter(character -> !character.equals(baseCharacter))
                 .filter(character -> !character.hasDot())
@@ -924,34 +894,9 @@ public class Main {
                 .filter(character -> baseCharacter.isInBounds(character.getX() + (character.getWidth() / 2), baseCharacter.getY() + 4))
                 .filter(character -> baseCharacter.getHeight() > character.getHeight() * 2)
                 .filter(dotCharacter -> {
-//                    System.out.println("\t\tdotCharacter = " + dotCharacter);
                     int below = dotCharacter.getY() - dotCharacter.getHeight();
                     int mod = dotCharacter.getHeight();
-//                    boolean before = checkDifference(below, baseCharacter.getY() + baseCharacter.getHeight(), mod + 3);
-                    boolean got = checkDifference(below, baseCharacter.getY() + baseCharacter.getHeight(), mod + 2);
-//                    for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
-////                        System.out.println("\t\t" + i + " (" + (below + mod) + " == " + (baseCharacter.getY() + baseCharacter.getHeight()) + ")");
-//                        if (DRAW_PROBES)
-//                            drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.BLUE);
-//                        if (checkDifference(below + (mod--), baseCharacter.getY() + baseCharacter.getHeight(), 2)) {
-//                            if (!DRAW_FULL_PROBES) return true;
-//                            got = true;
-//                        }
-//                    }
-
-
-
-//                    System.out.println("got = " + got);
-
-//                    if (got) {
-//                        if (!before) System.out.println("===========================================================================");
-//                        System.out.println("Got was true, before was: " + before);
-//                    } else if (before) {
-//                        System.out.println("===========================================================================");
-//                        System.out.println("BEFORE false positive");
-//                    }
-
-                    return got;
+                    return checkDifference(below, baseCharacter.getY() + baseCharacter.getHeight(), mod + 2);
                 })
                 .findFirst();
     }
@@ -967,22 +912,10 @@ public class Main {
                     return (ratio >= 0.3 && ratio <= 0.5) || (topDot.getHeight() == character.getHeight() && topDot.getWidth() == character.getWidth());
                 })
                 .filter(dotCharacter -> {
-//                    System.out.println("Bottom");
                     int below = dotCharacter.getY() - dotCharacter.getHeight() * 2;
                     int mod = dotCharacter.getHeight() * 2;
-//                    boolean got = false;
-//                    for (int i = 0; i < dotCharacter.getHeight() * 3; i++) {
-//                        if (DRAW_PROBES)
-//                            drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.GREEN);
-//                        if (below + (mod--) == topDot.getY() + topDot.getHeight()) {
-//                            if (!DRAW_FULL_PROBES) return true;
-//                            got = true;
-//                        }
-//                    }
 
-                    boolean got = checkDifference(below, topDot.getY() + topDot.getHeight(), mod + 1);
-
-                    return got;
+                    return checkDifference(below, topDot.getY() + topDot.getHeight(), mod + 1);
                 })
                 .findFirst();
     }
