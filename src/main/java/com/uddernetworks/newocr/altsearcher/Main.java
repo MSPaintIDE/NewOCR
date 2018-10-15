@@ -319,10 +319,13 @@ public class Main {
 
 //                    searchCharacter.drawTo(input);
 
-                    TrainedCharacterData trainedCharacterData = getTrainedData(current, trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null)));
-                    trainedCharacterData.setHasDot(searchCharacter.hasDot());
-                    trainedCharacterData.recalculateTo(searchCharacter);
-                    trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey());
+                    List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null));
+                    if (characterList != null) {
+                        TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
+                        trainedCharacterData.setHasDot(searchCharacter.hasDot());
+                        trainedCharacterData.recalculateTo(searchCharacter);
+                        trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey());
+                    }
 //                    trainedCharacterData.recalculateCenter((((double) lineBound.getValue() - (double) lineBound.getKey()) / 2D) - ((double) lineBound.getKey() - (double) searchCharacter.getY()));
 
                     if (letterIndex >= trainString.length()) {
@@ -635,6 +638,7 @@ public class Main {
 
     // Is difference equal to or under
     private static boolean checkDifference(double num1, double num2, double amount) {
+//        System.out.println("Diff: " + (Math.max(num1, num2) - Math.min(num1, num2)) + " <= " + amount);
         return Math.max(num1, num2) - Math.min(num1, num2) <= amount;
     }
 
@@ -893,30 +897,17 @@ public class Main {
         coordinates.clear();
     }
 
+    // I think for i and j
     private static Optional<SearchCharacter> getBaseOfDot(List<SearchCharacter> characters, SearchCharacter dotCharacter) {
         return characters.parallelStream()
                 .filter(character -> !character.equals(dotCharacter))
                 .filter(character -> !character.hasDot())
                 .filter(character -> character.isInBounds(dotCharacter.getX() + (dotCharacter.getWidth() / 2), character.getY() + 4))
-                .filter(character -> character.getHeight() > dotCharacter.getHeight() * 3)
+                .filter(character -> character.getHeight() > dotCharacter.getHeight() * 5)
                 .filter(baseCharacter -> {
-                    int below = dotCharacter.getY() + (dotCharacter.getHeight() * 2);
-                    int mod = -dotCharacter.getHeight();
-//                    boolean got = false;
-//                    for (int i = 0; i < dotCharacter.getHeight() * 2; i++) {
-//                        if (DRAW_PROBES)
-//                            drawGuides(dotCharacter.getX() + (dotCharacter.getWidth() / 2), below + mod, Color.RED);
-//                        if (below + (mod++) == baseCharacter.getY()) {
-//                            if (!DRAW_FULL_PROBES) return true;
-//                            got = true;
-//                        }
-//                    }
+                    int below = dotCharacter.getY() + dotCharacter.getHeight() + 1;
 
-//                    return got;
-
-
-                    return checkDifference(below, baseCharacter.getY(), dotCharacter.getHeight());
-//                    return below > baseCharacter.getY() && below + mod <= baseCharacter.getY();
+                    return checkDifference(below, baseCharacter.getY(), dotCharacter.getHeight() + 2);
                 })
                 .findFirst();
     }
@@ -944,14 +935,21 @@ public class Main {
                 .filter(character -> !character.hasDot())
                 .filter(character -> topDot.isInXBounds(character.getX() + (character.getWidth() / 2)))
                 .filter(character -> {
+//                    System.out.println("Got to!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                     double ratio = (double) topDot.getHeight() / (double) character.getHeight();
-                    return (ratio >= 0.3 && ratio <= 0.5) || (topDot.getHeight() == character.getHeight() && topDot.getWidth() == character.getWidth());
+//                    System.out.println("ratio = " + ratio);
+                    if (character.getWidth() * 2 < topDot.getWidth()) return false;
+                    return (ratio >= 0.25 && ratio <= 0.5) || (topDot.getHeight() == character.getHeight() && topDot.getWidth() == character.getWidth());
                 })
-                .filter(dotCharacter -> {
-                    int below = dotCharacter.getY() - dotCharacter.getHeight() * 2;
-                    int mod = dotCharacter.getHeight() * 2;
+                .filter(bottomCharacter -> {
+//                    int below = bottomCharacter.getY() - bottomCharacter.getHeight() * 2;
+                    double mult = ((double) bottomCharacter.getWidth() / (double) bottomCharacter.getHeight() > 3 && Arrays.deepEquals(bottomCharacter.getValues(), topDot.getValues())) ? 5 : 5;
+                    int mod = (int) (topDot.getHeight() * mult);
 
-                    return checkDifference(below, topDot.getY() + topDot.getHeight(), mod);
+//                    System.out.println("mult = " + mult);
+//                    System.out.println("mod = " + mod);
+
+                    return checkDifference(bottomCharacter.getY(), topDot.getY() + topDot.getHeight(), mod + 1);
                 })
                 .findFirst();
     }

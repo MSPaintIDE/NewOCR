@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 
 public class SearchCharacter implements Comparable<SearchCharacter> {
 
-    private char knownChar;
+    private char knownChar = '?';
     private boolean[][] values;
     private int x;
     private int y;
@@ -49,6 +49,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public boolean isProbablyDot() {
         int diff = Math.max(width, height) - Math.min(width, height);
 //        System.out.println("diff = " + diff);
+//        return diff <= 3 && width < height * 5;
         return diff <= 3;
     }
 
@@ -63,12 +64,19 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     public boolean isProbablyColon() {
+//        System.out.println(width + " x " + height);
+//        if (width > height * 5) {
+////            System.out.println("False!");
+//            return false;
+//        }
+
         double ratio = (Math.min(this.width, this.height) + 1D) / (Math.max(this.width, this.height) + 1D);
+//        double ratio = (double) this.width / (double) this.height;
 //        System.out.println("ratio = " + ratio);
 //        System.out.println("ratio " + ratio + " <= 0.9D is: " + (ratio <= 0.9D));
 
 //        System.out.println("ratio = " + ratio + " (" + (width + 1) + "/" + (height + 1) + ") " + (ratio <= 0.9D) + " and " + (ratio >= 0.8D));
-        return (ratio <= 1D && ratio >= 0.8D)
+        return (ratio <= 1D && ratio >= 0.7D)
                 || (height * 4 < width)
                 || ((width == 3 && height == 3)
                     || (width == 2 && height == 3)
