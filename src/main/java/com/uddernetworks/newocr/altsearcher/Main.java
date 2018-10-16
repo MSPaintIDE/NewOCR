@@ -330,10 +330,11 @@ public class Main {
 
                     List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null));
                     if (characterList != null) {
-                        if (!searchCharacter.hasDot()) System.out.println("DONT HAVE DOTTTTTTTTTTTTTTTTTTTTTTTTTTT");
+//                        if (!searchCharacter.hasDot()) System.out.println("DONT HAVE DOTTTTTTTTTTTTTTTTTTTTTTTTTTT");
                         TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
                         trainedCharacterData.recalculateTo(searchCharacter);
                         trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey());
+                        trainedCharacterData.setHasDot(searchCharacter.hasDot());
                     }
 //                    trainedCharacterData.recalculateCenter((((double) lineBound.getValue() - (double) lineBound.getKey()) / 2D) - ((double) lineBound.getKey() - (double) searchCharacter.getY()));
 
@@ -369,7 +370,8 @@ public class Main {
 
         trainedCharacterDataList
                 .forEach((fontBounds, databaseTrainedCharacters) -> databaseTrainedCharacters
-                        .forEach(databaseTrainedCharacter -> {
+                        .parallelStream().forEach(databaseTrainedCharacter -> {
+                            if (databaseTrainedCharacter.isEmpty()) return;
             databaseTrainedCharacter.finishRecalculations();
             char letter = databaseTrainedCharacter.getValue();
 
@@ -377,8 +379,8 @@ public class Main {
             while (!databaseFuture.isDone()) {
             }
 
-            if (!databaseTrainedCharacter.hasDot()) System.out.println("DONT HAVE DOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot() ? 1 : 0);
+//            if (!databaseTrainedCharacter.hasDot()) System.out.println("DONT HAVE DOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot());
             while (!databaseFuture.isDone()) {
             }
 
@@ -463,7 +465,7 @@ public class Main {
 
             segmentPercentages = searchCharacter.getSegmentPercentages();
 
-            searchCharacter.setHasDot(true);
+//            searchCharacter.setHasDot(true);
             searchCharacters.add(searchCharacter);
             coordinates.clear();
         }
@@ -484,6 +486,8 @@ public class Main {
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments(matchNearestFontSize(searchCharacter.getHeight())).get());
 //            System.out.println(data.size());
 //            System.out.println(searchCharacter.getHeight() + "] data = " + data);
+
+            System.out.println("Search: " + searchCharacter.hasDot());
 
             data.stream()
                     .filter(character -> character.hasDot() == searchCharacter.hasDot())
@@ -525,7 +529,15 @@ public class Main {
             System.out.println(entries);
 //        }
 
+        entries.forEach(entry -> {
+            if (!entry.getKey().hasDot()) {
+                System.out.println("Don't have dot: " + entry.getKey().getLetter());
+            }
+        });
+
 //        System.out.println("Got one: " + entries);
+
+        if (entries.size() < 2) return null;
 
         DatabaseCharacter first = entries.removeFirst().getKey();
         DatabaseCharacter second = entries.removeFirst().getKey();

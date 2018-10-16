@@ -18,6 +18,7 @@ public class TrainedCharacterData {
     private double minCenter = -1;
     private double maxCenter = -1;
     private double sizeRatio = -1; //        Width / Height
+    private boolean empty = true;
 
     public TrainedCharacterData(char value) {
         this.value = value;
@@ -40,7 +41,7 @@ public class TrainedCharacterData {
     }
 
     public void setHasDot(boolean hasDot) {
-        this.hasDot = hasDot;
+        if (!this.hasDot) this.hasDot = hasDot;
     }
 
     public double getSizeRatio() {
@@ -53,6 +54,7 @@ public class TrainedCharacterData {
     private List<Double> recalculatingCenters = new ArrayList<>();
 
     public void recalculateTo(SearchCharacter searchCharacter) {
+        this.empty = false;
         double[] segmentPercentages = searchCharacter.getSegmentPercentages();
 //        if (this.segmentPercentages == null) {
 //            this.segmentPercentages = segmentPercentages;
@@ -151,5 +153,9 @@ public class TrainedCharacterData {
 
     public double getMaxCenter() {
         return maxCenter;
+    }
+
+    public boolean isEmpty() {
+        return this.empty;
     }
 }

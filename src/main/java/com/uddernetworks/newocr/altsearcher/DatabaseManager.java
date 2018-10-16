@@ -72,7 +72,7 @@ public class DatabaseManager {
         return this.dataSource;
     }
 
-    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, int hasDot) {
+    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot) {
         return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
                 PreparedStatement createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
@@ -83,8 +83,9 @@ public class DatabaseManager {
                 createLetterEntry.setInt(5, maxFontSize);
                 createLetterEntry.setDouble(6, minCenter);
                 createLetterEntry.setDouble(7, maxCenter);
-                if (hasDot != 1) System.out.println("Don\'t have other");
-                createLetterEntry.setInt(8, 1);
+//                if (hasDot != 1) System.out.println("Don\'t have other");
+                System.out.println(hasDot);
+                createLetterEntry.setBoolean(8, hasDot);
                 createLetterEntry.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -180,7 +181,7 @@ public class DatabaseManager {
                             int maxFontSize = resultSet1.getInt("maxFontSize");
                             double minCenter = resultSet1.getDouble("minCenter");
                             double maxCenter = resultSet1.getDouble("maxCenter");
-                            int hasDot = resultSet1.getInt("hasDot");
+                            boolean hasDot = resultSet1.getBoolean("hasDot");
 
 //                            if (hasDot) {
                                 System.out.println("Something has it: " + letter + " = " + hasDot);
@@ -189,8 +190,8 @@ public class DatabaseManager {
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
                             newDatabaseCharacter.setMinCenter(minCenter);
                             newDatabaseCharacter.setMaxCenter(maxCenter);
-//                            newDatabaseCharacter.setHasDot(hasDot == 1);
-                            newDatabaseCharacter.setHasDot(true);
+                            newDatabaseCharacter.setHasDot(hasDot);
+//                            newDatabaseCharacter.setHasDot(true);
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }
@@ -205,6 +206,11 @@ public class DatabaseManager {
             }
 
             this.databaseCharacterCache.get().put(fontBounds, databaseCharacters);
+
+            databaseCharacters.stream().filter(databaseCharacter -> !databaseCharacter.hasDot()).forEach(shit -> {
+                System.out.println("Not have dot: " + shit.getLetter());
+            });
+
             return databaseCharacters;
         });
     }
