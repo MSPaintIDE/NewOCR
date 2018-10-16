@@ -6,5 +6,6 @@ CREATE TABLE IF NOT EXISTS `letters` (
   maxFontSize INTEGER, -- The maximum font size this data set was trained on
   minCenter DOUBLE,
   maxCenter DOUBLE,
+  hasDot BOOLEAN,
   UNIQUE(letter, minFontSize, maxFontSize)
 );

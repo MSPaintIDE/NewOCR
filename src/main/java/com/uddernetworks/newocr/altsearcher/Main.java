@@ -85,16 +85,16 @@ public class Main {
 
         System.out.println("Do you want to train? yes/no");
 
-//        String inputLine = scanner.nextLine();
-//        if (inputLine.equalsIgnoreCase("yes") || inputLine.equalsIgnoreCase("y")) {
+        String inputLine = scanner.nextLine();
+        if (inputLine.equalsIgnoreCase("yes") || inputLine.equalsIgnoreCase("y")) {
             System.out.println("AFFECT_BACKWARDS = " + AFFECT_BACKWARDS);
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
             generateFeatures(new File("E:\\NewOCR\\training.png"));
             System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
 
-            System.exit(0);
-//        }
+//            System.exit(0);
+        }
 
         BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HW.png"));
         boolean[][] values = createGrid(input);
@@ -123,6 +123,7 @@ public class Main {
 
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
         List<DatabaseCharacter> found = searchCharacters.stream()
+                .sorted()
                 .map(Main::getCharacterFor)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -203,7 +204,7 @@ public class Main {
             System.out.println(percent.format(entry.getKey() * 100) + "% \t\t| " + entry.getValue());
         });
 
-//        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
+        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
     }
 
     public static void generateFeatures(File file) throws IOException {
@@ -249,6 +250,8 @@ public class Main {
             }
         }
 
+        System.out.println("\t\t\t\t\t\t\tHas dots: " + searchCharacters.stream().filter(searchCharacter -> !searchCharacter.hasDot()).count());
+
 //        searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo());
         System.out.println("CHARS: " + searchCharacters.size());
 
@@ -278,8 +281,12 @@ public class Main {
 //            colorRow(finalInput, Color.GREEN, bottomY, 0, finalInput.getWidth());
 //        });
 
+        System.out.println("\t\t\t\t\t\t\t111 Has dots: " + searchCharacters.stream().filter(searchCharacter -> !searchCharacter.hasDot()).count());
 
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
+
+        System.out.println("\t\t\t\t\t\t\t222 Has dots: " + searchCharactersCopy.stream().filter(searchCharacter -> !searchCharacter.hasDot()).count());
+
         for (Pair<Integer, Integer> lineBound : lineBounds) {
             List<SearchCharacter> line = findCharacterAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
 
@@ -287,7 +294,7 @@ public class Main {
 
             if (!line.isEmpty()) {
 
-                System.out.println("\t\t\t" + line.size());
+//                System.out.println("\t\t\t" + line.size());
 
                 final boolean[] first = {false};
 
@@ -296,6 +303,8 @@ public class Main {
                 inc = 0;
 
                 line.forEach(searchCharacter -> {
+//                    System.out.println("\t\t\t\t\t\t\t333 Has dots: " + line.stream().filter(t -> !t.hasDot()).count());
+
                     if (first[0]) {
                         letterIndex = 0;
                         first[0] = false;
@@ -306,13 +315,13 @@ public class Main {
 //                    System.out.print(current);
                     searchCharacter.setKnownChar(current);
 
-                    if (current == 'o') {
-//                        System.out.println(searchCharacter.getY() + "\t==========\t" + ((double) searchCharacter.getValues().length / (double) searchCharacter.getValues()[0].length)  + " (" + searchCharacter.getValues().length + " / " + searchCharacter.getValues()[0].length);
-
-                        makeImage(searchCharacter.getValues(), searchCharacter.getValues().length + " x " + searchCharacter.getValues()[0].length);
-
-
-                    }
+//                    if (current == 'o') {
+////                        System.out.println(searchCharacter.getY() + "\t==========\t" + ((double) searchCharacter.getValues().length / (double) searchCharacter.getValues()[0].length)  + " (" + searchCharacter.getValues().length + " / " + searchCharacter.getValues()[0].length);
+//
+//                        makeImage(searchCharacter.getValues(), searchCharacter.getValues().length + " x " + searchCharacter.getValues()[0].length);
+//
+//
+//                    }
 
                     searchCharacter.drawTo(finalInput, TEMP[inc++]);
                     if (inc >= 3) inc = 0;
@@ -321,8 +330,8 @@ public class Main {
 
                     List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null));
                     if (characterList != null) {
+                        if (!searchCharacter.hasDot()) System.out.println("DONT HAVE DOTTTTTTTTTTTTTTTTTTTTTTTTTTT");
                         TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
-                        trainedCharacterData.setHasDot(searchCharacter.hasDot());
                         trainedCharacterData.recalculateTo(searchCharacter);
                         trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey());
                     }
@@ -349,7 +358,7 @@ public class Main {
 //        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
         System.out.println("Wrote output in " + (System.currentTimeMillis() - start) + "ms");
 
-        System.exit(0);
+//        System.exit(0);
 
         System.out.println("Writing data to database...");
         start = System.currentTimeMillis();
@@ -358,7 +367,9 @@ public class Main {
 
         System.out.println("trainedCharacterDataList = " + trainedCharacterDataList);
 
-        trainedCharacterDataList.forEach((fontBounds, databaseTrainedCharacters) -> databaseTrainedCharacters.parallelStream().forEach(databaseTrainedCharacter -> {
+        trainedCharacterDataList
+                .forEach((fontBounds, databaseTrainedCharacters) -> databaseTrainedCharacters
+                        .forEach(databaseTrainedCharacter -> {
             databaseTrainedCharacter.finishRecalculations();
             char letter = databaseTrainedCharacter.getValue();
 
@@ -366,7 +377,8 @@ public class Main {
             while (!databaseFuture.isDone()) {
             }
 
-            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter());
+            if (!databaseTrainedCharacter.hasDot()) System.out.println("DONT HAVE DOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot() ? 1 : 0);
             while (!databaseFuture.isDone()) {
             }
 
@@ -413,6 +425,7 @@ public class Main {
             Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
             if (possibleDot.isPresent()) {
                 combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE);
+                possibleDot.get().setHasDot(true);
                 searchCharacters.remove(searchCharacter);
                 return true;
             }
@@ -421,6 +434,7 @@ public class Main {
                 possibleDot = getBaseOfDot(searchCharacters, searchCharacter);
                 if (possibleDot.isPresent()) {
                     combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
+                    possibleDot.get().setHasDot(true);
                     searchCharacters.remove(searchCharacter);
                     return true;
                 }
@@ -438,6 +452,7 @@ public class Main {
                 possibleDot = getBottomColon(searchCharacters, searchCharacter);
                 if (possibleDot.isPresent()) {
                     combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON);
+                    possibleDot.get().setHasDot(true);
                     searchCharacters.remove(searchCharacter);
                     return true;
                 }
@@ -448,6 +463,7 @@ public class Main {
 
             segmentPercentages = searchCharacter.getSegmentPercentages();
 
+            searchCharacter.setHasDot(true);
             searchCharacters.add(searchCharacter);
             coordinates.clear();
         }
@@ -459,14 +475,19 @@ public class Main {
         return Arrays.stream(FONT_BOUNDS).filter(fontBounds -> fontBounds.isInbetween(fontSize)).findFirst().get();
     }
 
+    private static int doneee = 0;
+
     private static DatabaseCharacter getCharacterFor(SearchCharacter searchCharacter) {
         Map<DatabaseCharacter, Double> diffs = new HashMap<>(); // The lower value the better
 
         try {
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments(matchNearestFontSize(searchCharacter.getHeight())).get());
+//            System.out.println(data.size());
 //            System.out.println(searchCharacter.getHeight() + "] data = " + data);
 
-            data.parallelStream().forEach(character -> {
+            data.stream()
+                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
+                    .forEach(character -> {
                 double[] charDifference = getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData());
 
                 double value = 1;
@@ -474,12 +495,17 @@ public class Main {
                     value = Arrays.stream(charDifference).average().getAsDouble();
                 }
 
+//                if (character.hasDot()) return;
+
+//                        if (character.hasDot()) {
+//                            System.out.println("HAS");
+//                        }
+
                 DatabaseCharacter using = character.copy();
                 using.setX(searchCharacter.getX());
                 using.setY(searchCharacter.getY());
                 using.setRatio(((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()));
 //                using.setCenterExact(searchCharacter.getY() + using.getCenter());
-
                 diffs.put(using, value);
             });
 
@@ -487,11 +513,17 @@ public class Main {
             e.printStackTrace();
         }
 
+//        System.out.println(diffs);
+
 
 //        System.out.println("diffs = " + diffs);
 
         LinkedList<Map.Entry<DatabaseCharacter, Double>> entries = new LinkedList<>(sortByValue(diffs)
                 .entrySet());
+
+//        if (doneee++ == 2) {
+            System.out.println(entries);
+//        }
 
 //        System.out.println("Got one: " + entries);
 
@@ -821,6 +853,8 @@ public class Main {
         SearchCharacter baseCharacter = getBaseOfDot(searchCharacters, dotCharacter).orElse(null);
         if (baseCharacter != null) {
             combine(baseCharacter, dotCharacter, coordinates, CombineMethod.DOT);
+            baseCharacter.setHasDot(true);
+            dotCharacter.setHasDot(true);
             return true;
         }
 
@@ -843,6 +877,8 @@ public class Main {
         SearchCharacter baseCharacter = getBaseForPercent(searchCharacters, percentDotCharacter).orElse(null);
         if (baseCharacter != null) {
             combine(baseCharacter, percentDotCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE);
+            baseCharacter.setHasDot(true);
+            percentDotCharacter.setHasDot(true);
             return true;
         }
 

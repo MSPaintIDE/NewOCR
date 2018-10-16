@@ -9,6 +9,7 @@ public class DatabaseCharacter {
     private int maxFontSize;
     private double minCenter; // Pixels from the top
     private double maxCenter; // Pixels from the top
+    private boolean hasDot;
 
     private int x;
     private int y;
@@ -102,6 +103,7 @@ public class DatabaseCharacter {
         copy.maxFontSize = this.maxFontSize;
         copy.minCenter = this.minCenter;
         copy.maxCenter = this.maxCenter;
+        copy.hasDot = this.hasDot;
         return copy;
     }
 
@@ -137,5 +139,14 @@ public class DatabaseCharacter {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof DatabaseCharacter && ((DatabaseCharacter) obj).letter == this.letter;
+    }
+
+    public void setHasDot(boolean hasDot) {
+        if (!hasDot) System.out.println("Setting has!!!!!");
+        this.hasDot = hasDot;
+    }
+
+    public boolean hasDot() {
+        return this.hasDot;
     }
 }
