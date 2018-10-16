@@ -142,7 +142,7 @@ public class DatabaseCharacter {
     }
 
     public void setHasDot(boolean hasDot) {
-        if (!hasDot) System.out.println("Setting has!!!!!");
+//        if (!hasDot) System.out.println("Setting has!!!!!");
         this.hasDot = hasDot;
     }
 

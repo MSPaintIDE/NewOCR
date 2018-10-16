@@ -96,6 +96,8 @@ public class Main {
 //            System.exit(0);
         }
 
+        long start = System.currentTimeMillis();
+
         BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HW.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
@@ -164,6 +166,12 @@ public class Main {
                     double ratio = databaseCharacter.getAvgWidth() / databaseCharacter.getAvgHeight();
                     System.out.println("Database ratio: " + ratio + " Real: " + databaseCharacter.getRatio() + " database:" + databaseCharacter.getAvgWidth() + " / " + databaseCharacter.getAvgHeight());
 
+                    double diff = Math.max(ratio, databaseCharacter.getRatio()) - Math.min(ratio, databaseCharacter.getRatio());
+                    if (diff > 0.2D) {
+                        System.out.println("Diff is: " + diff);
+                        return;
+                    }
+
                     lines.get(center).add(databaseCharacter);
                 });
 
@@ -176,6 +184,8 @@ public class Main {
         OptionalDouble averageOptional = percentages.stream().mapToDouble(t -> t).average();
         if (!averageOptional.isPresent()) {
             System.out.println("No average found");
+
+            System.out.println("Finished in " + (System.currentTimeMillis() - start));
             System.exit(0);
         }
 
@@ -427,7 +437,6 @@ public class Main {
             Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
             if (possibleDot.isPresent()) {
                 combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE);
-                possibleDot.get().setHasDot(true);
                 searchCharacters.remove(searchCharacter);
                 return true;
             }
@@ -436,7 +445,6 @@ public class Main {
                 possibleDot = getBaseOfDot(searchCharacters, searchCharacter);
                 if (possibleDot.isPresent()) {
                     combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
-                    possibleDot.get().setHasDot(true);
                     searchCharacters.remove(searchCharacter);
                     return true;
                 }
@@ -454,7 +462,6 @@ public class Main {
                 possibleDot = getBottomColon(searchCharacters, searchCharacter);
                 if (possibleDot.isPresent()) {
                     combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON);
-                    possibleDot.get().setHasDot(true);
                     searchCharacters.remove(searchCharacter);
                     return true;
                 }
@@ -465,7 +472,6 @@ public class Main {
 
             segmentPercentages = searchCharacter.getSegmentPercentages();
 
-//            searchCharacter.setHasDot(true);
             searchCharacters.add(searchCharacter);
             coordinates.clear();
         }
@@ -499,12 +505,6 @@ public class Main {
                     value = Arrays.stream(charDifference).average().getAsDouble();
                 }
 
-//                if (character.hasDot()) return;
-
-//                        if (character.hasDot()) {
-//                            System.out.println("HAS");
-//                        }
-
                 DatabaseCharacter using = character.copy();
                 using.setX(searchCharacter.getX());
                 using.setY(searchCharacter.getY());
@@ -531,7 +531,7 @@ public class Main {
 
         entries.forEach(entry -> {
             if (!entry.getKey().hasDot()) {
-                System.out.println("Don't have dot: " + entry.getKey().getLetter());
+//                System.out.println("Don't have dot: " + entry.getKey().getLetter());
             }
         });
 

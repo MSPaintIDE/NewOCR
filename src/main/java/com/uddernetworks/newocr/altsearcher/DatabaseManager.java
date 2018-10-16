@@ -184,7 +184,7 @@ public class DatabaseManager {
                             boolean hasDot = resultSet1.getBoolean("hasDot");
 
 //                            if (hasDot) {
-                                System.out.println("Something has it: " + letter + " = " + hasDot);
+//                                System.out.println("Something has it: " + letter + " = " + hasDot);
 //                            }
 
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
