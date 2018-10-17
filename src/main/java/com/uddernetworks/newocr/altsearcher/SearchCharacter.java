@@ -19,6 +19,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int width;
     private int height;
     private boolean hasDot;
+    private LetterMeta letterMeta = LetterMeta.NONE;
     private Histogram histogram;
     private List<Feature> features = new ArrayList<>();
     private Map<boolean[][], Integer> segments = new LinkedHashMap<>();
@@ -313,5 +314,13 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public boolean[][] getData() {
         return values;
+    }
+
+    public LetterMeta getLetterMeta() {
+        return letterMeta;
+    }
+
+    public void setLetterMeta(LetterMeta letterMeta) {
+        this.letterMeta = letterMeta;
     }
 }

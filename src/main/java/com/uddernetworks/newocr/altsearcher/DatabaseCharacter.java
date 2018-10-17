@@ -10,6 +10,7 @@ public class DatabaseCharacter {
     private double minCenter; // Pixels from the top
     private double maxCenter; // Pixels from the top
     private boolean hasDot;
+    private LetterMeta letterMeta;
 
     private int x;
     private int y;
@@ -148,5 +149,13 @@ public class DatabaseCharacter {
 
     public boolean hasDot() {
         return this.hasDot;
+    }
+
+    public LetterMeta getLetterMeta() {
+        return letterMeta;
+    }
+
+    public void setLetterMeta(LetterMeta letterMeta) {
+        this.letterMeta = letterMeta;
     }
 }

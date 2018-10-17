@@ -179,26 +179,18 @@ public class Main {
 
         System.out.println("lines = " + lines);
 
-        lines.forEach((center, line) -> System.out.println(line));
+        Map<Integer, List<DatabaseCharacter>> sortedLines = new LinkedHashMap<>();
 
-        OptionalDouble averageOptional = percentages.stream().mapToDouble(t -> t).average();
-        if (!averageOptional.isPresent()) {
-            System.out.println("No average found");
+        lines.keySet().stream().sorted().forEach(y -> sortedLines.put(y, lines.get(y)));
 
-            System.out.println("Finished in " + (System.currentTimeMillis() - start));
-            System.exit(0);
-        }
+        sortedLines.forEach((center, line) -> System.out.println(line));
 
-        double average = averageOptional.getAsDouble();
-        System.out.println("\nAverage: " + average);
+        System.out.println("Finished in " + (System.currentTimeMillis() - start));
 
-        System.exit(0);
-        averageToBack.put(average, AFFECT_BACKWARDS);
-
-        searchCharacters = searchCharactersCopy;
-
-        BufferedImage finalInput = input;
-        searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
+//        searchCharacters = searchCharactersCopy;
+//
+//        BufferedImage finalInput = input;
+//        searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
 
 //            System.out.println(searchCharacters.size() + " characters found");
 
@@ -206,15 +198,15 @@ public class Main {
 //            AFFECT_BACKWARDS += 0.3D;
 //        }
 
-        List<Map.Entry<Double, Double>> entries = new ArrayList<>(averageToBack.entrySet());
-        Collections.reverse(entries);
-//        System.out.println(averageToBack);
-        System.out.println("\n\n====================");
-        entries.forEach(entry -> {
-            System.out.println(percent.format(entry.getKey() * 100) + "% \t\t| " + entry.getValue());
-        });
-
-        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
+//        List<Map.Entry<Double, Double>> entries = new ArrayList<>(averageToBack.entrySet());
+//        Collections.reverse(entries);
+////        System.out.println(averageToBack);
+//        System.out.println("\n\n====================");
+//        entries.forEach(entry -> {
+//            System.out.println(percent.format(entry.getKey() * 100) + "% \t\t| " + entry.getValue());
+//        });
+//
+//        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
     }
 
     public static void generateFeatures(File file) throws IOException {
@@ -345,6 +337,7 @@ public class Main {
                         trainedCharacterData.recalculateTo(searchCharacter);
                         trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey());
                         trainedCharacterData.setHasDot(searchCharacter.hasDot());
+                        trainedCharacterData.setLetterMeta(searchCharacter.getLetterMeta());
                     }
 //                    trainedCharacterData.recalculateCenter((((double) lineBound.getValue() - (double) lineBound.getKey()) / 2D) - ((double) lineBound.getKey() - (double) searchCharacter.getY()));
 
@@ -390,7 +383,7 @@ public class Main {
             }
 
 //            if (!databaseTrainedCharacter.hasDot()) System.out.println("DONT HAVE DOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot());
+            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta());
             while (!databaseFuture.isDone()) {
             }
 
@@ -436,7 +429,7 @@ public class Main {
 
             Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
             if (possibleDot.isPresent()) {
-                combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE);
+                combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE, LetterMeta.PERCENT);
                 searchCharacters.remove(searchCharacter);
                 return true;
             }
@@ -444,7 +437,7 @@ public class Main {
             if (searchCharacter.isProbablyDot() && !searchCharacter.hasDot()) {
                 possibleDot = getBaseOfDot(searchCharacters, searchCharacter);
                 if (possibleDot.isPresent()) {
-                    combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
+                    combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT, LetterMeta.DOT_ABOVE);
                     searchCharacters.remove(searchCharacter);
                     return true;
                 }
@@ -453,7 +446,7 @@ public class Main {
             // For ! or ?
             possibleDot = getDotUnderLetter(searchCharacters, searchCharacter);
             if (possibleDot.isPresent()) {
-                combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT);
+                combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT, LetterMeta.DOT_UNDER);
                 searchCharacters.remove(searchCharacter);
                 return true;
             }
@@ -461,7 +454,7 @@ public class Main {
             if (searchCharacter.isProbablyColon() && isAllBlack(searchCharacter) && !searchCharacter.hasDot()) {
                 possibleDot = getBottomColon(searchCharacters, searchCharacter);
                 if (possibleDot.isPresent()) {
-                    combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON);
+                    combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON, LetterMeta.EVEN_DOTS);
                     searchCharacters.remove(searchCharacter);
                     return true;
                 }
@@ -497,6 +490,7 @@ public class Main {
 
             data.stream()
                     .filter(character -> character.hasDot() == searchCharacter.hasDot())
+                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
                     .forEach(character -> {
                 double[] charDifference = getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData());
 
@@ -525,15 +519,7 @@ public class Main {
         LinkedList<Map.Entry<DatabaseCharacter, Double>> entries = new LinkedList<>(sortByValue(diffs)
                 .entrySet());
 
-//        if (doneee++ == 2) {
-            System.out.println(entries);
-//        }
-
-        entries.forEach(entry -> {
-            if (!entry.getKey().hasDot()) {
-//                System.out.println("Don't have dot: " + entry.getKey().getLetter());
-            }
-        });
+        System.out.println(entries);
 
 //        System.out.println("Got one: " + entries);
 
@@ -864,20 +850,9 @@ public class Main {
         if (!dotCharacter.isProbablyDot()) return false;
         SearchCharacter baseCharacter = getBaseOfDot(searchCharacters, dotCharacter).orElse(null);
         if (baseCharacter != null) {
-            combine(baseCharacter, dotCharacter, coordinates, CombineMethod.DOT);
+            combine(baseCharacter, dotCharacter, coordinates, CombineMethod.DOT, LetterMeta.DOT_ABOVE);
             baseCharacter.setHasDot(true);
             dotCharacter.setHasDot(true);
-            return true;
-        }
-
-        return false;
-    }
-
-    private static boolean doColonStuff(SearchCharacter dotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
-        if (!dotCharacter.isProbablyColon()) return false;
-        SearchCharacter baseCharacter = getDotUnderLetter(searchCharacters, dotCharacter).orElse(null);
-        if (baseCharacter != null) {
-            combine(baseCharacter, dotCharacter, coordinates, CombineMethod.COLON);
             return true;
         }
 
@@ -888,7 +863,7 @@ public class Main {
         if (!percentDotCharacter.isProbablyCircleOfPercent()) return false;
         SearchCharacter baseCharacter = getBaseForPercent(searchCharacters, percentDotCharacter).orElse(null);
         if (baseCharacter != null) {
-            combine(baseCharacter, percentDotCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE);
+            combine(baseCharacter, percentDotCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE, LetterMeta.PERCENT);
             baseCharacter.setHasDot(true);
             percentDotCharacter.setHasDot(true);
             return true;
@@ -908,7 +883,7 @@ public class Main {
         return false;
     }*/
 
-    private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates, CombineMethod combineMethod) {
+    private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates, CombineMethod combineMethod, LetterMeta letterMeta) {
         int minX = Math.min(baseCharacter.getX(), adding.getX());
         int minY = Math.min(baseCharacter.getY(), adding.getY());
         int maxX = Math.max(baseCharacter.getX() + baseCharacter.getWidth(), adding.getX() + adding.getWidth());
@@ -917,6 +892,7 @@ public class Main {
         baseCharacter.setHeight(maxY - minY);
         baseCharacter.setX(minX);
         baseCharacter.setY(minY);
+        baseCharacter.setLetterMeta(letterMeta);
 
         switch (combineMethod) {
             case DOT:

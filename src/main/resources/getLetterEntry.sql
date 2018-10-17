@@ -1,1 +1,1 @@
-SELECT avgWidth, avgHeight, minFontSize, maxFontSize, minCenter, maxCenter, hasDot FROM `letters` WHERE letter = ? ORDER BY letter;
+SELECT avgWidth, avgHeight, minFontSize, maxFontSize, minCenter, maxCenter, hasDot, letterMeta FROM `letters` WHERE letter = ? ORDER BY letter;

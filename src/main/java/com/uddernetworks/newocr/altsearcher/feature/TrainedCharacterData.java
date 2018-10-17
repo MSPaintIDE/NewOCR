@@ -1,5 +1,6 @@
 package com.uddernetworks.newocr.altsearcher.feature;
 
+import com.uddernetworks.newocr.altsearcher.LetterMeta;
 import com.uddernetworks.newocr.altsearcher.SearchCharacter;
 import javafx.util.Pair;
 
@@ -19,6 +20,7 @@ public class TrainedCharacterData {
     private double maxCenter = -1;
     private double sizeRatio = -1; //        Width / Height
     private boolean empty = true;
+    private LetterMeta letterMeta = LetterMeta.NONE;
 
     public TrainedCharacterData(char value) {
         this.value = value;
@@ -157,5 +159,13 @@ public class TrainedCharacterData {
 
     public boolean isEmpty() {
         return this.empty;
+    }
+
+    public LetterMeta getLetterMeta() {
+        return letterMeta;
+    }
+
+    public void setLetterMeta(LetterMeta letterMeta) {
+        this.letterMeta = letterMeta;
     }
 }

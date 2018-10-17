@@ -72,7 +72,7 @@ public class DatabaseManager {
         return this.dataSource;
     }
 
-    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot) {
+    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta) {
         return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
                 PreparedStatement createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
@@ -83,9 +83,8 @@ public class DatabaseManager {
                 createLetterEntry.setInt(5, maxFontSize);
                 createLetterEntry.setDouble(6, minCenter);
                 createLetterEntry.setDouble(7, maxCenter);
-//                if (hasDot != 1) System.out.println("Don\'t have other");
-                System.out.println(hasDot);
                 createLetterEntry.setBoolean(8, hasDot);
+                createLetterEntry.setInt(9, letterMeta.getID());
                 createLetterEntry.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -182,15 +181,19 @@ public class DatabaseManager {
                             double minCenter = resultSet1.getDouble("minCenter");
                             double maxCenter = resultSet1.getDouble("maxCenter");
                             boolean hasDot = resultSet1.getBoolean("hasDot");
+                            int letterMetaID = resultSet1.getInt("letterMeta");
 
 //                            if (hasDot) {
 //                                System.out.println("Something has it: " + letter + " = " + hasDot);
 //                            }
 
+                            System.out.println(letter + "\t\t" + LetterMeta.fromID(letterMetaID).name());
+
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
                             newDatabaseCharacter.setMinCenter(minCenter);
                             newDatabaseCharacter.setMaxCenter(maxCenter);
                             newDatabaseCharacter.setHasDot(hasDot);
+                            newDatabaseCharacter.setLetterMeta(LetterMeta.fromID(letterMetaID));
 //                            newDatabaseCharacter.setHasDot(true);
                         } catch (SQLException e) {
                             e.printStackTrace();

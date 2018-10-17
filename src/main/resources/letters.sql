@@ -7,5 +7,6 @@ CREATE TABLE IF NOT EXISTS `letters` (
   minCenter DOUBLE,
   maxCenter DOUBLE,
   hasDot BOOLEAN,
+  letterMeta INTEGER,
   UNIQUE(letter, minFontSize, maxFontSize)
 );
