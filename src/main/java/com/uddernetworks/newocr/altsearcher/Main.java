@@ -92,8 +92,7 @@ public class Main {
             long start = System.currentTimeMillis();
             generateFeatures(new File("E:\\NewOCR\\training.png"));
             System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
-
-//            System.exit(0);
+            System.exit(0);
         }
 
         long start = System.currentTimeMillis();
@@ -183,7 +182,13 @@ public class Main {
 
         lines.keySet().stream().sorted().forEach(y -> sortedLines.put(y, lines.get(y)));
 
-        sortedLines.forEach((center, line) -> System.out.println(line));
+        sortedLines.keySet().forEach(y -> {
+            System.out.println(String.join("", lines.get(y)
+                    .stream()
+                    .map(DatabaseCharacter::getLetter)
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(""))));
+        });
 
         System.out.println("Finished in " + (System.currentTimeMillis() - start));
 
