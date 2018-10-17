@@ -118,41 +118,34 @@ public class Main {
             }
         }
 
-//        System.out.println("Got letters?");
+        Map<FontBounds, List<SearchCharacter>> searchLines = new HashMap<>();
 
-        List<Double> percentages = new ArrayList<>();
+        searchCharacters.forEach(searchCharacter -> {
+            FontBounds bounds = matchNearestFontSize(searchCharacter.getHeight());
+            searchLines.putIfAbsent(bounds, new ArrayList<>());
+            searchLines.get(bounds).add(searchCharacter);
+        });
 
-        List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
-        List<DatabaseCharacter> found = searchCharacters.stream()
-                .sorted()
-                .map(Main::getCharacterFor)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        searchLines.keySet().parallelStream().forEach(fontBounds -> {
+            try {
+                databaseManager.getAllCharacterSegments(fontBounds).get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        });
 
         Map<Integer, List<DatabaseCharacter>> lines = new LinkedHashMap<>();
 
-//        System.out.println("lines = " + lines);
-
-        found = found.stream()
-                .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
-                .collect(Collectors.toList());
-
-//        System.out.println("111");
-//        found.forEach(databaseCharacter -> System.out.println(databaseCharacter.getLetter() + " = [" + databaseCharacter.getX()));
-//        System.out.println("222");
-
-        // Ordering
-
-        found.stream()
+        searchLines.values()
+                .parallelStream()
+                .flatMap(List::parallelStream)
+                .map(Main::getCharacterFor)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList())
+                .stream()
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
                 .forEach(databaseCharacter -> {
-//                    System.out.println("threashold = " + threashold);
-
-//                    System.out.println("========================================== [" + databaseCharacter.getLetter() + "] Exact center: " + ((int) (databaseCharacter.getY() - databaseCharacter.getCenter())) + " (" + databaseCharacter.getY() + " - " + databaseCharacter.getCenter() + ")");
-//                    System.out.println(lines.keySet());
-
                     double centerDiff = (databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter()) / 2 + databaseCharacter.getMinCenter();
-//                    double threashold = Math.max(databaseCharacter.getAvgHeight() / 2, 2D);
                     double threashold = Math.max(centerDiff * 1.5D, 2D);
 
                     int center = lines.keySet()
@@ -192,6 +185,8 @@ public class Main {
 
         System.out.println("Finished in " + (System.currentTimeMillis() - start));
 
+        System.exit(0);
+
 //        searchCharacters = searchCharactersCopy;
 //
 //        BufferedImage finalInput = input;
@@ -230,7 +225,7 @@ public class Main {
         filter(input);
         toGrid(input, values);
 
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
+//        ImageIO.write(input, "png", new File("E:\\NewOCR\\binariazed.png"));
 
 //        printOut(values);
         Main.testImageShit = input;
@@ -306,7 +301,6 @@ public class Main {
                 final boolean[] first = {false};
 
                 letterIndex = 0;
-                first[0] = false;
                 inc = 0;
 
                 line.forEach(searchCharacter -> {
@@ -356,7 +350,7 @@ public class Main {
             }
         }
 
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+//        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
 
         searchCharacters = searchCharactersCopy;
 

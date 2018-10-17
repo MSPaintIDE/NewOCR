@@ -187,7 +187,7 @@ public class DatabaseManager {
 //                                System.out.println("Something has it: " + letter + " = " + hasDot);
 //                            }
 
-                            System.out.println(letter + "\t\t" + LetterMeta.fromID(letterMetaID).name());
+//                            System.out.println(letter + "\t\t" + LetterMeta.fromID(letterMetaID).name());
 
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
                             newDatabaseCharacter.setMinCenter(minCenter);
