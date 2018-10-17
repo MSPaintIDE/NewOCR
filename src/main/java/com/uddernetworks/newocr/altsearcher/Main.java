@@ -137,14 +137,13 @@ public class Main {
         Map<Integer, List<DatabaseCharacter>> lines = new LinkedHashMap<>();
 
         searchLines.values()
-                .parallelStream()
-                .flatMap(List::parallelStream)
+                .stream()
+                .flatMap(List::stream)
+                .parallel()
                 .map(Main::getCharacterFor)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList())
-                .stream()
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
-                .forEach(databaseCharacter -> {
+                .forEachOrdered(databaseCharacter -> {
                     double centerDiff = (databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter()) / 2 + databaseCharacter.getMinCenter();
                     double threashold = Math.max(centerDiff * 1.5D, 2D);
 
