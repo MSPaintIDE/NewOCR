@@ -1,7 +1,5 @@
-package com.uddernetworks.newocr.altsearcher.feature;
+package com.uddernetworks.newocr.altsearcher;
 
-import com.uddernetworks.newocr.altsearcher.LetterMeta;
-import com.uddernetworks.newocr.altsearcher.SearchCharacter;
 import javafx.util.Pair;
 
 import java.util.ArrayList;

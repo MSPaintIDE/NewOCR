@@ -1,11 +1,11 @@
 package com.uddernetworks.newocr.altsearcher;
 
-import com.uddernetworks.newocr.altsearcher.feature.Feature;
-
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -20,8 +20,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int height;
     private boolean hasDot;
     private LetterMeta letterMeta = LetterMeta.NONE;
-    private Histogram histogram;
-    private List<Feature> features = new ArrayList<>();
     private Map<boolean[][], Integer> segments = new LinkedHashMap<>();
     private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
 
@@ -173,14 +171,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         this.height = height;
     }
 
-    public Histogram getHistogram() {
-        return histogram;
-    }
-
-    public void setHistogram(Histogram histogram) {
-        this.histogram = histogram;
-    }
-
     public boolean isInBounds(int x, int y) {
         return x <= this.x + this.width
                 && x >= this.x
@@ -209,17 +199,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 //            System.out.println(x + " is not between " + this.x + " and " + (this.x + this.width) + " (" + this.width  + ")");
             return false;
         }
-    }
-
-    public void addFeature(Feature feature) {
-        features.add(feature);
-    }
-
-    // Returns % of completed features (<= 1)
-    public double hasFeatures(List<Feature> features) {
-        AtomicInteger completed = new AtomicInteger(0);
-        features.stream().filter(feature -> feature.hasFeature(this.values)).forEach(t -> completed.getAndIncrement());
-        return (double) completed.get() / (double) features.size();
     }
 
     public void applySections() {

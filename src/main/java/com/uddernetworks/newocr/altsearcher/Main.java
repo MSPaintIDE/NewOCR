@@ -1,19 +1,20 @@
 package com.uddernetworks.newocr.altsearcher;
 
-import com.uddernetworks.newocr.altsearcher.feature.TrainedCharacterData;
 import javafx.util.Pair;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -38,25 +39,11 @@ public class Main {
 
     private static int inc = 0;
 
-    public static final boolean ALL_INPUTS_EQUAL = true;
     public static final boolean AVERAGE_DIFF = true; // true for average, false for max and min
-    public static final boolean DRAW_PROBES = true;
-    public static final boolean DRAW_FULL_PROBES = true;
     public static final String trainString = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~";
     private static DatabaseManager databaseManager;
 
-    private static Histogram first;
     private static int letterIndex = 0;
-    //    private static char letter = 'a';
-    //    private static Map<Character, SearchCharacter> searchCharacters = new HashMap<>();
-    private static int trainWidth = 0;
-    private static double[] segmentPercentages;
-
-    private static int testIndex = 0;
-
-    private static SortedMap<Double, Double> averageToBack = new TreeMap<>();
-
-    private static DecimalFormat percent = new DecimalFormat(".##");
 
     private static BufferedImage testImageShit;
 
@@ -215,8 +202,6 @@ public class Main {
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
-        trainWidth = input.getWidth();
-
         BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
         rewriteImage(temp, input);
         input = temp;
@@ -240,8 +225,6 @@ public class Main {
         }
 
         List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
-
-        testIndex = 0;
 
 //        List<Double> doubles = new ArrayList<>();
 
@@ -460,8 +443,6 @@ public class Main {
 
             searchCharacter.applySections();
             searchCharacter.analyzeSlices();
-
-            segmentPercentages = searchCharacter.getSegmentPercentages();
 
             searchCharacters.add(searchCharacter);
             coordinates.clear();
