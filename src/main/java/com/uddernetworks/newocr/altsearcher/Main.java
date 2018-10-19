@@ -158,6 +158,8 @@ public class Main {
         System.out.println("lines = " + lines);
 
         Map<Integer, List<DatabaseCharacter>> sortedLines = new LinkedHashMap<>();
+        
+        lines.values().forEach(line -> line.addAll(getSpacesFor(line)));
 
         lines.keySet().stream().sorted().forEach(y -> sortedLines.put(y, lines.get(y)));
 
@@ -169,7 +171,7 @@ public class Main {
                     .collect(Collectors.joining(""))));
         });
 
-        System.out.println("Finished in " + (System.currentTimeMillis() - start));
+        System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
 
         System.exit(0);
 
@@ -193,6 +195,13 @@ public class Main {
 //        });
 //
 //        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
+    }
+
+    private static List<DatabaseCharacter> getSpacesFor(List<DatabaseCharacter> line) {
+        List<DatabaseCharacter> ret = new ArrayList<>();
+        // TODO: Implement space addition
+        
+        return ret;
     }
 
     public static void generateFeatures(File file) throws IOException {
