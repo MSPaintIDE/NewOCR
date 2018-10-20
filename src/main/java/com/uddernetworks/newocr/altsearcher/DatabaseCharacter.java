@@ -15,6 +15,7 @@ public class DatabaseCharacter {
     private int x;
     private int y;
     private double ratio;
+    private int width;
 
     public DatabaseCharacter(char letter) {
         this.letter = letter;
@@ -157,5 +158,13 @@ public class DatabaseCharacter {
 
     public void setLetterMeta(LetterMeta letterMeta) {
         this.letterMeta = letterMeta;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public int getWidth() {
+        return width;
     }
 }

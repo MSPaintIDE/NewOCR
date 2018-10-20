@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -40,7 +41,7 @@ public class Main {
     private static int inc = 0;
 
     public static final boolean AVERAGE_DIFF = true; // true for average, false for max and min
-    public static final String trainString = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~";
+    public static final String trainString = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
     private static DatabaseManager databaseManager;
 
     private static int letterIndex = 0;
@@ -84,7 +85,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HW.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\wi.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -101,7 +102,7 @@ public class Main {
 
         for (int y = input.getHeight(); 0 <= --y; ) {
             for (int x = 0; x < input.getWidth(); x++) {
-                if (getLetterFrom(searchImage, x, y, coordinates, searchCharacters)) continue;
+                if (getLetterFrom(searchImage, input, x, y, coordinates, searchCharacters)) continue;
             }
         }
 
@@ -158,7 +159,7 @@ public class Main {
         System.out.println("lines = " + lines);
 
         Map<Integer, List<DatabaseCharacter>> sortedLines = new LinkedHashMap<>();
-        
+
         lines.values().forEach(line -> line.addAll(getSpacesFor(line)));
 
         lines.keySet().stream().sorted().forEach(y -> sortedLines.put(y, lines.get(y)));
@@ -172,6 +173,8 @@ public class Main {
         });
 
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
+
+        ImageIO.write(temp, "png", new File("E:\\NewOCR\\binariazed.png"));
 
         System.exit(0);
 
@@ -199,8 +202,21 @@ public class Main {
 
     private static List<DatabaseCharacter> getSpacesFor(List<DatabaseCharacter> line) {
         List<DatabaseCharacter> ret = new ArrayList<>();
-        // TODO: Implement space addition
-        
+
+        DatabaseCharacter prev = null;
+        for (DatabaseCharacter databaseCharacter : line) {
+            if (prev == null) {
+                prev = databaseCharacter;
+                continue;
+            }
+
+            int leftX = prev.getX() + prev.getWidth();
+            int rightX = databaseCharacter.getX();
+
+            System.out.println("Gap: " + (rightX - leftX));
+
+        }
+
         return ret;
     }
 
@@ -239,7 +255,7 @@ public class Main {
 
         for (int y = input.getHeight(); 0 <= --y; ) {
             for (int x = 0; x < input.getWidth(); x++) {
-                if (getLetterFrom(searchImage, x, y, coordinates, searchCharacters)) continue;
+                if (getLetterFrom(searchImage, input, x, y, coordinates, searchCharacters)) continue;
             }
         }
 
@@ -248,7 +264,12 @@ public class Main {
 //        searchCharacters.forEach(searchCharacter -> searchCharacter.drawTo());
         System.out.println("CHARS: " + searchCharacters.size());
 
-        trainedCharacterDataList.values().forEach(dataList -> IntStream.range('!', '~' + 1).forEach(letter -> dataList.add(new TrainedCharacterData((char) letter))));
+        trainedCharacterDataList.values().forEach(dataList -> {
+            IntStream.range('!', '~' + 1).forEach(letter -> dataList.add(new TrainedCharacterData((char) letter)));
+//            dataList.add(new TrainedCharacterData((char) 1));
+            dataList.add(new TrainedCharacterData(' '));
+//            dataList.add(new TrainedCharacterData((char) 2));
+        });
 
 //        int maxWidth = searchCharacters.stream().mapToInt(SearchCharacter::getHeight).max().getAsInt();
 
@@ -294,46 +315,44 @@ public class Main {
                 letterIndex = 0;
                 inc = 0;
 
-                line.forEach(searchCharacter -> {
-//                    System.out.println("\t\t\t\t\t\t\t333 Has dots: " + line.stream().filter(t -> !t.hasDot()).count());
+                AtomicInteger beforeSpaceX = new AtomicInteger();
 
+                line.forEach(searchCharacter -> {
                     if (first[0]) {
                         letterIndex = 0;
                         first[0] = false;
                         inc = 0;
                     }
 
-                    char current = trainString.charAt(letterIndex++);
-//                    System.out.print(current);
-                    searchCharacter.setKnownChar(current);
+                    List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null));
 
-//                    if (current == 'o') {
-////                        System.out.println(searchCharacter.getY() + "\t==========\t" + ((double) searchCharacter.getValues().length / (double) searchCharacter.getValues()[0].length)  + " (" + searchCharacter.getValues().length + " / " + searchCharacter.getValues()[0].length);
-//
-//                        makeImage(searchCharacter.getValues(), searchCharacter.getValues().length + " x " + searchCharacter.getValues()[0].length);
-//
-//
-//                    }
+                    char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
+                    if (letterIndex == trainString.length() - 2) {
+                        beforeSpaceX.set(searchCharacter.getX() + searchCharacter.getWidth());
+                        letterIndex++;
+                        return;
+                    } else if (letterIndex == trainString.length()) {
+                        TrainedCharacterData trainedCharacterData = getTrainedData(' ', characterList);
+                        trainedCharacterData.recalculateTo(searchCharacter.getX() - beforeSpaceX.get(), searchCharacter.getHeight());
+                        letterIndex = 0;
+                        return;
+                    } else {
+                        searchCharacter.setKnownChar(current);
+                    }
 
                     searchCharacter.drawTo(finalInput, TEMP[inc++]);
                     if (inc >= 3) inc = 0;
 
-//                    searchCharacter.drawTo(input);
-
-                    List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null));
                     if (characterList != null) {
-//                        if (!searchCharacter.hasDot()) System.out.println("DONT HAVE DOTTTTTTTTTTTTTTTTTTTTTTTTTTT");
                         TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
                         trainedCharacterData.recalculateTo(searchCharacter);
                         trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey());
                         trainedCharacterData.setHasDot(searchCharacter.hasDot());
                         trainedCharacterData.setLetterMeta(searchCharacter.getLetterMeta());
                     }
-//                    trainedCharacterData.recalculateCenter((((double) lineBound.getValue() - (double) lineBound.getKey()) / 2D) - ((double) lineBound.getKey() - (double) searchCharacter.getY()));
 
                     if (letterIndex >= trainString.length()) {
                         letterIndex = 0;
-//                        System.out.println("\n");
                     }
                 });
 
@@ -372,13 +391,14 @@ public class Main {
             while (!databaseFuture.isDone()) {
             }
 
-//            if (!databaseTrainedCharacter.hasDot()) System.out.println("DONT HAVE DOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta());
+            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' ');
             while (!databaseFuture.isDone()) {
             }
 
-            databaseFuture = databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
-            while (!databaseFuture.isDone()) {
+            if (letter != ' ') {
+                databaseFuture = databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
+                while (!databaseFuture.isDone()) {
+                }
             }
         }));
 
@@ -408,11 +428,36 @@ public class Main {
         return ret;
     }
 
-    private static boolean getLetterFrom(SearchImage searchImage, int x, int y, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
-        searchImage.scanFrom(x, y, coordinates);
+    private static void scanFrom(BufferedImage image, int x, int y, Color color, List<Map.Entry<Integer, Integer>> coordinates) {
+//        System.out.println("(" + x + ", " + y + ")");
+        if (image.getRGB(x, y) == color.getRGB()) {
+            image.setRGB(x, y, Color.WHITE.getRGB());
+            coordinates.add(new AbstractMap.SimpleEntry<>(x, y));
 
-        if (coordinates.size() != 0) {
-            SearchCharacter searchCharacter = new SearchCharacter(coordinates);
+            scanFrom(image, x, y + 1, color, coordinates);
+            scanFrom(image, x, y - 1, color, coordinates);
+            scanFrom(image, x + 1, y, color, coordinates);
+            scanFrom(image, x - 1, y, color, coordinates);
+            scanFrom(image, x + 1, y + 1, color, coordinates);
+            scanFrom(image, x + 1, y - 1, color, coordinates);
+            scanFrom(image, x - 1, y + 1, color, coordinates);
+            scanFrom(image, x - 1, y - 1, color, coordinates);
+        }
+    }
+
+    private static boolean getLetterFrom(SearchImage searchImage, BufferedImage binaryImage, int x, int y, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
+        SearchCharacter searchCharacter;
+
+        if (binaryImage.getRGB(x, y) == Color.RED.getRGB()) {
+            scanFrom(binaryImage, x, y, Color.RED, coordinates);
+
+            searchCharacter = new SearchCharacter(coordinates);
+            searchCharacter.setKnownChar(' ');
+        } else {
+            searchImage.scanFrom(x, y, coordinates);
+            if (coordinates.size() == 0) return false;
+
+            searchCharacter = new SearchCharacter(coordinates);
 
             if (doDotStuff(searchCharacter, coordinates, searchCharacters)) return true;
             if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) return true;
@@ -449,13 +494,13 @@ public class Main {
                     return true;
                 }
             }
-
-            searchCharacter.applySections();
-            searchCharacter.analyzeSlices();
-
-            searchCharacters.add(searchCharacter);
-            coordinates.clear();
         }
+
+        searchCharacter.applySections();
+        searchCharacter.analyzeSlices();
+
+        searchCharacters.add(searchCharacter);
+        coordinates.clear();
 
         return false;
     }
@@ -490,6 +535,7 @@ public class Main {
                 DatabaseCharacter using = character.copy();
                 using.setX(searchCharacter.getX());
                 using.setY(searchCharacter.getY());
+                using.setWidth(searchCharacter.getWidth());
                 using.setRatio(((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()));
 //                using.setCenterExact(searchCharacter.getY() + using.getCenter());
                 diffs.put(using, value);
@@ -1023,9 +1069,15 @@ public class Main {
     }
 
     private static void filter(BufferedImage bufferedImage) {
+        int red = Color.RED.getRGB();
         for (int y = 0; y < bufferedImage.getHeight(); y++) {
             for (int x = 0; x < bufferedImage.getWidth(); x++) {
-                bufferedImage.setRGB(x, y, isBlack(bufferedImage, x, y) ? new Color(0, 0, 0, 255).getRGB() : new Color(255, 255, 255, 255).getRGB());
+                Color writeColor = isBlack(bufferedImage, x, y) ? new Color(0, 0, 0, 255) : new Color(255, 255, 255, 255);
+                if (bufferedImage.getRGB(x, y) == red) {
+                    writeColor = Color.RED;
+                }
+
+                bufferedImage.setRGB(x, y, writeColor.getRGB());
             }
         }
     }

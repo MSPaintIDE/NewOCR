@@ -9,6 +9,7 @@ import java.io.IOException;
 public class TrainGenerator {
 
     public static final int UPPER_FONT_BOUND = 90;
+//    public static final int LOWER_FONT_BOUND = 80;
     public static final int LOWER_FONT_BOUND = 20;
 
     public static void main(String[] args) {
@@ -24,13 +25,12 @@ public class TrainGenerator {
         Font fontt = new Font("Verdana", Font.PLAIN, 92);
         graphics.setFont(fontt);
 
-//        List<String> linesList = Arrays.asList(message.split("\n"));
+        int newHeight = 11;
 
-        int newHeight = 100;
-
-        int size2 = 92;
+        int size2 = UPPER_FONT_BOUND;
         for (int i = 0; i < UPPER_FONT_BOUND - LOWER_FONT_BOUND; i++) {
-            newHeight += size2 + 1;
+            newHeight += size2 + 11;
+            size2--;
         }
 
         System.out.println("newHeight = " + newHeight);
@@ -49,8 +49,6 @@ public class TrainGenerator {
         int size = UPPER_FONT_BOUND;
         int offset = UPPER_FONT_BOUND;
         for (int i = 0; i < UPPER_FONT_BOUND - LOWER_FONT_BOUND; i++) {
-//        for (int i = 0; i < linesList.size(); i++) {
-//            graphics.drawString(linesList.get(i), 0, 100);
             drawLine(graphics, Main.trainString, offset, size);
             offset += size + 10;
             size--;
@@ -69,6 +67,19 @@ public class TrainGenerator {
         drawTo.setPaint(Color.BLACK);
 
         drawTo.drawString(line, 10, yOffset);
+//        int xOffset = drawTo.getFontMetrics().stringWidth(line);
+
+//        drawSpace(drawTo, xOffset, yOffset, size);
+    }
+
+    private static void drawSpace(Graphics2D drawTo, int xOffset, int yOffset, int size) {
+        int width = drawTo.getFontMetrics().stringWidth(" ");
+
+        drawTo.setPaint(Color.RED);
+
+        System.out.println("drawTo = [" + drawTo + "], xOffset = [" + xOffset + "], yOffset = [" + yOffset + "], size = [" + size + "]");
+
+        drawTo.fillRect(xOffset + 25, yOffset, width, size);
     }
 
 }

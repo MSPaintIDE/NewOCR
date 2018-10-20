@@ -4,9 +4,11 @@ CREATE TABLE IF NOT EXISTS `letters` (
   avgHeight DOUBLE, -- The average height of all tested character images of this letter
   minFontSize INTEGER, -- The minimum font size this data set was trained on
   maxFontSize INTEGER, -- The maximum font size this data set was trained on
+  fontSize INTEGER,
   minCenter DOUBLE,
   maxCenter DOUBLE,
   hasDot BOOLEAN,
   letterMeta INTEGER,
+  isSpace BOOLEAN,
   UNIQUE(letter, minFontSize, maxFontSize)
 );

@@ -53,46 +53,25 @@ public class TrainedCharacterData {
     private List<Double> recalculatingHeights = new ArrayList<>();
     private List<Double> recalculatingCenters = new ArrayList<>();
 
+    public void recalculateTo(double width, double height) {
+        this.empty = false;
+
+        recalculatingWidths.add(width);
+        recalculatingHeights.add(height);
+    }
+
     public void recalculateTo(SearchCharacter searchCharacter) {
         this.empty = false;
         double[] segmentPercentages = searchCharacter.getSegmentPercentages();
-//        if (this.segmentPercentages == null) {
-//            this.segmentPercentages = segmentPercentages;
-//            return;
-//        }
 
-//        double[] temp = new double[segmentPercentages.length]
-//        if (!Main.ALL_INPUTS_EQUAL) {
-//            for (int i = 0; i < segmentPercentages.length; i++) {
-//                this.segmentPercentages[i] += (segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS; // Default 2
-////            System.out.println((segmentPercentages[i] - this.segmentPercentages[i]) / Main.AFFECT_BACKWARDS);
-////            System.out.println("Changed by " + ((segmentPercentages[i] - this.segmentPercentages[i]) / 2));
-//            }
-//        } else {
-//            System.out.println("segmentPercentages = " + segmentPercentages.length);
-            recalculatingList.add(segmentPercentages);
-            if (searchCharacter.getWidth() != 0 && searchCharacter.getHeight() != 0) {
-//                System.out.println(searchCharacter.getWidth() + " / " + searchCharacter.getHeight());
-//                recalculatingRatios.add((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight());
-                recalculatingWidths.add((double) searchCharacter.getWidth());
-                recalculatingHeights.add((double) searchCharacter.getHeight());
-            }
-//        }
-
-
-//        System.out.println(Arrays.toString(this.segmentPercentages));
+        recalculatingList.add(segmentPercentages);
+        if (searchCharacter.getWidth() != 0 && searchCharacter.getHeight() != 0) {
+            recalculatingWidths.add((double) searchCharacter.getWidth());
+            recalculatingHeights.add((double) searchCharacter.getHeight());
+        }
     }
 
     public void finishRecalculations() {
-//        if (!Main.ALL_INPUTS_EQUAL) return;
-
-        this.segmentPercentages = new double[8 + 9];
-        for (int i = 0; i < 8 + 9; i++) {
-            int finalI = i;
-            OptionalDouble optionalDouble = recalculatingList.stream().mapToDouble(t -> t[finalI]).average();
-            this.segmentPercentages[i] = optionalDouble.isPresent() ? optionalDouble.getAsDouble() : 0;
-        }
-
         OptionalDouble widthAverageOptional = recalculatingWidths.stream().mapToDouble(t -> t).average();
         this.widthAverage = widthAverageOptional.isPresent() ? widthAverageOptional.getAsDouble() : 0D;
 
@@ -100,6 +79,15 @@ public class TrainedCharacterData {
         this.heightAverage = heightAverageOptional.isPresent() ? heightAverageOptional.getAsDouble() : 0D;
 
         this.sizeRatio = this.heightAverage != 0 ? this.widthAverage / this.heightAverage : 0;
+
+        if (value == ' ') return;
+
+        this.segmentPercentages = new double[8 + 9];
+        for (int i = 0; i < 8 + 9; i++) {
+            int finalI = i;
+            OptionalDouble optionalDouble = recalculatingList.stream().mapToDouble(t -> t[finalI]).average();
+            this.segmentPercentages[i] = optionalDouble.isPresent() ? optionalDouble.getAsDouble() : 0;
+        }
 
 //        this.center = this.recalculatingCenters.stream().mapToDouble(t -> t).average().orElse(0);
     }

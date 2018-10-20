@@ -29,6 +29,7 @@ public class DatabaseManager {
     private String selectSegments;
     private String selectAllSegments;
     private String getLetterEntry;
+    private String getSpaceEntry;
 
     private final AtomicReference<Map<FontBounds, List<DatabaseCharacter>>> databaseCharacterCache = new AtomicReference<>(new HashMap<>());
 
@@ -52,6 +53,7 @@ public class DatabaseManager {
         this.selectSegments = getQuery("selectSegments");
         this.selectAllSegments = getQuery("selectAllSegments");
         this.getLetterEntry = getQuery("getLetterEntry");
+        this.getSpaceEntry = getQuery("getSpaceEntry");
     }
 
     private String getQuery(String name) throws IOException {
@@ -72,7 +74,7 @@ public class DatabaseManager {
         return this.dataSource;
     }
 
-    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta) {
+    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
         return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
                 PreparedStatement createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
@@ -85,6 +87,7 @@ public class DatabaseManager {
                 createLetterEntry.setDouble(7, maxCenter);
                 createLetterEntry.setBoolean(8, hasDot);
                 createLetterEntry.setInt(9, letterMeta.getID());
+                createLetterEntry.setBoolean(10, isLetter);
                 createLetterEntry.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -183,18 +186,11 @@ public class DatabaseManager {
                             boolean hasDot = resultSet1.getBoolean("hasDot");
                             int letterMetaID = resultSet1.getInt("letterMeta");
 
-//                            if (hasDot) {
-//                                System.out.println("Something has it: " + letter + " = " + hasDot);
-//                            }
-
-//                            System.out.println(letter + "\t\t" + LetterMeta.fromID(letterMetaID).name());
-
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
                             newDatabaseCharacter.setMinCenter(minCenter);
                             newDatabaseCharacter.setMaxCenter(maxCenter);
                             newDatabaseCharacter.setHasDot(hasDot);
                             newDatabaseCharacter.setLetterMeta(LetterMeta.fromID(letterMetaID));
-//                            newDatabaseCharacter.setHasDot(true);
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }
@@ -204,15 +200,37 @@ public class DatabaseManager {
                     if (!databaseCharacters.contains(databaseCharacter)) databaseCharacters.add(databaseCharacter);
                 }
 
+                try (PreparedStatement selectSpace = connection.prepareStatement(this.getSpaceEntry)) {
+                    ResultSet spaceResult = selectSpace.executeQuery();
+
+                    if (spaceResult.next()) {
+
+                        double avgWidth = spaceResult.getDouble("avgWidth");
+                        double avgHeight = spaceResult.getDouble("avgHeight");
+                        int minFontSize = spaceResult.getInt("minFontSize");
+                        int maxFontSize = spaceResult.getInt("maxFontSize");
+//                        double minCenter = spaceResult.getDouble("minCenter");
+//                        double maxCenter = spaceResult.getDouble("maxCenter");
+//                        boolean hasDot = spaceResult.getBoolean("hasDot");
+//                        int letterMetaID = spaceResult.getInt("letterMeta");
+
+                        DatabaseCharacter spaceCharacter = new DatabaseCharacter(' ');
+                        spaceCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
+                        databaseCharacters.add(spaceCharacter);
+
+                        System.out.println("Got space! " + avgWidth + ", " + avgHeight);
+                    }
+                }
+
             } catch (SQLException e) {
                 e.printStackTrace();
             }
 
             this.databaseCharacterCache.get().put(fontBounds, databaseCharacters);
 
-            databaseCharacters.stream().filter(databaseCharacter -> !databaseCharacter.hasDot()).forEach(shit -> {
-                System.out.println("Not have dot: " + shit.getLetter());
-            });
+//            databaseCharacters.stream().filter(databaseCharacter -> !databaseCharacter.hasDot()).forEach(shit -> {
+//                System.out.println("Not have dot: " + shit.getLetter());
+//            });
 
             return databaseCharacters;
         });
