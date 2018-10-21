@@ -81,7 +81,7 @@ public class Main {
             long start = System.currentTimeMillis();
             generateFeatures(new File("E:\\NewOCR\\training.png"));
             System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
-            System.exit(0);
+//            System.exit(0);
         }
 
         long start = System.currentTimeMillis();
@@ -429,16 +429,26 @@ public class Main {
                         trainedCharacterData.recalculateTo(searchCharacter);
 //                        trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey()); // This gets just from top
 
-                        System.out.println("=====\t" + trainedCharacterData.getValue() + "\t=====");
+//                        System.out.println("=====\t" + trainedCharacterData.getValue() + "\t=====");
 
                         double halfOfLineHeight = ((double) lineBound.getValue() - (double) lineBound.getKey()) / 2;
 //                        System.out.println("halfOfLineHeight = " + halfOfLineHeight);
+//                        if (halfOfLineHeight < 0) System.out.println("SHIT");
                         double middleToTopChar = (double) searchCharacter.getY() - (double) lineBound.getKey();
 //                        System.out.println("middleToTopChar = " + middleToTopChar);
+//                        if (middleToTopChar < 0) System.out.println("Other SHIT: " + middleToTopChar);
                         double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
-                        System.out.println("topOfLetterToCenter = " + topOfLetterToCenter);
+//                        System.out.println("topOfLetterToCenter = " + topOfLetterToCenter);
 
-                        System.out.println("\n");
+//                        if (topOfLetterToCenter < 0) System.out.println("two SHIT");
+
+//                        System.out.println("\n");
+
+                        if (trainedCharacterData.getValue() == 'F' || trainedCharacterData.getValue() == 'o') {
+                            System.out.println(trainedCharacterData.getValue() + "\t" + topOfLetterToCenter + " (" + searchCharacter.getHeight() + ")");
+                        }
+
+                        // TODO: Make letters' minFontSize and maxFontSize in the database (Derived from the FontBounds) be stored PER LINE and NOT per character dimensions. This will allow the centers of characters to line up based on their height, to have a single uniform line instead of trying to get the next character based on the previous one (Which could cause a very large staggering effect to be allowed with any tolerance above 0).
 
                         colorRow(finalInput, Color.RED, (int) (searchCharacter.getY() + topOfLetterToCenter), searchCharacter.getX(), searchCharacter.getWidth());
 

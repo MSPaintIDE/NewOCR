@@ -126,6 +126,11 @@ public class TrainedCharacterData {
     }
 
     public void recalculateCenter(double center) {
+//        if (center < 0) {
+//            System.out.println("Pushing bad center: " + center);
+//            System.out.println("PRE min: " + minCenter + " max: " + maxCenter);
+//        }
+
         if (minCenter == -1 && maxCenter == -1) {
             minCenter = center;
             maxCenter = center;
@@ -133,6 +138,10 @@ public class TrainedCharacterData {
             if (center > maxCenter) maxCenter = center;
             if (center < minCenter) minCenter = center;
         }
+
+//        if (center < 0) {
+//            System.out.println("POST min: " + minCenter + " max: " + maxCenter);
+//        }
     }
 
     public double getMinCenter() {
