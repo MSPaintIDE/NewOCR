@@ -218,7 +218,7 @@ public class DatabaseManager {
                         spaceCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
                         databaseCharacters.add(spaceCharacter);
 
-                        System.out.println("Got space! " + avgWidth + ", " + avgHeight);
+//                        System.out.println("Got space! " + avgWidth + ", " + avgHeight);
                     }
                 }
 

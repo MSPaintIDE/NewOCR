@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -41,7 +42,7 @@ public class Main {
     private static int inc = 0;
 
     public static final boolean AVERAGE_DIFF = true; // true for average, false for max and min
-    public static final String trainString = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
+    public static String trainString = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
     private static DatabaseManager databaseManager;
 
     private static int letterIndex = 0;
@@ -85,7 +86,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\wi.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\SS.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -124,6 +125,9 @@ public class Main {
 
         Map<Integer, List<DatabaseCharacter>> lines = new LinkedHashMap<>();
 
+        AtomicBoolean first = new AtomicBoolean(true);
+
+        BufferedImage finalInput = input;
         searchLines.values()
                 .stream()
                 .flatMap(List::stream)
@@ -132,15 +136,37 @@ public class Main {
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
                 .forEachOrdered(databaseCharacter -> {
+                    System.out.println("First = " + databaseCharacter.getLetter());
+//                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+//                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
                     double centerDiff = (databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter()) / 2 + databaseCharacter.getMinCenter();
                     double threashold = Math.max(centerDiff * 1.5D, 2D);
+//                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() - centerDiff), 0, finalInput.getWidth());
+
+                    System.out.println("Min: " + databaseCharacter.getMinCenter());
+                    System.out.println("Max: " + databaseCharacter.getMaxCenter());
 
                     int center = lines.keySet()
                             .stream()
                             .filter(y -> isWithin(y, (int) (databaseCharacter.getY() - centerDiff), threashold)).findFirst().orElseGet(() -> {
                                 lines.put((int) (databaseCharacter.getY() - centerDiff), new LinkedList<>());
+
+                                if (first.get()) {
+                                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+                                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+
+                                    first.set(false);
+                                } else {
+                                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+                                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+
+                                }
+
                                 return (int) (databaseCharacter.getY() - centerDiff);
                             });
+
+                    System.out.println("centerDiff = " + centerDiff);
+                    System.out.println("center = " + center);
 
                     double ratio = databaseCharacter.getAvgWidth() / databaseCharacter.getAvgHeight();
                     System.out.println("Database ratio: " + ratio + " Real: " + databaseCharacter.getRatio() + " database:" + databaseCharacter.getAvgWidth() + " / " + databaseCharacter.getAvgHeight());
@@ -160,11 +186,26 @@ public class Main {
 
         Map<Integer, List<DatabaseCharacter>> sortedLines = new LinkedHashMap<>();
 
-        lines.values().forEach(line -> line.addAll(getSpacesFor(line)));
-
         lines.keySet().stream().sorted().forEach(y -> sortedLines.put(y, lines.get(y)));
 
-        sortedLines.keySet().forEach(y -> {
+//        sortedLines.values().forEach(line -> {
+//            if (line.isEmpty()) return;
+//            try {
+//                line.addAll(getSpacesFor(line, line.get(0).getHeight()));
+//            } catch (ExecutionException | InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        });
+
+        System.out.println("lines = " + lines);
+
+        lines.clear();
+        sortedLines.keySet().stream().sorted().forEach(y -> {
+            List<DatabaseCharacter> line = sortedLines.get(y);
+            lines.put(y, line.stream().sorted(Comparator.comparingInt(DatabaseCharacter::getX)).collect(Collectors.toList()));
+        });
+
+        lines.keySet().forEach(y -> {
             System.out.println(String.join("", lines.get(y)
                     .stream()
                     .map(DatabaseCharacter::getLetter)
@@ -200,8 +241,17 @@ public class Main {
 //        ImageIO.write(temp, "png", new File("E:\\NewOCR\\tempout.png"));
     }
 
-    private static List<DatabaseCharacter> getSpacesFor(List<DatabaseCharacter> line) {
+    private static List<DatabaseCharacter> getSpacesFor(List<DatabaseCharacter> line, int fontSize) throws ExecutionException, InterruptedException {
         List<DatabaseCharacter> ret = new ArrayList<>();
+        System.out.println("fontSize = " + fontSize);
+        List<DatabaseCharacter> data = databaseManager.getAllCharacterSegments(matchNearestFontSize(fontSize)).get();
+        DatabaseCharacter space = data.stream().filter(databaseCharacter -> databaseCharacter.getLetter() == ' ').findFirst().orElse(null);
+        if (space == null) {
+            System.err.println("No space found for current font size: " + fontSize);
+            return line;
+        }
+
+        System.out.println("line = " + line);
 
         DatabaseCharacter prev = null;
         for (DatabaseCharacter databaseCharacter : line) {
@@ -210,14 +260,45 @@ public class Main {
                 continue;
             }
 
+//            System.out.println(databaseCharacter.getX() + " - " + prev.getX() + " + " + prev.getWidth());
+
             int leftX = prev.getX() + prev.getWidth();
             int rightX = databaseCharacter.getX();
+            double gap = rightX - leftX;
 
-            System.out.println("Gap: " + (rightX - leftX));
+//            System.out.println("Gap: " + gap);
 
+            double ratio = space.getAvgWidth() / space.getAvgHeight();
+            double usedWidth = ratio * databaseCharacter.getWidth();
+
+//            System.out.println("Ratio: " + ratio);
+//            System.out.println("Using width: " + usedWidth);
+
+            int spaces = spaceRound(gap / usedWidth);
+
+            System.out.println(spaces + "\t" + (gap / usedWidth) + " (" + spaceRound(gap / usedWidth) + ")");
+            System.out.println(databaseCharacter.getLetter());
+
+            for (int i = 0; i < spaces; i++) {
+                DatabaseCharacter insertingSpace = space.copy();
+//                System.out.println("X is: " + ((int) (leftX + (usedWidth * (i - 1)))));
+                insertingSpace.setX((int) (leftX + (usedWidth * (i - 1))));
+                ret.add(insertingSpace);
+            }
+
+            prev = databaseCharacter;
         }
 
         return ret;
+    }
+
+    private static int spaceRound(double input) {
+        int known = (int) Math.floor(input);
+        double extra = input % 1;
+
+        known += checkDifference(extra, 1, 0.2D) ? 1 : 0;
+
+        return known;
     }
 
     public static void generateFeatures(File file) throws IOException {
@@ -340,13 +421,28 @@ public class Main {
                         searchCharacter.setKnownChar(current);
                     }
 
-                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
-                    if (inc >= 3) inc = 0;
+//                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
+//                    if (inc >= 3) inc = 0;
 
                     if (characterList != null) {
                         TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
                         trainedCharacterData.recalculateTo(searchCharacter);
-                        trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey());
+//                        trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey()); // This gets just from top
+
+                        System.out.println("=====\t" + trainedCharacterData.getValue() + "\t=====");
+
+                        double halfOfLineHeight = ((double) lineBound.getValue() - (double) lineBound.getKey()) / 2;
+//                        System.out.println("halfOfLineHeight = " + halfOfLineHeight);
+                        double middleToTopChar = (double) searchCharacter.getY() - (double) lineBound.getKey();
+//                        System.out.println("middleToTopChar = " + middleToTopChar);
+                        double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
+                        System.out.println("topOfLetterToCenter = " + topOfLetterToCenter);
+
+                        System.out.println("\n");
+
+                        colorRow(finalInput, Color.RED, (int) (searchCharacter.getY() + topOfLetterToCenter), searchCharacter.getX(), searchCharacter.getWidth());
+
+                        trainedCharacterData.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
                         trainedCharacterData.setHasDot(searchCharacter.hasDot());
                         trainedCharacterData.setLetterMeta(searchCharacter.getLetterMeta());
                     }
@@ -368,7 +464,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
         System.out.println("Writing output...");
-//        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\outputNEW.png"));
         System.out.println("Wrote output in " + (System.currentTimeMillis() - start) + "ms");
 
 //        System.exit(0);
@@ -536,6 +632,7 @@ public class Main {
                 using.setX(searchCharacter.getX());
                 using.setY(searchCharacter.getY());
                 using.setWidth(searchCharacter.getWidth());
+                using.setHeight(searchCharacter.getHeight());
                 using.setRatio(((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()));
 //                using.setCenterExact(searchCharacter.getY() + using.getCenter());
                 diffs.put(using, value);
@@ -697,6 +794,10 @@ public class Main {
     }
 
     private static boolean isWithin(int lowerBound, int upperBound, int value) {
+        return lowerBound <= value && value <= upperBound;
+    }
+
+    private static boolean isWithin(double lowerBound, double upperBound, double value) {
         return lowerBound <= value && value <= upperBound;
     }
 

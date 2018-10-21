@@ -16,6 +16,7 @@ public class DatabaseCharacter {
     private int y;
     private double ratio;
     private int width;
+    private int height;
 
     public DatabaseCharacter(char letter) {
         this.letter = letter;
@@ -166,5 +167,13 @@ public class DatabaseCharacter {
 
     public int getWidth() {
         return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
     }
 }
