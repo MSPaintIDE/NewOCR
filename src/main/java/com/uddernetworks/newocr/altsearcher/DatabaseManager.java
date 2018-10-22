@@ -173,6 +173,8 @@ public class DatabaseManager {
                     DatabaseCharacter databaseCharacter = getDatabaseCharacter(databaseCharacters, letter, newDatabaseCharacter -> {
                         try (PreparedStatement getLetterEntry = connection.prepareCall(this.getLetterEntry)) {
                             getLetterEntry.setInt(1, letter);
+                            getLetterEntry.setInt(2, fontBounds.getMinFont());
+                            getLetterEntry.setInt(3, fontBounds.getMaxFont());
                             ResultSet resultSet1 = getLetterEntry.executeQuery();
 
                             if (!resultSet1.next()) return;
@@ -185,6 +187,8 @@ public class DatabaseManager {
                             double maxCenter = resultSet1.getDouble("maxCenter");
                             boolean hasDot = resultSet1.getBoolean("hasDot");
                             int letterMetaID = resultSet1.getInt("letterMeta");
+
+                            System.out.println("Min: " + minFontSize + " Max: " + maxFontSize + " VS FontMin: " + fontBounds.getMinFont() + " FontMax: " + fontBounds.getMaxFont());
 
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
                             newDatabaseCharacter.setMinCenter(minCenter);

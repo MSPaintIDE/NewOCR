@@ -405,16 +405,56 @@ public class Main {
                         inc = 0;
                     }
 
-                    List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null));
+//                    List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null));
+//                    List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet()
+//                            .stream()
+//                            .filter(fontBounds ->
+//                                    fontBounds.isInbetween(searchCharacter.getHeight()))
+//                            .findFirst()
+//                            .orElse(null));
+
+                    AtomicInteger index = new AtomicInteger(0);
+//                    List<TrainedCharacterData> characterList = new LinkedList<>();
+
+
+
+//                    trainedCharacterDataList.keySet()
+//                            .stream()
+//                            .filter(fontBounds ->
+//                                    fontBounds.isInbetween(searchCharacter.getHeight()))
+//                            .forEach(fontBounds -> characterList.add(trainedCharacterDataList.get(fontBounds).get(index.getAndIncrement())));
 
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
+
+                    TrainedCharacterData trainedSearchCharacter = trainedCharacterDataList.get(trainedCharacterDataList.keySet()
+                            .stream()
+                            .filter(fontBounds ->
+                                    fontBounds.isInbetween(searchCharacter.getHeight()))
+                            .findFirst()
+                            .get())
+                            .stream()
+                            .filter(trainedCharacterData -> trainedCharacterData.getValue() == current)
+                            .findFirst()
+                            .orElse(null);
+
+                    TrainedCharacterData spaceTrainedCharacter = trainedCharacterDataList.get(trainedCharacterDataList.keySet()
+                            .stream()
+                            .filter(fontBounds ->
+                                    fontBounds.isInbetween(searchCharacter.getHeight()))
+                            .findFirst()
+                            .get())
+                            .stream()
+                            .filter(trainedCharacterData -> trainedCharacterData.getValue() == ' ')
+                            .findFirst()
+                            .orElse(null);
+
                     if (letterIndex == trainString.length() - 2) {
                         beforeSpaceX.set(searchCharacter.getX() + searchCharacter.getWidth());
                         letterIndex++;
                         return;
                     } else if (letterIndex == trainString.length()) {
-                        TrainedCharacterData trainedCharacterData = getTrainedData(' ', characterList);
-                        trainedCharacterData.recalculateTo(searchCharacter.getX() - beforeSpaceX.get(), searchCharacter.getHeight());
+//                        TrainedCharacterData trainedCharacterData = getTrainedData(' ', characterList);
+                        spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX.get(), searchCharacter.getHeight());
                         letterIndex = 0;
                         return;
                     } else {
@@ -424,9 +464,9 @@ public class Main {
 //                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
 //                    if (inc >= 3) inc = 0;
 
-                    if (characterList != null) {
-                        TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
-                        trainedCharacterData.recalculateTo(searchCharacter);
+//                    if (characterList != null) {
+//                        TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
+                    trainedSearchCharacter.recalculateTo(searchCharacter);
 //                        trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey()); // This gets just from top
 
 //                        System.out.println("=====\t" + trainedCharacterData.getValue() + "\t=====");
@@ -444,18 +484,18 @@ public class Main {
 
 //                        System.out.println("\n");
 
-                        if (trainedCharacterData.getValue() == 'F' || trainedCharacterData.getValue() == 'o') {
-                            System.out.println(trainedCharacterData.getValue() + "\t" + topOfLetterToCenter + " (" + searchCharacter.getHeight() + ")");
+                        if (trainedSearchCharacter.getValue() == 'F' || trainedSearchCharacter.getValue() == 'o') {
+                            System.out.println(trainedSearchCharacter.getValue() + "\t" + topOfLetterToCenter + " (" + searchCharacter.getHeight() + ")");
                         }
 
                         // TODO: Make letters' minFontSize and maxFontSize in the database (Derived from the FontBounds) be stored PER LINE and NOT per character dimensions. This will allow the centers of characters to line up based on their height, to have a single uniform line instead of trying to get the next character based on the previous one (Which could cause a very large staggering effect to be allowed with any tolerance above 0).
 
                         colorRow(finalInput, Color.RED, (int) (searchCharacter.getY() + topOfLetterToCenter), searchCharacter.getX(), searchCharacter.getWidth());
 
-                        trainedCharacterData.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
-                        trainedCharacterData.setHasDot(searchCharacter.hasDot());
-                        trainedCharacterData.setLetterMeta(searchCharacter.getLetterMeta());
-                    }
+                        trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
+                        trainedSearchCharacter.setHasDot(searchCharacter.hasDot());
+                        trainedSearchCharacter.setLetterMeta(searchCharacter.getLetterMeta());
+//                    }
 
                     if (letterIndex >= trainString.length()) {
                         letterIndex = 0;
@@ -620,12 +660,14 @@ public class Main {
     private static DatabaseCharacter getCharacterFor(SearchCharacter searchCharacter) {
         Map<DatabaseCharacter, Double> diffs = new HashMap<>(); // The lower value the better
 
+        System.out.println("Height: " + searchCharacter.getHeight() + " " + matchNearestFontSize(searchCharacter.getHeight()));
+
         try {
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments(matchNearestFontSize(searchCharacter.getHeight())).get());
 //            System.out.println(data.size());
 //            System.out.println(searchCharacter.getHeight() + "] data = " + data);
 
-            System.out.println("Search: " + searchCharacter.hasDot());
+//            System.out.println("Search: " + searchCharacter.hasDot());
 
             data.stream()
                     .filter(character -> character.hasDot() == searchCharacter.hasDot())
@@ -660,7 +702,7 @@ public class Main {
         LinkedList<Map.Entry<DatabaseCharacter, Double>> entries = new LinkedList<>(sortByValue(diffs)
                 .entrySet());
 
-        System.out.println(entries);
+//        System.out.println(entries);
 
 //        System.out.println("Got one: " + entries);
 
@@ -669,8 +711,10 @@ public class Main {
         DatabaseCharacter first = entries.removeFirst().getKey();
         DatabaseCharacter second = entries.removeFirst().getKey();
 
-        System.out.println(first.getLetter() + "\t\t" + (first.getAvgWidth() / first.getAvgHeight()) + " vs " + (second.getAvgWidth() / second.getAvgHeight()) + " REAL: " + ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight()));
-        System.out.println("\t\t^ " + searchCharacter.getWidth()  + " x " + searchCharacter.getHeight());
+//        System.out.println(first.getLetter() + "\t\t" + (first.getAvgWidth() / first.getAvgHeight()) + " vs " + (second.getAvgWidth() / second.getAvgHeight()) + " REAL: " + ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight()));
+//        System.out.println("\t\t^ " + searchCharacter.getWidth()  + " x " + searchCharacter.getHeight());
+
+        System.out.println("\t\t\tFirst: min: " + first.getMinCenter() + " max: " + first.getMaxCenter());
 
 //        System.out.println(entries);
 //        System.out.println("\n");
