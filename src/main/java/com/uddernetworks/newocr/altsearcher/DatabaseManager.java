@@ -188,8 +188,6 @@ public class DatabaseManager {
                             boolean hasDot = resultSet1.getBoolean("hasDot");
                             int letterMetaID = resultSet1.getInt("letterMeta");
 
-                            System.out.println("Min: " + minFontSize + " Max: " + maxFontSize + " VS FontMin: " + fontBounds.getMinFont() + " FontMax: " + fontBounds.getMaxFont());
-
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
                             newDatabaseCharacter.setMinCenter(minCenter);
                             newDatabaseCharacter.setMaxCenter(maxCenter);

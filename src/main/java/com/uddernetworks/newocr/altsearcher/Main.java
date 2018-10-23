@@ -86,7 +86,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\SS.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HW4.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -188,14 +188,14 @@ public class Main {
 
         lines.keySet().stream().sorted().forEach(y -> sortedLines.put(y, lines.get(y)));
 
-//        sortedLines.values().forEach(line -> {
-//            if (line.isEmpty()) return;
-//            try {
-//                line.addAll(getSpacesFor(line, line.get(0).getHeight()));
-//            } catch (ExecutionException | InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        });
+        sortedLines.values().forEach(line -> {
+            if (line.isEmpty()) return;
+            try {
+                line.addAll(getSpacesFor(line, line.get(0).getHeight()));
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
 
         System.out.println("lines = " + lines);
 
@@ -243,8 +243,9 @@ public class Main {
 
     private static List<DatabaseCharacter> getSpacesFor(List<DatabaseCharacter> line, int fontSize) throws ExecutionException, InterruptedException {
         List<DatabaseCharacter> ret = new ArrayList<>();
-        System.out.println("fontSize = " + fontSize);
-        List<DatabaseCharacter> data = databaseManager.getAllCharacterSegments(matchNearestFontSize(fontSize)).get();
+        System.out.println("fontSize = " + fontSize + " " + matchNearestFontSize(fontSize));
+        FontBounds fontBounds = matchNearestFontSize(fontSize);
+        List<DatabaseCharacter> data = databaseManager.getAllCharacterSegments(fontBounds).get();
         DatabaseCharacter space = data.stream().filter(databaseCharacter -> databaseCharacter.getLetter() == ' ').findFirst().orElse(null);
         if (space == null) {
             System.err.println("No space found for current font size: " + fontSize);
@@ -266,22 +267,17 @@ public class Main {
             int rightX = databaseCharacter.getX();
             double gap = rightX - leftX;
 
-//            System.out.println("Gap: " + gap);
-
             double ratio = space.getAvgWidth() / space.getAvgHeight();
-            double usedWidth = ratio * databaseCharacter.getWidth();
-
-//            System.out.println("Ratio: " + ratio);
-//            System.out.println("Using width: " + usedWidth);
+            double usedWidth = ratio * databaseCharacter.getHeight();
 
             int spaces = spaceRound(gap / usedWidth);
 
+            System.out.println("usedWidth = " + usedWidth);
             System.out.println(spaces + "\t" + (gap / usedWidth) + " (" + spaceRound(gap / usedWidth) + ")");
             System.out.println(databaseCharacter.getLetter());
 
             for (int i = 0; i < spaces; i++) {
                 DatabaseCharacter insertingSpace = space.copy();
-//                System.out.println("X is: " + ((int) (leftX + (usedWidth * (i - 1)))));
                 insertingSpace.setX((int) (leftX + (usedWidth * (i - 1))));
                 ret.add(insertingSpace);
             }
@@ -383,6 +379,8 @@ public class Main {
         System.out.println("\t\t\t\t\t\t\t222 Has dots: " + searchCharactersCopy.stream().filter(searchCharacter -> !searchCharacter.hasDot()).count());
 
         for (Pair<Integer, Integer> lineBound : lineBounds) {
+            int lineHeight = lineBound.getValue() - lineBound.getKey();
+            System.out.println("\t\t\tlineHeight = " + lineHeight);
             List<SearchCharacter> line = findCharacterAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
 
 //            System.out.println("line = " + line.size());
@@ -413,7 +411,6 @@ public class Main {
 //                            .findFirst()
 //                            .orElse(null));
 
-                    AtomicInteger index = new AtomicInteger(0);
 //                    List<TrainedCharacterData> characterList = new LinkedList<>();
 
 
@@ -426,23 +423,20 @@ public class Main {
 
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
 
-                    TrainedCharacterData trainedSearchCharacter = trainedCharacterDataList.get(trainedCharacterDataList.keySet()
-                            .stream()
-                            .filter(fontBounds ->
-                                    fontBounds.isInbetween(searchCharacter.getHeight()))
-                            .findFirst()
-                            .get())
+                    FontBounds currentFontBounds = trainedCharacterDataList.keySet()
+                                    .stream()
+                                    .filter(fontBounds ->
+                                            fontBounds.isInbetween(searchCharacter.getHeight()))
+                                    .findFirst()
+                                    .orElse(null);
+
+                    TrainedCharacterData trainedSearchCharacter = trainedCharacterDataList.get(currentFontBounds)
                             .stream()
                             .filter(trainedCharacterData -> trainedCharacterData.getValue() == current)
                             .findFirst()
                             .orElse(null);
 
-                    TrainedCharacterData spaceTrainedCharacter = trainedCharacterDataList.get(trainedCharacterDataList.keySet()
-                            .stream()
-                            .filter(fontBounds ->
-                                    fontBounds.isInbetween(searchCharacter.getHeight()))
-                            .findFirst()
-                            .get())
+                    TrainedCharacterData spaceTrainedCharacter = trainedCharacterDataList.get(currentFontBounds)
                             .stream()
                             .filter(trainedCharacterData -> trainedCharacterData.getValue() == ' ')
                             .findFirst()
@@ -454,7 +448,7 @@ public class Main {
                         return;
                     } else if (letterIndex == trainString.length()) {
 //                        TrainedCharacterData trainedCharacterData = getTrainedData(' ', characterList);
-                        spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX.get(), searchCharacter.getHeight());
+                        spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX.get(), lineHeight);
                         letterIndex = 0;
                         return;
                     } else {
@@ -487,8 +481,6 @@ public class Main {
                         if (trainedSearchCharacter.getValue() == 'F' || trainedSearchCharacter.getValue() == 'o') {
                             System.out.println(trainedSearchCharacter.getValue() + "\t" + topOfLetterToCenter + " (" + searchCharacter.getHeight() + ")");
                         }
-
-                        // TODO: Make letters' minFontSize and maxFontSize in the database (Derived from the FontBounds) be stored PER LINE and NOT per character dimensions. This will allow the centers of characters to line up based on their height, to have a single uniform line instead of trying to get the next character based on the previous one (Which could cause a very large staggering effect to be allowed with any tolerance above 0).
 
                         colorRow(finalInput, Color.RED, (int) (searchCharacter.getY() + topOfLetterToCenter), searchCharacter.getX(), searchCharacter.getWidth());
 
