@@ -86,7 +86,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HW4.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HW.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -197,7 +197,12 @@ public class Main {
             }
         });
 
-        System.out.println("lines = " + lines);
+//        System.out.println("lines = " + lines);
+//        lines.forEach((y, line) -> {
+//            line.forEach(cha -> {
+//                System.out.println(cha.getX() + ": " + cha.getLetter());
+//            });
+//        });
 
         lines.clear();
         sortedLines.keySet().stream().sorted().forEach(y -> {
@@ -243,7 +248,6 @@ public class Main {
 
     private static List<DatabaseCharacter> getSpacesFor(List<DatabaseCharacter> line, int fontSize) throws ExecutionException, InterruptedException {
         List<DatabaseCharacter> ret = new ArrayList<>();
-        System.out.println("fontSize = " + fontSize + " " + matchNearestFontSize(fontSize));
         FontBounds fontBounds = matchNearestFontSize(fontSize);
         List<DatabaseCharacter> data = databaseManager.getAllCharacterSegments(fontBounds).get();
         DatabaseCharacter space = data.stream().filter(databaseCharacter -> databaseCharacter.getLetter() == ' ').findFirst().orElse(null);
@@ -252,16 +256,12 @@ public class Main {
             return line;
         }
 
-        System.out.println("line = " + line);
-
         DatabaseCharacter prev = null;
         for (DatabaseCharacter databaseCharacter : line) {
             if (prev == null) {
                 prev = databaseCharacter;
                 continue;
             }
-
-//            System.out.println(databaseCharacter.getX() + " - " + prev.getX() + " + " + prev.getWidth());
 
             int leftX = prev.getX() + prev.getWidth();
             int rightX = databaseCharacter.getX();
@@ -272,13 +272,9 @@ public class Main {
 
             int spaces = spaceRound(gap / usedWidth);
 
-            System.out.println("usedWidth = " + usedWidth);
-            System.out.println(spaces + "\t" + (gap / usedWidth) + " (" + spaceRound(gap / usedWidth) + ")");
-            System.out.println(databaseCharacter.getLetter());
-
             for (int i = 0; i < spaces; i++) {
                 DatabaseCharacter insertingSpace = space.copy();
-                insertingSpace.setX((int) (leftX + (usedWidth * (i - 1))));
+                insertingSpace.setX((int) (leftX + (usedWidth * i)));
                 ret.add(insertingSpace);
             }
 
