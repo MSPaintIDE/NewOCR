@@ -86,7 +86,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HW.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HWTest.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -140,30 +140,40 @@ public class Main {
 //                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
 //                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
                     double centerDiff = (databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter()) / 2 + databaseCharacter.getMinCenter();
-                    double threashold = Math.max(centerDiff * 1.5D, 2D);
+                    double threashold = Math.max(centerDiff * 2D, 2D);
 //                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() - centerDiff), 0, finalInput.getWidth());
 
-                    System.out.println("Min: " + databaseCharacter.getMinCenter());
-                    System.out.println("Max: " + databaseCharacter.getMaxCenter());
+                    System.out.println("\t\t\tthreashold = " + threashold);
+//                    System.out.println("Min: " + databaseCharacter.getMinCenter());
+//                    System.out.println("Max: " + databaseCharacter.getMaxCenter());
 
-                    int center = lines.keySet()
+                    int potentialY = (int) (databaseCharacter.getY() - centerDiff);
+
+                    Optional<Integer> tempp = lines.keySet()
                             .stream()
-                            .filter(y -> isWithin(y, (int) (databaseCharacter.getY() - centerDiff), threashold)).findFirst().orElseGet(() -> {
-                                lines.put((int) (databaseCharacter.getY() - centerDiff), new LinkedList<>());
+                            .filter(y -> isWithin(y, potentialY, threashold))
+                            .min(Comparator.comparing(y -> getDiff(y, potentialY)));
 
-                                if (first.get()) {
-                                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
-                                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+                    System.out.println(lines.keySet()
+                            .stream()
+                            .filter(y -> isWithin(y, potentialY, threashold))
+                    .collect(Collectors.toList()));
 
-                                    first.set(false);
-                                } else {
-                                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
-                                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+                    int center = tempp.orElseGet(() -> {
+                        lines.put((int) (databaseCharacter.getY() - centerDiff), new LinkedList<>());
 
-                                }
+                        if (first.get()) {
+                            colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+                            colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
 
-                                return (int) (databaseCharacter.getY() - centerDiff);
-                            });
+                            first.set(false);
+                        } else {
+                            colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+                            colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+                        }
+
+                        return (int) (databaseCharacter.getY() - centerDiff);
+                    });
 
                     System.out.println("centerDiff = " + centerDiff);
                     System.out.println("center = " + center);
@@ -173,7 +183,7 @@ public class Main {
 
                     double diff = Math.max(ratio, databaseCharacter.getRatio()) - Math.min(ratio, databaseCharacter.getRatio());
                     if (diff > 0.2D) {
-                        System.out.println("Diff is: " + diff);
+//                        System.out.println("Diff is: " + diff);
                         return;
                     }
 
@@ -543,8 +553,13 @@ public class Main {
 //        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
     }
 
+    private static int getDiff(int one, int two) {
+        return Math.max(one, two) - Math.min(one, two);
+    }
+
     private static boolean isWithin(int one, int two, double within) {
         double diff = Math.max((double) one, (double) two) - Math.min((double) one, (double) two);
+        System.out.println(one + " and " + two + " diff = " + diff);
         return diff <= within;
     }
 
