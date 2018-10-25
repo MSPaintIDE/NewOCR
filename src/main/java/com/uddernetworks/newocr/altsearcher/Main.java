@@ -127,6 +127,20 @@ public class Main {
 
         AtomicBoolean first = new AtomicBoolean(true);
 
+        /*
+        if (databaseCharacter.getLetter() == ','
+                    || databaseCharacter.getLetter() == '.'
+                    || databaseCharacter.getLetter() == '_'
+                    || databaseCharacter.getLetter() == '`'
+                    || databaseCharacter.getLetter() == '\'') {
+
+                        return true;
+                    }
+         */
+
+        List<DatabaseCharacter> firstList = new LinkedList<>();
+        List<DatabaseCharacter> secondList = new LinkedList<>();
+
         BufferedImage finalInput = input;
         searchLines.values()
                 .stream()
@@ -136,58 +150,83 @@ public class Main {
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
                 .forEachOrdered(databaseCharacter -> {
-                    System.out.println("First = " + databaseCharacter.getLetter());
+                    if (false
+//                            databaseCharacter.getLetter() == ','
+                            || databaseCharacter.getLetter() == '.'
+                            || databaseCharacter.getLetter() == '_'
+                            || databaseCharacter.getLetter() == '`'
+//                            || databaseCharacter.getLetter() == '\''
+                    ) {
+                        secondList.add(databaseCharacter);
+                    } else {
+                        firstList.add(databaseCharacter);
+                    }
+                });
+
+        Arrays.asList(firstList, secondList)
+                .forEach(list -> {
+                    list.forEach(databaseCharacter -> {
+
+                        System.out.println("First = " + databaseCharacter.getLetter());
 //                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
 //                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
-                    double centerDiff = (databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter()) / 2 + databaseCharacter.getMinCenter();
-                    double threashold = Math.max(centerDiff * 2D, 2D);
+                        double centerDiff = (Math.abs(databaseCharacter.getMaxCenter()) - Math.abs(databaseCharacter.getMinCenter())) / 2 + Math.abs(databaseCharacter.getMinCenter());
+                        System.out.println(databaseCharacter.getMaxCenter() + " - " + (((double) databaseCharacter.getHeight() / 2) + databaseCharacter.getY()));
+//                        double centerDiff = databaseCharacter.getMaxCenter();
+                        double threashold = Math.max(Math.abs(centerDiff * 1.75D), 2D);
 //                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() - centerDiff), 0, finalInput.getWidth());
 
-                    System.out.println("\t\t\tthreashold = " + threashold);
+                        System.out.println("\t\t\tthreashold = " + threashold);
 //                    System.out.println("Min: " + databaseCharacter.getMinCenter());
 //                    System.out.println("Max: " + databaseCharacter.getMaxCenter());
 
-                    int potentialY = (int) (databaseCharacter.getY() - centerDiff);
+                        int potentialY = (int) (databaseCharacter.getY() - centerDiff);
+                        System.out.println("potentialY = " + potentialY);
+                        System.out.println("Max Center: " + databaseCharacter.getMaxCenter() + " Min Center: " + databaseCharacter.getMinCenter());
 
-                    Optional<Integer> tempp = lines.keySet()
-                            .stream()
-                            .filter(y -> isWithin(y, potentialY, threashold))
-                            .min(Comparator.comparing(y -> getDiff(y, potentialY)));
+                        Optional<Integer> tempp = lines.keySet()
+                                .stream()
+                                .filter(y -> isWithin(y, potentialY, threashold))
+                                .sorted(Comparator.comparing(y -> getDiff(y, potentialY)))
+                                .findFirst();
 
-                    System.out.println(lines.keySet()
-                            .stream()
-                            .filter(y -> isWithin(y, potentialY, threashold))
-                    .collect(Collectors.toList()));
+                        System.out.println(lines.keySet()
+                                .stream()
+                                .filter(y -> isWithin(y, potentialY, threashold))
+                                .sorted(Comparator.comparing(y -> getDiff(y, potentialY)))
+                                .collect(Collectors.toList()));
 
-                    int center = tempp.orElseGet(() -> {
-                        lines.put((int) (databaseCharacter.getY() - centerDiff), new LinkedList<>());
+                        int center = tempp.orElseGet(() -> {
+                            lines.put((int) (databaseCharacter.getY() - centerDiff), new LinkedList<>());
 
-                        if (first.get()) {
-                            colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
-                            colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+                            if (first.get()) {
+                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
 
-                            first.set(false);
-                        } else {
-                            colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
-                            colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+                                first.set(false);
+                            } else {
+                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+                            }
+
+                            return (int) (databaseCharacter.getY() - centerDiff);
+                        });
+
+                        System.out.println("centerDiff = " + centerDiff);
+                        System.out.println("center = " + center);
+
+                        double ratio = databaseCharacter.getAvgWidth() / databaseCharacter.getAvgHeight();
+                        System.out.println("Database ratio: " + ratio + " Real: " + databaseCharacter.getRatio() + " database:" + databaseCharacter.getAvgWidth() + " / " + databaseCharacter.getAvgHeight());
+
+                        double diff = Math.max(ratio, databaseCharacter.getRatio()) - Math.min(ratio, databaseCharacter.getRatio());
+                        if (diff > 0.2D) {
+                            return;
                         }
 
-                        return (int) (databaseCharacter.getY() - centerDiff);
-                    });
+                        lines.get(center).add(databaseCharacter);
 
-                    System.out.println("centerDiff = " + centerDiff);
-                    System.out.println("center = " + center);
-
-                    double ratio = databaseCharacter.getAvgWidth() / databaseCharacter.getAvgHeight();
-                    System.out.println("Database ratio: " + ratio + " Real: " + databaseCharacter.getRatio() + " database:" + databaseCharacter.getAvgWidth() + " / " + databaseCharacter.getAvgHeight());
-
-                    double diff = Math.max(ratio, databaseCharacter.getRatio()) - Math.min(ratio, databaseCharacter.getRatio());
-                    if (diff > 0.2D) {
-//                        System.out.println("Diff is: " + diff);
                         return;
-                    }
-
-                    lines.get(center).add(databaseCharacter);
+                    });
                 });
 
         // End ordering
