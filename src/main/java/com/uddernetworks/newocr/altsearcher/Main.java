@@ -521,8 +521,8 @@ public class Main {
 
                     System.out.println("current = " + searchCharacter.getKnownChar());
 
-                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
-                    if (inc >= 3) inc = 0;
+//                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
+//                    if (inc >= 3) inc = 0;
 
 //                    if (characterList != null) {
 //                        TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
@@ -555,29 +555,34 @@ public class Main {
 //                        makeImage(searchCharacter.getValues(), fileee.getName());
 //                    }
 
-                    try {
-                        String curr = current + "";
-                        switch (current) {
-                            case '"': curr = "apostraphe";
-                                break;
-                            case '\\': curr = "backslash";
-                                break;
-                            case '?': curr = "question";
-                                break;
-                            case '>': curr = "right";
-                                break;
-                            case '<': curr = "left";
-                                break;
-                            case '*': curr = "star";
-                                break;
-                            case '|': curr = "pipe";
-                                break;
-                            case ' ': curr = "space";
-                                break;
-                        }
+                    if (current == '%') {
+                        makeImage(searchCharacter.getValues(), "output\\percent_" + searchCharacter.getWidth() + "x" + searchCharacter.getHeight());
+                    }
 
-                        makeImage(searchCharacter.getValues(), "output\\charcater_" + curr);
-                    } catch (Exception ignore) {}
+//                    try {
+//                        String curr = current + "";
+//                        boolean upper = Character.isUpperCase(current);
+//                        switch (current) {
+//                            case '"': curr = "apostraphe";
+//                                break;
+//                            case '\\': curr = "backslash";
+//                                break;
+//                            case '?': curr = "question";
+//                                break;
+//                            case '>': curr = "right";
+//                                break;
+//                            case '<': curr = "left";
+//                                break;
+//                            case '*': curr = "star";
+//                                break;
+//                            case '|': curr = "pipe";
+//                                break;
+//                            case ' ': curr = "space";
+//                                break;
+//                        }
+//
+//                        makeImage(searchCharacter.getValues(), "output\\charcater_" + curr + (upper ? "_U" : ""));
+//                    } catch (Exception ignore) {}
 //
                         colorRow(finalInput, Color.RED, (int) (searchCharacter.getY() + topOfLetterToCenter), searchCharacter.getX(), searchCharacter.getWidth());
 //
@@ -738,7 +743,7 @@ public class Main {
                 }
             }
 
-            if (!searchCharacter.isProbablyApostraphe()) {
+            if (searchCharacter.isProbablyApostraphe()) {
                 SearchCharacter leftApostrophe = getLeftApostrophe(searchCharacters, searchCharacter).orElse(null);
                 if (leftApostrophe != null) {
                     System.out.println("Is probably apostraphe!");
@@ -1221,7 +1226,8 @@ public class Main {
                 baseCharacter.addDot(coordinates);
                 break;
             case PERCENTAGE_CIRCLE:
-                baseCharacter.addPercentageCircle(coordinates, adding.getY() + (adding.getHeight() / 2) < baseCharacter.getY() + (baseCharacter.getHeight() / 2));
+//                baseCharacter.addPercentageCircle(coordinates, adding.getY() + (adding.getHeight() / 2) < baseCharacter.getY() + (baseCharacter.getHeight() / 2));
+                baseCharacter.addPercentageCircle(coordinates, Main.isWithin(adding.getY(), baseCharacter.getY(), (double) baseCharacter.getHeight() / 10D));
                 break;
             case APOSTROPHE:
                 baseCharacter.addPercentageCircle(coordinates, false);
@@ -1292,8 +1298,6 @@ public class Main {
         return characters.parallelStream()
                 .filter(SearchCharacter::isProbablyApostraphe)
                 .filter(character -> character.getY() == rightApostrophe.getY())
-//                .filter(character -> character.getHeight() == rightApostrophe.getHeight()
-//                                    && character.getWidth() == rightApostrophe.getWidth())
                 .filter(character -> {
                     boolean[][] values = character.getValues();
                     boolean[][] values2 = rightApostrophe.getValues();
@@ -1307,14 +1311,10 @@ public class Main {
                     return true;
                 })
                 .filter(character -> {
-                    for (int i = 0; i < 10; i++) {
-                        System.out.println("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
-                    }
-
                     double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
                     double acceptedDiff = ((double) rightApostrophe.getWidth());
 //                    return xDiff < acceptedDiff;
-                    return isWithin(character.getX() + character.getWidth(), rightApostrophe.getX(), ((double) rightApostrophe.getWidth() * 1.5D) + 2D);
+                    return isWithin(character.getX() + character.getWidth(), rightApostrophe.getX(), ((double) rightApostrophe.getWidth() * 1.5D) + 3D);
                 })
                 .findFirst();
     }
