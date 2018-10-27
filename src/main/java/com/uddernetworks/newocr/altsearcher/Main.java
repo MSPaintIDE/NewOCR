@@ -151,11 +151,11 @@ public class Main {
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
                 .forEachOrdered(databaseCharacter -> {
                     if (false
-//                            databaseCharacter.getLetter() == ','
+                            || databaseCharacter.getLetter() == ','
                             || databaseCharacter.getLetter() == '.'
                             || databaseCharacter.getLetter() == '_'
                             || databaseCharacter.getLetter() == '`'
-//                            || databaseCharacter.getLetter() == '\''
+                            || databaseCharacter.getLetter() == '\''
                     ) {
                         secondList.add(databaseCharacter);
                     } else {
@@ -236,11 +236,18 @@ public class Main {
 
         // End ordering
 
-        System.out.println("lines = " + lines);
-
         Map<Integer, List<DatabaseCharacter>> sortedLines = new LinkedHashMap<>();
 
-        lines.keySet().stream().sorted().forEach(y -> sortedLines.put(y, lines.get(y)));
+        lines.keySet()
+                .stream()
+                .sorted()
+                .forEach(y -> {
+                    List<DatabaseCharacter> databaseCharacters = lines.get(y);
+                    databaseCharacters.sort(Comparator.comparingInt(DatabaseCharacter::getX));
+                    sortedLines.put(y, databaseCharacters);
+                });
+
+        System.out.println("lines = " + lines);
 
         sortedLines.values().forEach(line -> {
             if (line.isEmpty()) return;
@@ -312,6 +319,7 @@ public class Main {
 
         DatabaseCharacter prev = null;
         for (DatabaseCharacter databaseCharacter : line) {
+            System.out.println("databaseCharacter = " + databaseCharacter);
             if (prev == null) {
                 prev = databaseCharacter;
                 continue;
@@ -320,9 +328,11 @@ public class Main {
             int leftX = prev.getX() + prev.getWidth();
             int rightX = databaseCharacter.getX();
             double gap = rightX - leftX;
+            System.out.println("gap = " + gap);
 
             double ratio = space.getAvgWidth() / space.getAvgHeight();
-            double usedWidth = ratio * databaseCharacter.getHeight();
+            double usedWidth = ratio * fontSize;
+            System.out.println("usedWidth = " + usedWidth);
 
             int spaces = spaceRound(gap / usedWidth);
 
