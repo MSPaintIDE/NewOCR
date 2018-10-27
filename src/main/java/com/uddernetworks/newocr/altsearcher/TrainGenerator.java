@@ -9,8 +9,8 @@ import java.io.IOException;
 public class TrainGenerator {
 
     public static final int UPPER_FONT_BOUND = 90;
-//    public static final int LOWER_FONT_BOUND = 50;
-    public static final int LOWER_FONT_BOUND = 20;
+    public static final int LOWER_FONT_BOUND = 89;
+//    public static final int LOWER_FONT_BOUND = 20;
 
     public static void main(String[] args) {
 //        Main.trainString = "Fo";

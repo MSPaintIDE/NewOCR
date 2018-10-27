@@ -42,7 +42,7 @@ public class Main {
     private static int inc = 0;
 
     public static final boolean AVERAGE_DIFF = true; // true for average, false for max and min
-    public static String trainString = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
+    public static String trainString = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
     private static DatabaseManager databaseManager;
 
     private static int letterIndex = 0;
@@ -81,12 +81,12 @@ public class Main {
             long start = System.currentTimeMillis();
             generateFeatures(new File("E:\\NewOCR\\training.png"));
             System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
-//            System.exit(0);
+            System.exit(0);
         }
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HWTest.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\all.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -176,6 +176,7 @@ public class Main {
 //                        System.out.println(databaseCharacter.getMaxCenter() + " - " + (((double) databaseCharacter.getHeight() / 2) + databaseCharacter.getY()));
 //                        double centerDiff = databaseCharacter.getMaxCenter();
                         double threashold = Math.max(Math.abs(centerDiff * 1.1), 2D);
+
 //                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() - centerDiff), 0, finalInput.getWidth());
 
                         System.out.println("\t\t\tthreashold = " + threashold);
@@ -217,7 +218,7 @@ public class Main {
 //                        System.out.println("centerDiff = " + centerDiff);
 //                        System.out.println("center = " + center);
 
-                        colorRow(finalInput, Color.MAGENTA, potentialY, 0, finalInput.getWidth());
+//                        colorRow(finalInput, Color.MAGENTA, potentialY, 0, finalInput.getWidth());
 //                        System.out.println(databaseCharacter.getY() + " + " + centerDiff + " = " + (databaseCharacter.getY() + centerDiff));
 
                         double ratio = databaseCharacter.getAvgWidth() / databaseCharacter.getAvgHeight();
@@ -252,7 +253,7 @@ public class Main {
         sortedLines.values().forEach(line -> {
             if (line.isEmpty()) return;
             try {
-                line.addAll(getSpacesFor(line, line.get(0).getHeight()));
+                line.addAll(getSpacesFor(line, line.stream().mapToInt(DatabaseCharacter::getHeight).max().getAsInt()));
             } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -328,11 +329,11 @@ public class Main {
             int leftX = prev.getX() + prev.getWidth();
             int rightX = databaseCharacter.getX();
             double gap = rightX - leftX;
-            System.out.println("gap = " + gap);
+//            System.out.println("gap = " + gap);
 
             double ratio = space.getAvgWidth() / space.getAvgHeight();
             double usedWidth = ratio * fontSize;
-            System.out.println("usedWidth = " + usedWidth);
+//            System.out.println("usedWidth = " + usedWidth);
 
             int spaces = spaceRound(gap / usedWidth);
 
@@ -449,7 +450,7 @@ public class Main {
 
 //                System.out.println("\t\t\t" + line.size());
 
-                final boolean[] first = {false};
+                final boolean[] first = {true};
 
                 letterIndex = 0;
                 inc = 0;
@@ -481,7 +482,10 @@ public class Main {
 //                                    fontBounds.isInbetween(searchCharacter.getHeight()))
 //                            .forEach(fontBounds -> characterList.add(trainedCharacterDataList.get(fontBounds).get(index.getAndIncrement())));
 
+                    System.out.println("index at " + letterIndex + " is: " + trainString.charAt(letterIndex));
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
+
+//                    makeImage(searchCharacter.getValues(), current + "");
 
                     FontBounds currentFontBounds = trainedCharacterDataList.keySet()
                                     .stream()
@@ -515,8 +519,10 @@ public class Main {
                         searchCharacter.setKnownChar(current);
                     }
 
-//                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
-//                    if (inc >= 3) inc = 0;
+                    System.out.println("current = " + searchCharacter.getKnownChar());
+
+                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
+                    if (inc >= 3) inc = 0;
 
 //                    if (characterList != null) {
 //                        TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
@@ -538,16 +544,49 @@ public class Main {
 
 //                        System.out.println("\n");
 
-                        if (trainedSearchCharacter.getValue() == 'F' || trainedSearchCharacter.getValue() == 'o') {
-                            System.out.println(trainedSearchCharacter.getValue() + "\t" + topOfLetterToCenter + " (" + searchCharacter.getHeight() + ")");
+//                    System.out.println(trainedSearchCharacter.getValue());
+
+//                        if (trainedSearchCharacter.getValue() == 'F' || trainedSearchCharacter.getValue() == 'o') {
+//                            System.out.println(trainedSearchCharacter.getValue() + "\t" + topOfLetterToCenter + " (" + searchCharacter.getHeight() + ")");
+//                        }
+
+//                    File fileee = new File("E:\\NewOCR\\output\\" + searchCharacter.getWidth() + "x" + searchCharacter.getHeight() + ".png");
+//                    if (!fileee.exists()) {
+//                        makeImage(searchCharacter.getValues(), fileee.getName());
+//                    }
+
+                    try {
+                        String curr = current + "";
+                        switch (current) {
+                            case '"': curr = "apostraphe";
+                                break;
+                            case '\\': curr = "backslash";
+                                break;
+                            case '?': curr = "question";
+                                break;
+                            case '>': curr = "right";
+                                break;
+                            case '<': curr = "left";
+                                break;
+                            case '*': curr = "star";
+                                break;
+                            case '|': curr = "pipe";
+                                break;
+                            case ' ': curr = "space";
+                                break;
                         }
 
+                        makeImage(searchCharacter.getValues(), "output\\charcater_" + curr);
+                    } catch (Exception ignore) {}
+//
                         colorRow(finalInput, Color.RED, (int) (searchCharacter.getY() + topOfLetterToCenter), searchCharacter.getX(), searchCharacter.getWidth());
-
+//
                         trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
                         trainedSearchCharacter.setHasDot(searchCharacter.hasDot());
                         trainedSearchCharacter.setLetterMeta(searchCharacter.getLetterMeta());
 //                    }
+
+
 
                     if (letterIndex >= trainString.length()) {
                         letterIndex = 0;
@@ -664,6 +703,7 @@ public class Main {
 
             if (doDotStuff(searchCharacter, coordinates, searchCharacters)) return true;
             if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) return true;
+            if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) return true;
 
             Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
             if (possibleDot.isPresent()) {
@@ -693,6 +733,19 @@ public class Main {
                 possibleDot = getBottomColon(searchCharacters, searchCharacter);
                 if (possibleDot.isPresent()) {
                     combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON, LetterMeta.EVEN_DOTS);
+                    searchCharacters.remove(searchCharacter);
+                    return true;
+                }
+            }
+
+            if (!searchCharacter.isProbablyApostraphe()) {
+                SearchCharacter leftApostrophe = getLeftApostrophe(searchCharacters, searchCharacter).orElse(null);
+                if (leftApostrophe != null) {
+                    System.out.println("Is probably apostraphe!");
+                    System.out.println("leftApostrophe = " + leftApostrophe);
+                    combine(leftApostrophe, searchCharacter, coordinates, CombineMethod.APOSTROPHE, LetterMeta.QUOTE);
+                    leftApostrophe.setHasDot(true);
+                    searchCharacter.setHasDot(true);
                     searchCharacters.remove(searchCharacter);
                     return true;
                 }
@@ -744,6 +797,13 @@ public class Main {
                 using.setHeight(searchCharacter.getHeight());
                 using.setRatio(((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()));
 //                using.setCenterExact(searchCharacter.getY() + using.getCenter());
+
+                        if (character.getLetter() == '"') {
+                            System.out.println("\" IS " + value);
+                        } else if (character.getLetter() == '\'') {
+                            System.out.println("\' IS " + value);
+                        }
+
                 diffs.put(using, value);
             });
 
@@ -918,6 +978,7 @@ public class Main {
         return Math.max(num1, num2) - Math.min(num1, num2) <= amount;
     }
 
+    private static int ttttt =0;
     private static void makeImage(boolean[][] values, String name) {
         try {
             BufferedImage image = new BufferedImage(values[0].length, values.length, BufferedImage.TYPE_INT_ARGB);
@@ -928,6 +989,7 @@ public class Main {
                 }
             }
 
+//            if (name.matches("[^a-z]")) name = "" + ttttt++;
             ImageIO.write(image, "png", new File("E:\\NewOCR\\" + name + ".png"));
         } catch (IOException e) {
 //            e.printStackTrace();
@@ -1118,16 +1180,18 @@ public class Main {
         return false;
     }
 
-    /*private static boolean doApostropheStuff(SearchCharacter rightApostrophe, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
+    private static boolean doApostropheStuff(SearchCharacter rightApostrophe, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         if (!rightApostrophe.isProbablyApostraphe()) return false;
         SearchCharacter leftApostrophe = getLeftApostrophe(searchCharacters, rightApostrophe).orElse(null);
         if (leftApostrophe != null) {
-            combine(leftApostrophe, rightApostrophe, coordinates, CombineMethod.APOSTROPHE);
+            combine(leftApostrophe, rightApostrophe, coordinates, CombineMethod.APOSTROPHE, LetterMeta.QUOTE);
+            leftApostrophe.setHasDot(true);
+            rightApostrophe.setHasDot(true);
             return true;
         }
 
         return false;
-    }*/
+    }
 
     private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates, CombineMethod combineMethod, LetterMeta letterMeta) {
         int minX = Math.min(baseCharacter.getX(), adding.getX());
@@ -1220,6 +1284,37 @@ public class Main {
 //                    System.out.println("mod = " + mod);
 
                     return checkDifference(bottomCharacter.getY(), topDot.getY() + topDot.getHeight(), mod + 1);
+                })
+                .findFirst();
+    }
+
+    private static Optional<SearchCharacter> getLeftApostrophe(List<SearchCharacter> characters, SearchCharacter rightApostrophe) {
+        return characters.parallelStream()
+                .filter(SearchCharacter::isProbablyApostraphe)
+                .filter(character -> character.getY() == rightApostrophe.getY())
+//                .filter(character -> character.getHeight() == rightApostrophe.getHeight()
+//                                    && character.getWidth() == rightApostrophe.getWidth())
+                .filter(character -> {
+                    boolean[][] values = character.getValues();
+                    boolean[][] values2 = rightApostrophe.getValues();
+                    if (values.length != values2.length || values[0].length != values2[0].length) return false;
+                    for (int x = 0; x < values.length; x++) {
+                        for (int y = 0; y < values[x].length; y++) {
+                            if (values[x][y] != values2[x][y]) return false;
+                        }
+                    }
+
+                    return true;
+                })
+                .filter(character -> {
+                    for (int i = 0; i < 10; i++) {
+                        System.out.println("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
+                    }
+
+                    double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
+                    double acceptedDiff = ((double) rightApostrophe.getWidth());
+//                    return xDiff < acceptedDiff;
+                    return isWithin(character.getX() + character.getWidth(), rightApostrophe.getX(), ((double) rightApostrophe.getWidth() * 1.5D) + 2D);
                 })
                 .findFirst();
     }

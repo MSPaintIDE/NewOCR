@@ -7,7 +7,8 @@ public enum LetterMeta {
     EVEN_DOTS(1), // : =
     DOT_UNDER(2), // ! ?
     DOT_ABOVE(3), // ;
-    PERCENT(4);   // %
+    PERCENT(4),   // %
+    QUOTE(5);     // "
 
     private int id;
 

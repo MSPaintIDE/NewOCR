@@ -59,6 +59,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public boolean isProbablyApostraphe() {
         double ratio = (double) width / (double) height;
+//        System.out.println("ratio = " + ratio);
         return (ratio <= 0.375 && ratio >= 0.166) || (width == 1 && (height == 4 || height == 5));
     }
 
