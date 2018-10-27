@@ -170,17 +170,19 @@ public class Main {
                         System.out.println("First = " + databaseCharacter.getLetter());
 //                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
 //                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
-                        double centerDiff = (Math.abs(databaseCharacter.getMaxCenter()) - Math.abs(databaseCharacter.getMinCenter())) / 2 + Math.abs(databaseCharacter.getMinCenter());
-                        System.out.println(databaseCharacter.getMaxCenter() + " - " + (((double) databaseCharacter.getHeight() / 2) + databaseCharacter.getY()));
+                        double centerDiff = (databaseCharacter.getMaxCenter() < 0 && databaseCharacter.getMinCenter() < 0) ?
+                                databaseCharacter.getMaxCenter() + databaseCharacter.getMinCenter() :
+                                databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter();
+//                        System.out.println(databaseCharacter.getMaxCenter() + " - " + (((double) databaseCharacter.getHeight() / 2) + databaseCharacter.getY()));
 //                        double centerDiff = databaseCharacter.getMaxCenter();
-                        double threashold = Math.max(Math.abs(centerDiff * 1.75D), 2D);
+                        double threashold = Math.max(Math.abs(centerDiff * 1.1), 2D);
 //                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() - centerDiff), 0, finalInput.getWidth());
 
                         System.out.println("\t\t\tthreashold = " + threashold);
 //                    System.out.println("Min: " + databaseCharacter.getMinCenter());
 //                    System.out.println("Max: " + databaseCharacter.getMaxCenter());
 
-                        int potentialY = (int) (databaseCharacter.getY() - centerDiff);
+                        int potentialY = (int) (databaseCharacter.getY() + centerDiff);
                         System.out.println("potentialY = " + potentialY);
                         System.out.println("Max Center: " + databaseCharacter.getMaxCenter() + " Min Center: " + databaseCharacter.getMinCenter());
 
@@ -197,26 +199,29 @@ public class Main {
                                 .collect(Collectors.toList()));
 
                         int center = tempp.orElseGet(() -> {
-                            lines.put((int) (databaseCharacter.getY() - centerDiff), new LinkedList<>());
+                            lines.put(potentialY, new LinkedList<>());
 
-                            if (first.get()) {
-                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
-                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+//                            if (first.get()) {
+//                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+//                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+//
+//                                first.set(false);
+//                            } else {
+//                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+//                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+//                            }
 
-                                first.set(false);
-                            } else {
-                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
-                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
-                            }
-
-                            return (int) (databaseCharacter.getY() - centerDiff);
+                            return potentialY;
                         });
 
-                        System.out.println("centerDiff = " + centerDiff);
-                        System.out.println("center = " + center);
+//                        System.out.println("centerDiff = " + centerDiff);
+//                        System.out.println("center = " + center);
+
+                        colorRow(finalInput, Color.MAGENTA, potentialY, 0, finalInput.getWidth());
+//                        System.out.println(databaseCharacter.getY() + " + " + centerDiff + " = " + (databaseCharacter.getY() + centerDiff));
 
                         double ratio = databaseCharacter.getAvgWidth() / databaseCharacter.getAvgHeight();
-                        System.out.println("Database ratio: " + ratio + " Real: " + databaseCharacter.getRatio() + " database:" + databaseCharacter.getAvgWidth() + " / " + databaseCharacter.getAvgHeight());
+//                        System.out.println("Database ratio: " + ratio + " Real: " + databaseCharacter.getRatio() + " database:" + databaseCharacter.getAvgWidth() + " / " + databaseCharacter.getAvgHeight());
 
                         double diff = Math.max(ratio, databaseCharacter.getRatio()) - Math.min(ratio, databaseCharacter.getRatio());
                         if (diff > 0.2D) {
@@ -872,11 +877,11 @@ public class Main {
                     .collect(Collectors.toCollection(LinkedList::new));
         }
 
-        if (!temp.isEmpty()) {
-            for (int x = 0; x < testImageShit.getWidth(); x++) {
-                drawGuides(x, otherBetterY == -1 ? betterY : otherBetterY, Color.GREEN);
-            }
-        }
+//        if (!temp.isEmpty()) {
+//            for (int x = 0; x < testImageShit.getWidth(); x++) {
+//                drawGuides(x, otherBetterY == -1 ? betterY : otherBetterY, Color.GREEN);
+//            }
+//        }
 
         return temp;
     }
