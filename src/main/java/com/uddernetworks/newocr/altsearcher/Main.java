@@ -150,18 +150,23 @@ public class Main {
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
                 .forEachOrdered(databaseCharacter -> {
-                    if (false
-                            || databaseCharacter.getLetter() == ','
+                    if (       databaseCharacter.getLetter() == ','
                             || databaseCharacter.getLetter() == '.'
                             || databaseCharacter.getLetter() == '_'
                             || databaseCharacter.getLetter() == '`'
                             || databaseCharacter.getLetter() == '\''
+                            || databaseCharacter.getLetter() == '"'
+                            || databaseCharacter.getLetter() == '*'
+                            || databaseCharacter.getLetter() == '`'
                     ) {
                         secondList.add(databaseCharacter);
                     } else {
                         firstList.add(databaseCharacter);
                     }
                 });
+
+        System.out.println("firstList = " + firstList);
+        System.out.println("secondList = " + secondList);
 
         Arrays.asList(firstList, secondList)
                 .forEach(list -> {
@@ -710,9 +715,12 @@ public class Main {
             if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) return true;
             if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) return true;
 
-            Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, searchCharacter);
+            Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, /* Is the circle > */ searchCharacter);
             if (possibleDot.isPresent()) {
+                System.out.println("PERCENT PRESENT 1");
+                System.out.println("searchCharacters = " + searchCharacters);
                 combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE, LetterMeta.PERCENT);
+                System.out.println("searchCharacters = " + searchCharacters);
                 searchCharacters.remove(searchCharacter);
                 return true;
             }
@@ -824,11 +832,16 @@ public class Main {
         LinkedList<Map.Entry<DatabaseCharacter, Double>> entries = new LinkedList<>(sortByValue(diffs)
                 .entrySet());
 
+        System.out.println("entries = " + entries);
+
 //        System.out.println(entries);
 
 //        System.out.println("Got one: " + entries);
 
-        if (entries.size() < 2) return null;
+        if (entries.size() < 2) {
+            if (entries.size() == 1) return entries.removeFirst().getKey();
+            return null;
+        }
 
         DatabaseCharacter first = entries.removeFirst().getKey();
         DatabaseCharacter second = entries.removeFirst().getKey();
@@ -1174,8 +1187,10 @@ public class Main {
 
     private static boolean doPercentStuff(SearchCharacter percentDotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         if (!percentDotCharacter.isProbablyCircleOfPercent()) return false;
+        System.out.println("Is circle");
         SearchCharacter baseCharacter = getBaseForPercent(searchCharacters, percentDotCharacter).orElse(null);
         if (baseCharacter != null) {
+            System.out.println("NN");
             combine(baseCharacter, percentDotCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE, LetterMeta.PERCENT);
             baseCharacter.setHasDot(true);
             percentDotCharacter.setHasDot(true);
@@ -1199,6 +1214,7 @@ public class Main {
     }
 
     private static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates, CombineMethod combineMethod, LetterMeta letterMeta) {
+        System.out.println("Combining: " + letterMeta);
         int minX = Math.min(baseCharacter.getX(), adding.getX());
         int minY = Math.min(baseCharacter.getY(), adding.getY());
         int maxX = Math.max(baseCharacter.getX() + baseCharacter.getWidth(), adding.getX() + adding.getWidth());
