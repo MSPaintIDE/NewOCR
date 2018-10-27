@@ -85,7 +85,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\all.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\starTest.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -156,7 +156,6 @@ public class Main {
                             || databaseCharacter.getLetter() == '\''
                             || databaseCharacter.getLetter() == '"'
                             || databaseCharacter.getLetter() == '*'
-                            || databaseCharacter.getLetter() == '`'
                     ) {
                         secondList.add(databaseCharacter);
                     } else {
@@ -231,12 +230,11 @@ public class Main {
 
                         double diff = Math.max(ratio, databaseCharacter.getRatio()) - Math.min(ratio, databaseCharacter.getRatio());
                         if (diff > 0.2D) {
-                            return;
+                            System.err.println("Questionable ratio diff of " + diff + " on letter: " + databaseCharacter.getLetter() + " at (" + databaseCharacter.getX() + ", " + databaseCharacter.getY() + ")");
+//                            return;
                         }
 
                         lines.get(center).add(databaseCharacter);
-
-                        return;
                     });
                 });
 
@@ -656,6 +654,10 @@ public class Main {
 //        ImageIO.write(input, "png", new File("E:\\NewOCR\\output.png"));
     }
 
+    private static double getDiff(double one, double two) {
+        return Math.max(one, two) - Math.min(one, two);
+    }
+
     private static int getDiff(int one, int two) {
         return Math.max(one, two) - Math.min(one, two);
     }
@@ -837,37 +839,18 @@ public class Main {
             e.printStackTrace();
         }
 
-//        System.out.println(diffs);
+        // TODO: The following code can definitely be improved
 
+        List<Map.Entry<DatabaseCharacter, Double>> entries = new ArrayList<>(sortByValue(diffs).entrySet());
 
-//        System.out.println("diffs = " + diffs);
+        Map.Entry<DatabaseCharacter, Double> firstEntry = entries.get(0);
+        entries.removeIf(value -> !value.getValue().equals(firstEntry.getValue()));
 
-        LinkedList<Map.Entry<DatabaseCharacter, Double>> entries = new LinkedList<>(sortByValue(diffs)
-                .entrySet());
+        double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
 
-        System.out.println("entries = " + entries);
+        entries.sort(Comparator.comparingDouble(entry -> getDiff(searchRatio, entry.getKey().getAvgWidth() / entry.getKey().getAvgHeight())));
 
-//        System.out.println(entries);
-
-//        System.out.println("Got one: " + entries);
-
-        if (entries.size() < 2) {
-            if (entries.size() == 1) return entries.removeFirst().getKey();
-            return null;
-        }
-
-        DatabaseCharacter first = entries.removeFirst().getKey();
-        DatabaseCharacter second = entries.removeFirst().getKey();
-
-//        System.out.println(first.getLetter() + "\t\t" + (first.getAvgWidth() / first.getAvgHeight()) + " vs " + (second.getAvgWidth() / second.getAvgHeight()) + " REAL: " + ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight()));
-//        System.out.println("\t\t^ " + searchCharacter.getWidth()  + " x " + searchCharacter.getHeight());
-
-        System.out.println("\t\t\tFirst: min: " + first.getMinCenter() + " max: " + first.getMaxCenter());
-
-//        System.out.println(entries);
-//        System.out.println("\n");
-//        return entries.isEmpty() ? null : entries.getFirst().getKey(); // 017458380571894187 before 04165299523632378
-        return first; // 017458380571894187 before 04165299523632378
+        return entries.get(0).getKey();
     }
 
     private static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
