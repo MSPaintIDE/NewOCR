@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -125,7 +124,7 @@ public class Main {
 
         Map<Integer, List<DatabaseCharacter>> lines = new LinkedHashMap<>();
 
-        AtomicBoolean first = new AtomicBoolean(true);
+        AtomicInteger count = new AtomicInteger(0);
 
         /*
         if (databaseCharacter.getLetter() == ','
@@ -171,13 +170,14 @@ public class Main {
         Arrays.asList(firstList, secondList)
                 .forEach(list -> {
                     list.forEach(databaseCharacter -> {
-
+                        System.out.println("=================== " + databaseCharacter.getLetter() + " ===================");
                         System.out.println("First = " + databaseCharacter.getLetter());
 //                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
 //                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
                         double centerDiff = (databaseCharacter.getMaxCenter() < 0 && databaseCharacter.getMinCenter() < 0) ?
                                 databaseCharacter.getMaxCenter() + databaseCharacter.getMinCenter() :
                                 databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter();
+                        centerDiff /= 2;
 //                        System.out.println(databaseCharacter.getMaxCenter() + " - " + (((double) databaseCharacter.getHeight() / 2) + databaseCharacter.getY()));
 //                        double centerDiff = databaseCharacter.getMaxCenter();
                         double threashold = Math.max(Math.abs(centerDiff * 1.1), 2D);
@@ -188,8 +188,8 @@ public class Main {
 //                    System.out.println("Min: " + databaseCharacter.getMinCenter());
 //                    System.out.println("Max: " + databaseCharacter.getMaxCenter());
 
-                        int potentialY = (int) (databaseCharacter.getY() + centerDiff);
-                        System.out.println("potentialY = " + potentialY);
+                        int potentialY = (int) (databaseCharacter.getY() + centerDiff + databaseCharacter.getMinCenter());
+                        System.out.println(databaseCharacter.getY() + " + " + centerDiff + " = " + potentialY);
                         System.out.println("Max Center: " + databaseCharacter.getMaxCenter() + " Min Center: " + databaseCharacter.getMinCenter());
 
                         Optional<Integer> tempp = lines.keySet()
@@ -207,15 +207,15 @@ public class Main {
                         int center = tempp.orElseGet(() -> {
                             lines.put(potentialY, new LinkedList<>());
 
-//                            if (first.get()) {
-//                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
-//                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
-//
-//                                first.set(false);
-//                            } else {
-//                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
-//                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
-//                            }
+                            if (count.getAndIncrement() == 1) {
+                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+                                colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+                                colorRow(finalInput, Color.BLUE, potentialY, 0, finalInput.getWidth());
+                            } else {
+                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
+                                colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
+                                colorRow(finalInput, Color.ORANGE, potentialY, 0, finalInput.getWidth());
+                            }
 
                             return potentialY;
                         });
@@ -664,6 +664,19 @@ public class Main {
         double diff = Math.max((double) one, (double) two) - Math.min((double) one, (double) two);
         System.out.println(one + " and " + two + " diff = " + diff);
         return diff <= within;
+    }
+
+    private static double getDifferencesFrom2D(boolean[][] input1, boolean[][] input2) {
+        if (input1.length != input2.length) return 1D;
+        double result = 0;
+        for (int x = 0; x < input1.length; x++) {
+            for (int y = 0; y < input1[0].length; y++) {
+                if (input1[x][y] != input2[x][y]) result++;
+            }
+        }
+
+        System.out.println("result = " + result + " / (" + input1.length + " * " + input1[0].length + ")");
+        return result / ((double) input1.length * (double) input1[0].length);
     }
 
     private static double[] getDifferencesFrom(double[] input1, double[] input2) {
@@ -1318,13 +1331,19 @@ public class Main {
                     boolean[][] values = character.getValues();
                     boolean[][] values2 = rightApostrophe.getValues();
                     if (values.length != values2.length || values[0].length != values2[0].length) return false;
-                    for (int x = 0; x < values.length; x++) {
-                        for (int y = 0; y < values[x].length; y++) {
-                            if (values[x][y] != values2[x][y]) return false;
-                        }
-                    }
+//                    for (int x = 0; x < values.length; x++) {
+//                        for (int y = 0; y < values[x].length; y++) {
+//                            if (values[x][y] != values2[x][y]) return false;
+//                        }
+//                    }
 
-                    return true;
+                    double diff = getDifferencesFrom2D(values, values2);
+                    System.out.println("===============================");
+                    for (int i = 0; i < 10; i++) {
+                        System.out.println("diff = " + diff);
+                    }
+                    System.out.println("===============================");
+                    return diff <= 0.05; // If it's at least 5% similar
                 })
                 .filter(character -> {
                     double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
