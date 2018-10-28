@@ -86,7 +86,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\starTest.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\all.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -662,8 +662,12 @@ public class Main {
 
     private static boolean isWithin(int one, int two, double within) {
         double diff = Math.max((double) one, (double) two) - Math.min((double) one, (double) two);
-        System.out.println(one + " and " + two + " diff = " + diff);
         return diff <= within;
+    }
+
+    private static boolean isWithin(int one, int two, double lowerBound, double upperBound) {
+        double diff = Math.max((double) one, (double) two) - Math.min((double) one, (double) two);
+        return diff <= upperBound && lowerBound <= diff;
     }
 
     private static double getDifferencesFrom2D(boolean[][] input1, boolean[][] input2) {
@@ -1331,7 +1335,7 @@ public class Main {
                     double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
                     double acceptedDiff = ((double) rightApostrophe.getWidth());
 //                    return xDiff < acceptedDiff;
-                    return isWithin(character.getX() + character.getWidth(), rightApostrophe.getX(), ((double) rightApostrophe.getWidth() * 1.1D) + 3D);
+                    return isWithin(character.getX() + character.getWidth(), rightApostrophe.getX(), rightApostrophe.getWidth() - 1D, ((double) rightApostrophe.getWidth() * 1.1D) + 3D);
                 })
                 .findFirst();
     }
