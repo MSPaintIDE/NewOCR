@@ -42,6 +42,7 @@ public class Main {
 
     public static final boolean AVERAGE_DIFF = true; // true for average, false for max and min
     public static String trainString = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
+    public static String noRoundDownSpace = "!";
     private static DatabaseManager databaseManager;
 
     private static int letterIndex = 0;
@@ -323,22 +324,19 @@ public class Main {
 
         DatabaseCharacter prev = null;
         for (DatabaseCharacter databaseCharacter : line) {
-            System.out.println("databaseCharacter = " + databaseCharacter);
             if (prev == null) {
                 prev = databaseCharacter;
                 continue;
             }
 
-            int leftX = prev.getX() + prev.getWidth();
+            int leftX = prev.getX() + prev.getWidth() + 1;
             int rightX = databaseCharacter.getX();
             double gap = rightX - leftX;
-//            System.out.println("gap = " + gap);
 
             double ratio = space.getAvgWidth() / space.getAvgHeight();
             double usedWidth = ratio * fontSize;
-//            System.out.println("usedWidth = " + usedWidth);
 
-            int spaces = spaceRound(gap / usedWidth);
+            int spaces = noRoundDownSpace.contains(databaseCharacter.getLetter() + "") ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
 
             for (int i = 0; i < spaces; i++) {
                 DatabaseCharacter insertingSpace = space.copy();
@@ -843,6 +841,7 @@ public class Main {
 
         List<Map.Entry<DatabaseCharacter, Double>> entries = new ArrayList<>(sortByValue(diffs).entrySet());
 
+        if (entries.size() == 0) return null;
         Map.Entry<DatabaseCharacter, Double> firstEntry = entries.get(0);
         entries.removeIf(value -> !value.getValue().equals(firstEntry.getValue()));
 
@@ -1332,7 +1331,7 @@ public class Main {
                     double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
                     double acceptedDiff = ((double) rightApostrophe.getWidth());
 //                    return xDiff < acceptedDiff;
-                    return isWithin(character.getX() + character.getWidth(), rightApostrophe.getX(), ((double) rightApostrophe.getWidth() * 1.5D) + 3D);
+                    return isWithin(character.getX() + character.getWidth(), rightApostrophe.getX(), ((double) rightApostrophe.getWidth() * 1.1D) + 3D);
                 })
                 .findFirst();
     }
