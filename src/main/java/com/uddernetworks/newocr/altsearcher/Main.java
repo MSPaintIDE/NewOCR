@@ -86,7 +86,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\all.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\trainingDash.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -174,7 +174,8 @@ public class Main {
                         System.out.println("First = " + databaseCharacter.getLetter());
 //                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
 //                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
-                        double centerDiff = (databaseCharacter.getMaxCenter() < 0 && databaseCharacter.getMinCenter() < 0) ?
+                        boolean subtract = databaseCharacter.getMaxCenter() < 0 && databaseCharacter.getMinCenter() < 0;
+                        double centerDiff = subtract ?
                                 databaseCharacter.getMaxCenter() + databaseCharacter.getMinCenter() :
                                 databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter();
                         centerDiff /= 2;
@@ -188,8 +189,7 @@ public class Main {
 //                    System.out.println("Min: " + databaseCharacter.getMinCenter());
 //                    System.out.println("Max: " + databaseCharacter.getMaxCenter());
 
-                        int potentialY = (int) (databaseCharacter.getY() + centerDiff + databaseCharacter.getMinCenter());
-                        System.out.println(databaseCharacter.getY() + " + " + centerDiff + " = " + potentialY);
+                        int potentialY = (int) (databaseCharacter.getY() + centerDiff + (databaseCharacter.getMinCenter() > 0 ? databaseCharacter.getMinCenter() : 0));
                         System.out.println("Max Center: " + databaseCharacter.getMaxCenter() + " Min Center: " + databaseCharacter.getMinCenter());
 
                         Optional<Integer> tempp = lines.keySet()
@@ -442,7 +442,7 @@ public class Main {
 
         for (Pair<Integer, Integer> lineBound : lineBounds) {
             int lineHeight = lineBound.getValue() - lineBound.getKey();
-            System.out.println("\t\t\tlineHeight = " + lineHeight);
+//            System.out.println("\t\t\tlineHeight = " + lineHeight);
             List<SearchCharacter> line = findCharacterAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
 
 //            System.out.println("line = " + line.size());
@@ -483,7 +483,6 @@ public class Main {
 //                                    fontBounds.isInbetween(searchCharacter.getHeight()))
 //                            .forEach(fontBounds -> characterList.add(trainedCharacterDataList.get(fontBounds).get(index.getAndIncrement())));
 
-                    System.out.println("index at " + letterIndex + " is: " + trainString.charAt(letterIndex));
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
 
 //                    makeImage(searchCharacter.getValues(), current + "");
@@ -519,8 +518,6 @@ public class Main {
                     } else {
                         searchCharacter.setKnownChar(current);
                     }
-
-                    System.out.println("current = " + searchCharacter.getKnownChar());
 
 //                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
 //                    if (inc >= 3) inc = 0;
@@ -626,23 +623,27 @@ public class Main {
         trainedCharacterDataList
                 .forEach((fontBounds, databaseTrainedCharacters) -> databaseTrainedCharacters
                         .parallelStream().forEach(databaseTrainedCharacter -> {
-                            if (databaseTrainedCharacter.isEmpty()) return;
-            databaseTrainedCharacter.finishRecalculations();
-            char letter = databaseTrainedCharacter.getValue();
+                            try {
+                                if (databaseTrainedCharacter.isEmpty()) return;
+                                databaseTrainedCharacter.finishRecalculations();
+                                char letter = databaseTrainedCharacter.getValue();
 
-            Future databaseFuture = databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont());
-            while (!databaseFuture.isDone()) {
-            }
+                                Future databaseFuture = databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont());
+                                while (!databaseFuture.isDone()) {
+                                }
 
-            databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' ');
-            while (!databaseFuture.isDone()) {
-            }
+                                databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' ');
+                                while (!databaseFuture.isDone()) {
+                                }
 
-            if (letter != ' ') {
-                databaseFuture = databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
-                while (!databaseFuture.isDone()) {
-                }
-            }
+                                if (letter != ' ') {
+                                    databaseFuture = databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
+                                    while (!databaseFuture.isDone()) {
+                                    }
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
         }));
 
 //        System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
@@ -828,11 +829,11 @@ public class Main {
                 using.setRatio(((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()));
 //                using.setCenterExact(searchCharacter.getY() + using.getCenter());
 
-                        if (character.getLetter() == '"') {
-                            System.out.println("\" IS " + value);
-                        } else if (character.getLetter() == '\'') {
-                            System.out.println("\' IS " + value);
-                        }
+//                        if (character.getLetter() == '"') {
+//                            System.out.println("\" IS " + value);
+//                        } else if (character.getLetter() == '\'') {
+//                            System.out.println("\' IS " + value);
+//                        }
 
                 diffs.put(using, value);
             });
@@ -844,14 +845,18 @@ public class Main {
         // TODO: The following code can definitely be improved
 
         List<Map.Entry<DatabaseCharacter, Double>> entries = new ArrayList<>(sortByValue(diffs).entrySet());
+        System.out.println("1 entries = " + entries);
 
         if (entries.size() == 0) return null;
         Map.Entry<DatabaseCharacter, Double> firstEntry = entries.get(0);
         entries.removeIf(value -> !value.getValue().equals(firstEntry.getValue()));
+        System.out.println("2 entries = " + entries);
 
         double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
 
         entries.sort(Comparator.comparingDouble(entry -> getDiff(searchRatio, entry.getKey().getAvgWidth() / entry.getKey().getAvgHeight())));
+
+        System.out.println("3 entries = " + entries);
 
         return entries.get(0).getKey();
     }

@@ -110,6 +110,10 @@ public class DatabaseManager {
     }
 
     public Future addLetterSegments(char letter, int minFontSize, int maxFontSize, double[] segments) {
+        if (letter == '-') {
+            System.out.println("[" + minFontSize + "-" + maxFontSize + "] Dash: " + Arrays.toString(segments));
+        }
+
         return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement addLetterSegment = connection.prepareStatement(this.addLetterSegment)) {

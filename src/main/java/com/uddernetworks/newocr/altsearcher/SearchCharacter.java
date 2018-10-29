@@ -20,7 +20,9 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int height;
     private boolean hasDot;
     private LetterMeta letterMeta = LetterMeta.NONE;
-    private Map<boolean[][], Integer> segments = new LinkedHashMap<>();
+    public LinkedHashMap<boolean[][], Integer> segments = new LinkedHashMap<>();
+//    private List<Double> segmentPercentages = new LinkedList<>(); // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
+//    private double[] segmentPercentagesArray;
     private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
 
     public SearchCharacter(List<Map.Entry<Integer, Integer>> coordinates) {
@@ -210,7 +212,13 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
                 .flatMap(Main::getVerticalHalf)
                 .forEach(section -> {
                     int i = index.getAndIncrement();
-                    if (section == null) return;
+                    if (section == null) {
+//                        addSegment(get2DFilledArray(true, 8 + 9, 1), 8 + 9);
+                        addPlaceholder();
+                        addPlaceholder();
+                        return;
+                    }
+
                     Main.getDiagonal(section, i == 1 || i == 2).forEach(this::addSegment);
                 });
 
@@ -225,26 +233,70 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
         Main.getHorizontalThird(this.values).forEach(values ->
                 Main.getVerticalThird(values).forEach(nineth -> {
-                    if (nineth == null) return;
+                    if (nineth == null) {
+//                        addSegment(get2DFilledArray(true, 8 + 9, 1), 8 + 9);
+                        addPlaceholder();
+                        return;
+                    }
+
                     addSegment(nineth, nineth.length * nineth[0].length);
                 }));
     }
 
+    private boolean[][] get2DFilledArray(boolean value, int width, int height) {
+        boolean[][] ret = new boolean[height][];
+        for (int y = 0; y < height; y++) {
+            ret[y] = getFilledArray(value, width);
+        }
+
+        return ret;
+    }
+
+    private boolean[] getFilledArray(boolean value, int size) {
+        boolean[] ret = new boolean[size];
+        Arrays.fill(ret, value);
+        return ret;
+    }
+
     public void analyzeSlices() {
         AtomicInteger temp = new AtomicInteger();
+        this.segmentPercentages = new double[8 + 9];
         this.segments.forEach((segment, size) -> {
+            if (segment == null || size == -1) {
+                this.segmentPercentages[temp.getAndIncrement()] = 1;
+                return;
+            }
+
             double amountTrue = Arrays.stream(segment)
                     .flatMap(array -> IntStream.range(0, array.length)
                             .mapToObj(i -> array[i]))
                     .filter(Boolean::booleanValue)
                     .count();
 
-            this.segmentPercentages[temp.getAndIncrement()] = size == 0 ? 0.5 : amountTrue / (double) size; // TODO: Not sure if 0.5 is the best
+//            System.out.println("amountTrue = " + amountTrue + "/" + size);
+
+            double val = size == 0 ? 1 : amountTrue / (double) size;
+//            if (val != 1) System.out.println("\t\t\t\tNot 1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+//            this.segmentPercentages.add(val); // TODO: Not sure if 0.5 is the best
+            this.segmentPercentages[temp.getAndIncrement()] = val;
         });
+
+//        this.segmentPercentagesArray = this.segmentPercentages.stream().mapToDouble(t -> t).toArray();
+
+//        System.out.println("\t\t\t\t\t\t\tsegmentPercentages = " + Arrays.toString(segmentPercentages));
     }
 
     public void addSegment(boolean[][] segment, int size) {
+//        System.out.println("(" + width + "x" + height + ") Adding size: " + size + " = " + Arrays.deepToString(segment));
         this.segments.put(segment, size);
+    }
+
+    public void addPlaceholder() {
+        this.segments.put(new boolean[0][], -1);
+//        Map.Entry<boolean[][], Integer> first = this.segments.entrySet().stream().findFirst().orElseGet(() -> {
+//            return new AbstractMap.SimpleEntry<>(get2DFilledArray(true, , ))
+//        });
+//        this.segments.put(get2DFilledArray(true, first.getKey()[0].length, first.getKey().length), first.getValue());
     }
 
     public Map<boolean[][], Integer> getSegments() {
@@ -252,6 +304,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     public double[] getSegmentPercentages() {
+//        return this.segmentPercentagesArray;
         return this.segmentPercentages;
     }
 
