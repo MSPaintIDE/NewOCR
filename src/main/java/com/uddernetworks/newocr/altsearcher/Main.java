@@ -86,7 +86,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\alphabet72.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\HWTest.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -127,17 +127,6 @@ public class Main {
 
         AtomicInteger count = new AtomicInteger(0);
 
-        /*
-        if (databaseCharacter.getLetter() == ','
-                    || databaseCharacter.getLetter() == '.'
-                    || databaseCharacter.getLetter() == '_'
-                    || databaseCharacter.getLetter() == '`'
-                    || databaseCharacter.getLetter() == '\'') {
-
-                        return true;
-                    }
-         */
-
         List<DatabaseCharacter> firstList = new LinkedList<>();
         List<DatabaseCharacter> secondList = new LinkedList<>();
 
@@ -164,45 +153,24 @@ public class Main {
                     }
                 });
 
-        System.out.println("firstList = " + firstList);
-        System.out.println("secondList = " + secondList);
-
         Arrays.asList(firstList, secondList)
                 .forEach(list -> {
                     list.forEach(databaseCharacter -> {
-                        System.out.println("=================== " + databaseCharacter.getLetter() + " ===================");
-                        System.out.println("First = " + databaseCharacter.getLetter());
-//                    colorRow(finalInput, Color.RED, (int) (databaseCharacter.getY() + databaseCharacter.getMinCenter()), 0, finalInput.getWidth());
-//                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() + databaseCharacter.getMaxCenter()), 0, finalInput.getWidth());
                         boolean subtract = databaseCharacter.getMaxCenter() < 0 && databaseCharacter.getMinCenter() < 0;
                         double centerDiff = subtract ?
                                 databaseCharacter.getMaxCenter() + databaseCharacter.getMinCenter() :
                                 databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter();
                         centerDiff /= 2;
-//                        System.out.println(databaseCharacter.getMaxCenter() + " - " + (((double) databaseCharacter.getHeight() / 2) + databaseCharacter.getY()));
-//                        double centerDiff = databaseCharacter.getMaxCenter();
                         double threashold = Math.max(Math.abs(centerDiff * 1.1), 2D);
 
-//                    colorRow(finalInput, Color.GREEN, (int) (databaseCharacter.getY() - centerDiff), 0, finalInput.getWidth());
-
-                        System.out.println("\t\t\tthreashold = " + threashold);
-//                    System.out.println("Min: " + databaseCharacter.getMinCenter());
-//                    System.out.println("Max: " + databaseCharacter.getMaxCenter());
 
                         int potentialY = (int) (databaseCharacter.getY() + centerDiff + (databaseCharacter.getMinCenter() > 0 ? databaseCharacter.getMinCenter() : 0));
-                        System.out.println("Max Center: " + databaseCharacter.getMaxCenter() + " Min Center: " + databaseCharacter.getMinCenter());
 
                         Optional<Integer> tempp = lines.keySet()
                                 .stream()
                                 .filter(y -> isWithin(y, potentialY, threashold))
                                 .sorted(Comparator.comparing(y -> getDiff(y, potentialY)))
                                 .findFirst();
-
-                        System.out.println(lines.keySet()
-                                .stream()
-                                .filter(y -> isWithin(y, potentialY, threashold))
-                                .sorted(Comparator.comparing(y -> getDiff(y, potentialY)))
-                                .collect(Collectors.toList()));
 
                         int center = tempp.orElseGet(() -> {
                             lines.put(potentialY, new LinkedList<>());
@@ -220,19 +188,11 @@ public class Main {
                             return potentialY;
                         });
 
-//                        System.out.println("centerDiff = " + centerDiff);
-//                        System.out.println("center = " + center);
-
-//                        colorRow(finalInput, Color.MAGENTA, potentialY, 0, finalInput.getWidth());
-//                        System.out.println(databaseCharacter.getY() + " + " + centerDiff + " = " + (databaseCharacter.getY() + centerDiff));
-
                         double ratio = databaseCharacter.getAvgWidth() / databaseCharacter.getAvgHeight();
-//                        System.out.println("Database ratio: " + ratio + " Real: " + databaseCharacter.getRatio() + " database:" + databaseCharacter.getAvgWidth() + " / " + databaseCharacter.getAvgHeight());
 
                         double diff = Math.max(ratio, databaseCharacter.getRatio()) - Math.min(ratio, databaseCharacter.getRatio());
                         if (diff > 0.2D) {
                             System.err.println("Questionable ratio diff of " + diff + " on letter: " + databaseCharacter.getLetter() + " at (" + databaseCharacter.getX() + ", " + databaseCharacter.getY() + ")");
-//                            return;
                         }
 
                         lines.get(center).add(databaseCharacter);
@@ -262,13 +222,6 @@ public class Main {
                 e.printStackTrace();
             }
         });
-
-//        System.out.println("lines = " + lines);
-//        lines.forEach((y, line) -> {
-//            line.forEach(cha -> {
-//                System.out.println(cha.getX() + ": " + cha.getLetter());
-//            });
-//        });
 
         lines.clear();
         sortedLines.keySet().stream().sorted().forEach(y -> {
@@ -416,40 +369,18 @@ public class Main {
 //        searchCharacters.stream().sorted().forEach(searchCharacter -> searchCharacter.drawTo(finalInput));
         Collections.sort(searchCharacters);
 
-
-        System.out.println("searchCharacters = " + searchCharacters.size());
-
-//        printOut(valuesClone);
-
         System.out.println("TOTAL CHARACTERS: " + trainString.length());
 
         // topY, bottomY
         List<Pair<Integer, Integer>> lineBounds = getLineBoundsForTesting(valuesClone);
-        System.out.println("lineBounds = " + lineBounds);
-
-//        lineBounds.forEach(pair -> {
-//            int topY = pair.getKey();
-//            int bottomY = pair.getValue();
-//            colorRow(finalInput, Color.GREEN, topY, 0, finalInput.getWidth());
-//            colorRow(finalInput, Color.GREEN, bottomY, 0, finalInput.getWidth());
-//        });
-
-        System.out.println("\t\t\t\t\t\t\t111 Has dots: " + searchCharacters.stream().filter(searchCharacter -> !searchCharacter.hasDot()).count());
 
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
 
-        System.out.println("\t\t\t\t\t\t\t222 Has dots: " + searchCharactersCopy.stream().filter(searchCharacter -> !searchCharacter.hasDot()).count());
-
         for (Pair<Integer, Integer> lineBound : lineBounds) {
             int lineHeight = lineBound.getValue() - lineBound.getKey();
-//            System.out.println("\t\t\tlineHeight = " + lineHeight);
             List<SearchCharacter> line = findCharacterAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
 
-//            System.out.println("line = " + line.size());
-
             if (!line.isEmpty()) {
-
-//                System.out.println("\t\t\t" + line.size());
 
                 final boolean[] first = {true};
 
@@ -465,27 +396,7 @@ public class Main {
                         inc = 0;
                     }
 
-//                    List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet().stream().filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight())).findFirst().orElse(null));
-//                    List<TrainedCharacterData> characterList = trainedCharacterDataList.get(trainedCharacterDataList.keySet()
-//                            .stream()
-//                            .filter(fontBounds ->
-//                                    fontBounds.isInbetween(searchCharacter.getHeight()))
-//                            .findFirst()
-//                            .orElse(null));
-
-//                    List<TrainedCharacterData> characterList = new LinkedList<>();
-
-
-
-//                    trainedCharacterDataList.keySet()
-//                            .stream()
-//                            .filter(fontBounds ->
-//                                    fontBounds.isInbetween(searchCharacter.getHeight()))
-//                            .forEach(fontBounds -> characterList.add(trainedCharacterDataList.get(fontBounds).get(index.getAndIncrement())));
-
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
-
-//                    makeImage(searchCharacter.getValues(), current + "");
 
                     FontBounds currentFontBounds = trainedCharacterDataList.keySet()
                                     .stream()
@@ -511,7 +422,6 @@ public class Main {
                         letterIndex++;
                         return;
                     } else if (letterIndex == trainString.length()) {
-//                        TrainedCharacterData trainedCharacterData = getTrainedData(' ', characterList);
                         spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX.get(), lineHeight);
                         letterIndex = 0;
                         return;
@@ -522,65 +432,11 @@ public class Main {
                     searchCharacter.drawTo(finalInput, TEMP[inc++]);
                     if (inc >= 3) inc = 0;
 
-//                    if (characterList != null) {
-//                        TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
                     trainedSearchCharacter.recalculateTo(searchCharacter);
-//                        trainedCharacterData.recalculateCenter((double) searchCharacter.getY() - (double) lineBound.getKey()); // This gets just from top
-
-//                        System.out.println("=====\t" + trainedCharacterData.getValue() + "\t=====");
 
                         double halfOfLineHeight = ((double) lineBound.getValue() - (double) lineBound.getKey()) / 2;
-//                        System.out.println("halfOfLineHeight = " + halfOfLineHeight);
-//                        if (halfOfLineHeight < 0) System.out.println("SHIT");
                         double middleToTopChar = (double) searchCharacter.getY() - (double) lineBound.getKey();
-//                        System.out.println("middleToTopChar = " + middleToTopChar);
-//                        if (middleToTopChar < 0) System.out.println("Other SHIT: " + middleToTopChar);
                         double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
-//                        System.out.println("topOfLetterToCenter = " + topOfLetterToCenter);
-
-//                        if (topOfLetterToCenter < 0) System.out.println("two SHIT");
-
-//                        System.out.println("\n");
-
-//                    System.out.println(trainedSearchCharacter.getValue());
-
-//                        if (trainedSearchCharacter.getValue() == 'F' || trainedSearchCharacter.getValue() == 'o') {
-//                            System.out.println(trainedSearchCharacter.getValue() + "\t" + topOfLetterToCenter + " (" + searchCharacter.getHeight() + ")");
-//                        }
-
-//                    File fileee = new File("E:\\NewOCR\\output\\" + searchCharacter.getWidth() + "x" + searchCharacter.getHeight() + ".png");
-//                    if (!fileee.exists()) {
-//                        makeImage(searchCharacter.getValues(), fileee.getName());
-//                    }
-
-//                    if (current == '%') {
-//                        makeImage(searchCharacter.getValues(), "output\\percent_" + searchCharacter.getWidth() + "x" + searchCharacter.getHeight());
-//                    }
-
-//                    try {
-//                        String curr = current + "";
-//                        boolean upper = Character.isUpperCase(current);
-//                        switch (current) {
-//                            case '"': curr = "apostraphe";
-//                                break;
-//                            case '\\': curr = "backslash";
-//                                break;
-//                            case '?': curr = "question";
-//                                break;
-//                            case '>': curr = "right";
-//                                break;
-//                            case '<': curr = "left";
-//                                break;
-//                            case '*': curr = "star";
-//                                break;
-//                            case '|': curr = "pipe";
-//                                break;
-//                            case ' ': curr = "space";
-//                                break;
-//                        }
-//
-//                        makeImage(searchCharacter.getValues(), "output\\charcater_" + curr + (upper ? "_U" : ""));
-//                    } catch (Exception ignore) {}
 //
                         colorRow(finalInput, Color.RED, (int) (searchCharacter.getY() + topOfLetterToCenter), searchCharacter.getX(), searchCharacter.getWidth());
 //
@@ -606,15 +462,17 @@ public class Main {
 
         System.out.println(searchCharacters.size() + " characters found");
 
+        /*
         long start = System.currentTimeMillis();
         System.out.println("Writing output...");
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\outputNEW.png"));
+//        ImageIO.write(input, "png", new File("E:\\NewOCR\\outputNEW.png"));
         System.out.println("Wrote output in " + (System.currentTimeMillis() - start) + "ms");
+        */
 
 //        System.exit(0);
 
         System.out.println("Writing data to database...");
-        start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
 
 //        trainedCharacterDataList.values().stream().flatMap(List::stream).forEach(TrainedCharacterData::finishRecalculations);
 
@@ -647,7 +505,7 @@ public class Main {
                             }
         }));
 
-//        System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
+        System.out.println("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
 
 //        trainedCharacterData.forEach(TrainedCharacterData::preformRecalculations);
 
@@ -681,7 +539,6 @@ public class Main {
             }
         }
 
-        System.out.println("result = " + result + " / (" + input1.length + " * " + input1[0].length + ")");
         return result / ((double) input1.length * (double) input1[0].length);
     }
 
@@ -700,7 +557,6 @@ public class Main {
     }
 
     private static void scanFrom(BufferedImage image, int x, int y, Color color, List<Map.Entry<Integer, Integer>> coordinates) {
-//        System.out.println("(" + x + ", " + y + ")");
         if (image.getRGB(x, y) == color.getRGB()) {
             image.setRGB(x, y, Color.WHITE.getRGB());
             coordinates.add(new AbstractMap.SimpleEntry<>(x, y));
@@ -736,10 +592,7 @@ public class Main {
 
             Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, /* Is the circle > */ searchCharacter);
             if (possibleDot.isPresent()) {
-                System.out.println("PERCENT PRESENT 1");
-                System.out.println("searchCharacters = " + searchCharacters);
                 combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE, LetterMeta.PERCENT);
-                System.out.println("searchCharacters = " + searchCharacters);
                 searchCharacters.remove(searchCharacter);
                 return true;
             }
@@ -773,8 +626,6 @@ public class Main {
             if (searchCharacter.isProbablyApostraphe()) {
                 SearchCharacter leftApostrophe = getLeftApostrophe(searchCharacters, searchCharacter).orElse(null);
                 if (leftApostrophe != null) {
-                    System.out.println("Is probably apostraphe!");
-                    System.out.println("leftApostrophe = " + leftApostrophe);
                     combine(leftApostrophe, searchCharacter, coordinates, CombineMethod.APOSTROPHE, LetterMeta.QUOTE);
                     leftApostrophe.setHasDot(true);
                     searchCharacter.setHasDot(true);
@@ -797,19 +648,11 @@ public class Main {
         return Arrays.stream(FONT_BOUNDS).filter(fontBounds -> fontBounds.isInbetween(fontSize)).findFirst().get();
     }
 
-    private static int doneee = 0;
-
     private static DatabaseCharacter getCharacterFor(SearchCharacter searchCharacter) {
         Map<DatabaseCharacter, Double> diffs = new HashMap<>(); // The lower value the better
 
-        System.out.println("Height: " + searchCharacter.getHeight() + " " + matchNearestFontSize(searchCharacter.getHeight()));
-
         try {
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments(matchNearestFontSize(searchCharacter.getHeight())).get());
-            System.out.println(data.size());
-            System.out.println(searchCharacter.getHeight() + "] data = " + data);
-
-//            System.out.println("Search: " + searchCharacter.hasDot());
 
             data.stream()
                     .filter(character -> character.hasDot() == searchCharacter.hasDot())
@@ -830,12 +673,6 @@ public class Main {
                 using.setRatio(((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()));
 //                using.setCenterExact(searchCharacter.getY() + using.getCenter());
 
-//                        if (character.getLetter() == '"') {
-//                            System.out.println("\" IS " + value);
-//                        } else if (character.getLetter() == '\'') {
-//                            System.out.println("\' IS " + value);
-//                        }
-
                 diffs.put(using, value);
             });
 
@@ -846,18 +683,14 @@ public class Main {
         // TODO: The following code can definitely be improved
 
         List<Map.Entry<DatabaseCharacter, Double>> entries = new ArrayList<>(sortByValue(diffs).entrySet());
-        System.out.println("1 entries = " + entries);
 
         if (entries.size() == 0) return null;
         Map.Entry<DatabaseCharacter, Double> firstEntry = entries.get(0);
         entries.removeIf(value -> !value.getValue().equals(firstEntry.getValue()));
-        System.out.println("2 entries = " + entries);
 
         double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
 
         entries.sort(Comparator.comparingDouble(entry -> getDiff(searchRatio, entry.getKey().getAvgWidth() / entry.getKey().getAvgHeight())));
-
-        System.out.println("3 entries = " + entries);
 
         return entries.get(0).getKey();
     }
@@ -970,12 +803,6 @@ public class Main {
                     .collect(Collectors.toCollection(LinkedList::new));
         }
 
-//        if (!temp.isEmpty()) {
-//            for (int x = 0; x < testImageShit.getWidth(); x++) {
-//                drawGuides(x, otherBetterY == -1 ? betterY : otherBetterY, Color.GREEN);
-//            }
-//        }
-
         return temp;
     }
 
@@ -997,11 +824,9 @@ public class Main {
 
     // Is difference equal to or under
     private static boolean checkDifference(double num1, double num2, double amount) {
-//        System.out.println("Diff: " + (Math.max(num1, num2) - Math.min(num1, num2)) + " <= " + amount);
         return Math.max(num1, num2) - Math.min(num1, num2) <= amount;
     }
 
-    private static int ttttt =0;
     private static void makeImage(boolean[][] values, String name) {
         try {
             BufferedImage image = new BufferedImage(values[0].length, values.length, BufferedImage.TYPE_INT_ARGB);
@@ -1012,7 +837,6 @@ public class Main {
                 }
             }
 
-//            if (name.matches("[^a-z]")) name = "" + ttttt++;
             ImageIO.write(image, "png", new File("E:\\NewOCR\\" + name + ".png"));
         } catch (IOException e) {
 //            e.printStackTrace();
@@ -1089,47 +913,25 @@ public class Main {
         if (values.length == 0) return Stream.of(null, null, null);
         int leftHeight = values[0].length / 3;
         int middleHeight = values[0].length - leftHeight * 2;
-        int rightHeight = leftHeight;
-
-//        boolean[][] leftHalf = new boolean[values.length][];
-//        boolean[][] middleHalf = new boolean[values.length][];
-//        boolean[][] rightHalf = new boolean[values.length][];
-
-//        for (int i = 0; i < values.length; i++) {
-//            leftHalf[i] = new boolean[leftHeight];
-//            middleHalf[i] = new boolean[middleHeight];
-//            rightHalf[i] = new boolean[rightHeight];
-//        }
 
         int leftSize = 0, leftTrue = 0;
         int middleSize = 0, middleTrue = 0;
         int rightSize = 0, rightTrue = 0;
 
-        for (int y = 0; y < values.length; y++) {
+        for (boolean[] line : values) {
             for (int x = 0; x < values[0].length; x++) {
                 if (x < leftHeight) {
-//                    leftHalf[y][x] = values[y][x];
-                    if (values[y][x]) leftTrue++;
+                    if (line[x]) leftTrue++;
                     leftSize++;
                 } else if (x < middleHeight + leftHeight) {
-//                    middleHalf[y][x - leftHeight] = values[y][x];
-                    if (values[y][x]) middleTrue++;
+                    if (line[x]) middleTrue++;
                     middleSize++;
                 } else {
-//                    rightHalf[y][x - leftHeight - middleHeight] = values[y][x];
-                    if (values[y][x]) rightTrue++;
+                    if (line[x]) rightTrue++;
                     rightSize++;
                 }
             }
         }
-
-        System.out.println("-------");
-//        printOut(values);
-        System.out.println("-------");
-
-        System.out.println(leftTrue + "/" + leftSize);
-        System.out.println(middleTrue + "/" + middleSize);
-        System.out.println(rightTrue + "/" + rightSize);
 
         return Stream.of(new AbstractMap.SimpleEntry<>(leftTrue, leftSize),
                 new AbstractMap.SimpleEntry<>(middleTrue, middleSize),
@@ -1147,50 +949,27 @@ public class Main {
             yPositions.add((int) y);
         }
 
-//        boolean[][] topHalf = new boolean[values.length][];
-//        boolean[][] bottomHalf = new boolean[values.length][];
-//        List<List<Boolean>> topHalf = new LinkedList<>();
-//        List<List<Boolean>> bottomHalf = new LinkedList<>();
         int topSize = 0;
         int topTrue = 0;
         int bottomSize = 0;
         int bottomTrue = 0;
 
-//        for (int i = 0; i < values.length; i++) {
-//            topHalf[i] = new boolean[values[0].length];
-//            bottomHalf[i] = new boolean[values[0].length];
-//            topHalf.add(new LinkedList<>());
-//            bottomHalf.add(new LinkedList<>());
-//        }
-
-
         for (int x = 0; x < values[0].length; x++) {
             int yPos = yPositions.get(x);
             for (int y = 0; y < values.length; y++) {
                 if (y < yPos) {
-//                    bottomHalf[y][x] = values[y][x];
-//                    bottomHalf.get(y).add(values[y][x]);
                     if (values[y][x]) bottomTrue++;
                     bottomSize++;
                 } else {
-//                    topHalf[y][x] = values[y][x];
-//                    topHalf.get(y).add(values[y][x]);
                     if (values[y][x]) topTrue++;
                     topSize++;
                 }
             }
         }
 
-        // This is EXPERIMENTAL! This comment will probably be made into prod but this ight cause issues
-
-//        for (int i = 0; i < topHalfArray.length; i++) {
-//            topHalfArray[i] =
-//        }
-
         List<Map.Entry<Integer, Integer>> ret = new LinkedList<>();
         ret.add(new AbstractMap.SimpleEntry<>(topTrue, topSize));
         ret.add(new AbstractMap.SimpleEntry<>(bottomTrue, bottomSize));
-//        ret.put(bottomHalf, bottomSize);
         return ret;
     }
 

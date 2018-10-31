@@ -64,18 +64,6 @@ public class TrainedCharacterData {
         this.empty = false;
         double[] segmentPercentages = searchCharacter.getSegmentPercentages();
 
-        if (value == '-') {
-            System.out.println("----------------------------------------------");
-            System.out.println("111 Dash");
-
-//            Main.printOut(searchCharacter.getValues());
-
-            System.out.println(Arrays.toString(segmentPercentages));
-            System.out.println("Set: " + searchCharacter.segments.size());
-
-            System.out.println("----------------------------------------------");
-        }
-
         recalculatingList.add(segmentPercentages);
         if (searchCharacter.getWidth() != 0 && searchCharacter.getHeight() != 0) {
             recalculatingWidths.add((double) searchCharacter.getWidth());
