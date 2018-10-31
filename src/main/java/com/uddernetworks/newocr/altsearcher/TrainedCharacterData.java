@@ -68,6 +68,8 @@ public class TrainedCharacterData {
             System.out.println("----------------------------------------------");
             System.out.println("111 Dash");
 
+//            Main.printOut(searchCharacter.getValues());
+
             System.out.println(Arrays.toString(segmentPercentages));
             System.out.println("Set: " + searchCharacter.segments.size());
 

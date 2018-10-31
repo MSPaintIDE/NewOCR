@@ -5,8 +5,14 @@ import javafx.util.Pair;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -48,7 +54,6 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
 
-        /*
         Arrays.asList("letters.sql", "sectionData.sql").parallelStream().forEach(table -> {
             try {
                 URL url = Main.class.getClassLoader().getResource(table);
@@ -64,7 +69,6 @@ public class Main {
                 e.printStackTrace();
             }
         });
-        */
 
         databaseManager.initializeStatements();
 
@@ -82,7 +86,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\trainingDash.png"));
+        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\alphabet72.png"));
         boolean[][] values = createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -515,8 +519,8 @@ public class Main {
                         searchCharacter.setKnownChar(current);
                     }
 
-//                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
-//                    if (inc >= 3) inc = 0;
+                    searchCharacter.drawTo(finalInput, TEMP[inc++]);
+                    if (inc >= 3) inc = 0;
 
 //                    if (characterList != null) {
 //                        TrainedCharacterData trainedCharacterData = getTrainedData(current, characterList);
@@ -624,10 +628,6 @@ public class Main {
                                 databaseTrainedCharacter.finishRecalculations();
                                 char letter = databaseTrainedCharacter.getValue();
 
-//                                System.out.println("[Debug] Values:");
-//                                System.out.println(Arrays.toString(databaseTrainedCharacter.getSegmentPercentages()));
-
-
                                 Future databaseFuture = databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont());
                                 while (!databaseFuture.isDone()) {
                                 }
@@ -646,8 +646,6 @@ public class Main {
                                 e.printStackTrace();
                             }
         }));
-
-        System.exit(0);
 
 //        System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
 
@@ -808,8 +806,8 @@ public class Main {
 
         try {
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments(matchNearestFontSize(searchCharacter.getHeight())).get());
-//            System.out.println(data.size());
-//            System.out.println(searchCharacter.getHeight() + "] data = " + data);
+            System.out.println(data.size());
+            System.out.println(searchCharacter.getHeight() + "] data = " + data);
 
 //            System.out.println("Search: " + searchCharacter.hasDot());
 
@@ -1126,7 +1124,7 @@ public class Main {
         }
 
         System.out.println("-------");
-        printOut(values);
+//        printOut(values);
         System.out.println("-------");
 
         System.out.println(leftTrue + "/" + leftSize);
@@ -1370,18 +1368,18 @@ public class Main {
 //                    }
 
                     double diff = getDifferencesFrom2D(values, values2);
-                    System.out.println("===============================");
-                    for (int i = 0; i < 10; i++) {
-                        System.out.println("diff = " + diff);
-                    }
-                    System.out.println("===============================");
+//                    System.out.println("===============================");
+//                    for (int i = 0; i < 10; i++) {
+//                        System.out.println("diff = " + diff);
+//                    }
+//                    System.out.println("===============================");
                     return diff <= 0.05; // If it's at least 5% similar
                 })
                 .filter(character -> {
                     double xDiff = Math.max(character.getX(), rightApostrophe.getX()) - Math.min(character.getX(), rightApostrophe.getX()) - rightApostrophe.getWidth();
                     double acceptedDiff = ((double) rightApostrophe.getWidth());
 //                    return xDiff < acceptedDiff;
-                    return isWithin(character.getX() + character.getWidth(), rightApostrophe.getX(), rightApostrophe.getWidth() - 1D, ((double) rightApostrophe.getWidth() * 1.1D) + 3D);
+                    return isWithin(character.getX() + character.getWidth(), rightApostrophe.getX(), rightApostrophe.getWidth() - 1D, ((double) rightApostrophe.getWidth() * 1.1D) + 4D);
                 })
                 .findFirst();
     }

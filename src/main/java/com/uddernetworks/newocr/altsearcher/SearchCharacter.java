@@ -2,8 +2,9 @@ package com.uddernetworks.newocr.altsearcher;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -48,8 +49,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public boolean isProbablyDot() {
         int diff = Math.max(width, height) - Math.min(width, height);
-//        System.out.println("diff = " + diff);
-//        return diff <= 3 && width < height * 5;
         return diff <= 3;
     }
 
@@ -60,23 +59,11 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public boolean isProbablyApostraphe() {
         double ratio = (double) width / (double) height;
-//        System.out.println("ratio = " + ratio);
         return (ratio <= 0.375 && ratio >= 0.166) || (width == 1 && (height == 4 || height == 5));
     }
 
     public boolean isProbablyColon() {
-//        System.out.println(width + " x " + height);
-//        if (width > height * 5) {
-////            System.out.println("False!");
-//            return false;
-//        }
-
         double ratio = (Math.min(this.width, this.height) + 1D) / (Math.max(this.width, this.height) + 1D);
-//        double ratio = (double) this.width / (double) this.height;
-//        System.out.println("ratio = " + ratio);
-//        System.out.println("ratio " + ratio + " <= 0.9D is: " + (ratio <= 0.9D));
-
-//        System.out.println("ratio = " + ratio + " (" + (width + 1) + "/" + (height + 1) + ") " + (ratio <= 0.9D) + " and " + (ratio >= 0.8D));
         return (ratio <= 1D && ratio >= 0.7D)
                 || (height * 4 < width)
                 || ((width == 3 && height == 3)
@@ -198,68 +185,18 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
                 && x >= this.x) {
             return true;
         } else {
-//            System.out.println(x + " is not between " + this.x + " and " + (this.x + this.width) + " (" + this.width  + ")");
             return false;
         }
     }
 
     public void applySections() {
-        System.out.println("===========================");
-        Main.printOut(this.values);
         AtomicInteger index = new AtomicInteger();
         Main.getHorizontalHalf(this.values)
                 .flatMap(Main::getVerticalHalf)
-                .forEach(section -> {
-                    int i = index.getAndIncrement();
-                    if (section == null) {
-//                        addSegment(get2DFilledArray(true, 8 + 9, 1), 8 + 9);
-//                        addPlaceholder();
-//                        addPlaceholder();
-                        addSegment(1, 1);
-                        addSegment(1, 1);
-                        return;
-                    }
-
-                    Main.getDiagonal(section, i == 1 || i == 2).forEach(this::addSegment);
-                });
-
-//        Main.getDiagonal(this.values, true).forEach((section, size) -> {
-//            Main.getDiagonal(section, false).forEach((innerSection, innerSize) -> {
-//                System.out.println("size = " + size + " inner = " + innerSize);
-//            });
-//        });
-
-//        Main.printOut(values);
-//        System.out.println("\n");
+                .forEach(section -> Main.getDiagonal(section, index.get() == 1 || index.getAndIncrement() == 2).forEach(this::addSegment));
 
         Main.getHorizontalThird(this.values).forEach(values ->
-                Main.getVerticalThird(values).forEach(entry -> {
-                    if (entry == null) {
-//                        addSegment(get2DFilledArray(true, 8 + 9, 1), 8 + 9);
-//                        addPlaceholder();
-                        addSegment(1, 1);
-                        addSegment(1, 1);
-                        return;
-                    }
-
-//                    addSegment(nineth, nineth.length * nineth[0].length);
-                    addSegment(entry);
-                }));
-    }
-
-    private boolean[][] get2DFilledArray(boolean value, int width, int height) {
-        boolean[][] ret = new boolean[height][];
-        for (int y = 0; y < height; y++) {
-            ret[y] = getFilledArray(value, width);
-        }
-
-        return ret;
-    }
-
-    private boolean[] getFilledArray(boolean value, int size) {
-        boolean[] ret = new boolean[size];
-        Arrays.fill(ret, value);
-        return ret;
+                Main.getVerticalThird(values).forEach(this::addSegment));
     }
 
     public void analyzeSlices() {
@@ -268,84 +205,21 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         this.segments.forEach((entry) -> {
             double amountTrue = entry.getKey();
             double total = entry.getValue();
-//            if (amountTrue == null || size == -1 || amountTrue.length == 0) {
-//                this.segmentPercentages[temp.getAndIncrement()] = 1;
-//                return;
-//            }
 
-//            double amountTrue = Arrays.stream(amountTrue)
-//                    .flatMap(array -> IntStream.range(0, array.length)
-//                            .mapToObj(i -> array[i]))
-//                    .filter(Boolean::booleanValue)
-//                    .count();
-
-//            System.out.println("amountTrue = " + amountTrue + "/" + size);
-
-//            System.out.println((size == 0 ? 1 : amountTrue / (double) size));
             double val = total == 0 ? 1 : amountTrue / total;
-            if (val == 0.3125D) {
-                System.out.println("1");
-            }
 
-            if (val != 1 && knownChar == '-') {
-                System.out.println("Non one!!!!!!!! " + val);
-            }
-//            if (val != 1) System.out.println("\t\t\t\tNot 1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-//            this.segmentPercentages.add(val); // TODO: Not sure if 0.5 is the best
             this.segmentPercentages[temp.getAndIncrement()] = val;
         });
-
-//        this.segmentPercentagesArray = this.segmentPercentages.stream().mapToDouble(t -> t).toArray();
-
-//        System.out.println("\t\t\t\t\t\t\tsegmentPercentages = " + Arrays.toString(segmentPercentages));
-    }
-
-    public void addSegment(int total, int size) {
-        if (total == 5 && size == 16) {
-            System.out.println("SHIT!!!!");
-
-        }
-        this.segments.add(new AbstractMap.SimpleEntry<>(total, size));
-//        System.out.println("(" + width + "x" + height + ") Adding size: " + size + " = " + Arrays.deepToString(segment));
-//        this.segments.put(segment, size);
     }
 
     public void addSegment(Map.Entry<Integer, Integer> entry) {
-        if (entry.getKey() == 5 && entry.getValue() == 16) {
-            System.out.println("SHIT 2");
-        }
         this.segments.add(entry);
     }
 
-//    public void addPlaceholder() {
-//        this.segments.put(new boolean[0][], -1);
-//        this.segments.put(new boolean[0][], -1);
-//        Map.Entry<boolean[][], Integer> first = this.segments.entrySet().stream().findFirst().orElseGet(() -> {
-//            return new AbstractMap.SimpleEntry<>(get2DFilledArray(true, , ))
-//        });
-//        this.segments.put(get2DFilledArray(true, first.getKey()[0].length, first.getKey().length), first.getValue());
-//    }
-
-//    public Map<boolean[][], Integer> getSegments() {
-//        return this.segments;
-//    }
-
     public double[] getSegmentPercentages() {
-//        return this.segmentPercentagesArray;
         return this.segmentPercentages;
     }
 
-    /*
-        public double getSimilarityWith(SearchCharacter searchCharacter) {
-            double[] otherPercentages = searchCharacter.segmentPercentages;
-            double[] differences = new double[8 + 9];
-            for (int i = 0; i < 8; i++) {
-                differences[i] = Math.max(this.segmentPercentages[i], otherPercentages[i]) - Math.min(otherPercentages[i], this.segmentPercentages[i]);
-            }
-
-            return 1 - Arrays.stream(differences).average().getAsDouble();
-        }
-    */
     public char getKnownChar() {
         return knownChar;
     }

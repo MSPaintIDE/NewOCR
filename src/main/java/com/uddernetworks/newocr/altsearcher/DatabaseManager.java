@@ -1,6 +1,7 @@
 package com.uddernetworks.newocr.altsearcher;
 
 import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
 import java.io.BufferedReader;
@@ -42,7 +43,7 @@ public class DatabaseManager {
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "1000");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "8192");
-//        dataSource = new HikariDataSource(config);
+        dataSource = new HikariDataSource(config);
     }
 
     public void initializeStatements() throws IOException {
