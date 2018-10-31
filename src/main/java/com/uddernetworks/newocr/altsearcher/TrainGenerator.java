@@ -13,7 +13,7 @@ public class TrainGenerator {
     public static final int LOWER_FONT_BOUND = 20;
 
     public static void main(String[] args) {
-//        Main.trainString = "Fo";
+        Main.trainString = "-";
         BufferedImage image = new BufferedImage(1500, 500, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = image.createGraphics();
 

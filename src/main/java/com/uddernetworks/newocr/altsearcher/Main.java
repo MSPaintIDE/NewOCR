@@ -5,14 +5,8 @@ import javafx.util.Pair;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -54,6 +48,7 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
 
+        /*
         Arrays.asList("letters.sql", "sectionData.sql").parallelStream().forEach(table -> {
             try {
                 URL url = Main.class.getClassLoader().getResource(table);
@@ -69,6 +64,7 @@ public class Main {
                 e.printStackTrace();
             }
         });
+        */
 
         databaseManager.initializeStatements();
 
@@ -553,9 +549,9 @@ public class Main {
 //                        makeImage(searchCharacter.getValues(), fileee.getName());
 //                    }
 
-                    if (current == '%') {
-                        makeImage(searchCharacter.getValues(), "output\\percent_" + searchCharacter.getWidth() + "x" + searchCharacter.getHeight());
-                    }
+//                    if (current == '%') {
+//                        makeImage(searchCharacter.getValues(), "output\\percent_" + searchCharacter.getWidth() + "x" + searchCharacter.getHeight());
+//                    }
 
 //                    try {
 //                        String curr = current + "";
@@ -628,6 +624,10 @@ public class Main {
                                 databaseTrainedCharacter.finishRecalculations();
                                 char letter = databaseTrainedCharacter.getValue();
 
+//                                System.out.println("[Debug] Values:");
+//                                System.out.println(Arrays.toString(databaseTrainedCharacter.getSegmentPercentages()));
+
+
                                 Future databaseFuture = databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont());
                                 while (!databaseFuture.isDone()) {
                                 }
@@ -641,10 +641,13 @@ public class Main {
                                     while (!databaseFuture.isDone()) {
                                     }
                                 }
+
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
         }));
+
+        System.exit(0);
 
 //        System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
 
@@ -1084,38 +1087,58 @@ public class Main {
         return Stream.of(leftHalf, rightHalf).sequential();
     }
 
-    public static Stream<boolean[][]> getVerticalThird(boolean[][] values) {
+    public static Stream<AbstractMap.SimpleEntry<Integer, Integer>> getVerticalThird(boolean[][] values) {
         if (values.length == 0) return Stream.of(null, null, null);
         int leftHeight = values[0].length / 3;
         int middleHeight = values[0].length - leftHeight * 2;
         int rightHeight = leftHeight;
 
-        boolean[][] leftHalf = new boolean[values.length][];
-        boolean[][] middleHalf = new boolean[values.length][];
-        boolean[][] rightHalf = new boolean[values.length][];
+//        boolean[][] leftHalf = new boolean[values.length][];
+//        boolean[][] middleHalf = new boolean[values.length][];
+//        boolean[][] rightHalf = new boolean[values.length][];
 
-        for (int i = 0; i < values.length; i++) {
-            leftHalf[i] = new boolean[leftHeight];
-            middleHalf[i] = new boolean[middleHeight];
-            rightHalf[i] = new boolean[rightHeight];
-        }
+//        for (int i = 0; i < values.length; i++) {
+//            leftHalf[i] = new boolean[leftHeight];
+//            middleHalf[i] = new boolean[middleHeight];
+//            rightHalf[i] = new boolean[rightHeight];
+//        }
+
+        int leftSize = 0, leftTrue = 0;
+        int middleSize = 0, middleTrue = 0;
+        int rightSize = 0, rightTrue = 0;
 
         for (int y = 0; y < values.length; y++) {
             for (int x = 0; x < values[0].length; x++) {
                 if (x < leftHeight) {
-                    leftHalf[y][x] = values[y][x];
+//                    leftHalf[y][x] = values[y][x];
+                    if (values[y][x]) leftTrue++;
+                    leftSize++;
                 } else if (x < middleHeight + leftHeight) {
-                    middleHalf[y][x - leftHeight] = values[y][x];
+//                    middleHalf[y][x - leftHeight] = values[y][x];
+                    if (values[y][x]) middleTrue++;
+                    middleSize++;
                 } else {
-                    rightHalf[y][x - leftHeight - middleHeight] = values[y][x];
+//                    rightHalf[y][x - leftHeight - middleHeight] = values[y][x];
+                    if (values[y][x]) rightTrue++;
+                    rightSize++;
                 }
             }
         }
 
-        return Stream.of(leftHalf, middleHalf, rightHalf).sequential();
+        System.out.println("-------");
+        printOut(values);
+        System.out.println("-------");
+
+        System.out.println(leftTrue + "/" + leftSize);
+        System.out.println(middleTrue + "/" + middleSize);
+        System.out.println(rightTrue + "/" + rightSize);
+
+        return Stream.of(new AbstractMap.SimpleEntry<>(leftTrue, leftSize),
+                new AbstractMap.SimpleEntry<>(middleTrue, middleSize),
+                new AbstractMap.SimpleEntry<>(rightTrue, rightSize)).sequential();
     }
 
-    public static Map<boolean[][], Integer> getDiagonal(boolean[][] values, boolean increasing) {
+    public static List<Map.Entry<Integer, Integer>> getDiagonal(boolean[][] values, boolean increasing) {
         double slope = (double) values.length / (double) values[0].length;
 
         List<Integer> yPositions = new ArrayList<>();
@@ -1126,32 +1149,50 @@ public class Main {
             yPositions.add((int) y);
         }
 
-        boolean[][] topHalf = new boolean[values.length][];
-        boolean[][] bottomHalf = new boolean[values.length][];
+//        boolean[][] topHalf = new boolean[values.length][];
+//        boolean[][] bottomHalf = new boolean[values.length][];
+//        List<List<Boolean>> topHalf = new LinkedList<>();
+//        List<List<Boolean>> bottomHalf = new LinkedList<>();
         int topSize = 0;
+        int topTrue = 0;
         int bottomSize = 0;
+        int bottomTrue = 0;
 
-        for (int i = 0; i < values.length; i++) {
-            topHalf[i] = new boolean[values[0].length];
-            bottomHalf[i] = new boolean[values[0].length];
-        }
+//        for (int i = 0; i < values.length; i++) {
+//            topHalf[i] = new boolean[values[0].length];
+//            bottomHalf[i] = new boolean[values[0].length];
+//            topHalf.add(new LinkedList<>());
+//            bottomHalf.add(new LinkedList<>());
+//        }
+
 
         for (int x = 0; x < values[0].length; x++) {
             int yPos = yPositions.get(x);
             for (int y = 0; y < values.length; y++) {
                 if (y < yPos) {
-                    bottomHalf[y][x] = values[y][x];
+//                    bottomHalf[y][x] = values[y][x];
+//                    bottomHalf.get(y).add(values[y][x]);
+                    if (values[y][x]) bottomTrue++;
                     bottomSize++;
                 } else {
-                    topHalf[y][x] = values[y][x];
+//                    topHalf[y][x] = values[y][x];
+//                    topHalf.get(y).add(values[y][x]);
+                    if (values[y][x]) topTrue++;
                     topSize++;
                 }
             }
         }
 
-        Map<boolean[][], Integer> ret = new LinkedHashMap<>();
-        ret.put(topHalf, topSize);
-        ret.put(bottomHalf, bottomSize);
+        // This is EXPERIMENTAL! This comment will probably be made into prod but this ight cause issues
+
+//        for (int i = 0; i < topHalfArray.length; i++) {
+//            topHalfArray[i] =
+//        }
+
+        List<Map.Entry<Integer, Integer>> ret = new LinkedList<>();
+        ret.add(new AbstractMap.SimpleEntry<>(topTrue, topSize));
+        ret.add(new AbstractMap.SimpleEntry<>(bottomTrue, bottomSize));
+//        ret.put(bottomHalf, bottomSize);
         return ret;
     }
 
@@ -1394,7 +1435,7 @@ public class Main {
     public static void printOut(boolean[][] values) {
         for (boolean[] row : values) {
             for (boolean bool : row) {
-                System.out.print(bool ? "1" : "0");
+                System.out.print(bool ? "＃" : "　");
             }
 
             System.out.println("");

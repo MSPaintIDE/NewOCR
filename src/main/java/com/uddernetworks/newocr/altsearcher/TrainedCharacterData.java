@@ -66,7 +66,7 @@ public class TrainedCharacterData {
 
         if (value == '-') {
             System.out.println("----------------------------------------------");
-            System.out.println("Dash");
+            System.out.println("111 Dash");
 
             System.out.println(Arrays.toString(segmentPercentages));
             System.out.println("Set: " + searchCharacter.segments.size());
@@ -107,7 +107,7 @@ public class TrainedCharacterData {
         if (value == '-') {
             System.out.println("=======================================");
 
-            System.out.println("Dash");
+            System.out.println("222 Dash");
             for (double[] doubles : recalculatingList) {
                 System.out.println(Arrays.toString(doubles));
             }

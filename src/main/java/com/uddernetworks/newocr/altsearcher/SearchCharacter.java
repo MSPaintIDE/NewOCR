@@ -2,13 +2,10 @@ package com.uddernetworks.newocr.altsearcher;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class SearchCharacter implements Comparable<SearchCharacter> {
 
@@ -20,7 +17,9 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int height;
     private boolean hasDot;
     private LetterMeta letterMeta = LetterMeta.NONE;
-    public LinkedHashMap<boolean[][], Integer> segments = new LinkedHashMap<>();
+//    public LinkedHashMap<boolean[][], Integer> segments = new LinkedHashMap<>();
+    //                     black, total
+    public LinkedList<Map.Entry<Integer, Integer>> segments = new LinkedList<>();
 //    private List<Double> segmentPercentages = new LinkedList<>(); // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
 //    private double[] segmentPercentagesArray;
     private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
@@ -205,8 +204,8 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     public void applySections() {
-//        System.out.println("===========================");
-//        Main.printOut(this.values);
+        System.out.println("===========================");
+        Main.printOut(this.values);
         AtomicInteger index = new AtomicInteger();
         Main.getHorizontalHalf(this.values)
                 .flatMap(Main::getVerticalHalf)
@@ -214,8 +213,10 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
                     int i = index.getAndIncrement();
                     if (section == null) {
 //                        addSegment(get2DFilledArray(true, 8 + 9, 1), 8 + 9);
-                        addPlaceholder();
-                        addPlaceholder();
+//                        addPlaceholder();
+//                        addPlaceholder();
+                        addSegment(1, 1);
+                        addSegment(1, 1);
                         return;
                     }
 
@@ -232,14 +233,17 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 //        System.out.println("\n");
 
         Main.getHorizontalThird(this.values).forEach(values ->
-                Main.getVerticalThird(values).forEach(nineth -> {
-                    if (nineth == null) {
+                Main.getVerticalThird(values).forEach(entry -> {
+                    if (entry == null) {
 //                        addSegment(get2DFilledArray(true, 8 + 9, 1), 8 + 9);
-                        addPlaceholder();
+//                        addPlaceholder();
+                        addSegment(1, 1);
+                        addSegment(1, 1);
                         return;
                     }
 
-                    addSegment(nineth, nineth.length * nineth[0].length);
+//                    addSegment(nineth, nineth.length * nineth[0].length);
+                    addSegment(entry);
                 }));
     }
 
@@ -260,22 +264,32 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public void analyzeSlices() {
         AtomicInteger temp = new AtomicInteger();
-        this.segmentPercentages = new double[8 + 9];
-        this.segments.forEach((segment, size) -> {
-            if (segment == null || size == -1) {
-                this.segmentPercentages[temp.getAndIncrement()] = 1;
-                return;
-            }
+        this.segmentPercentages = new double[segments.size()];
+        this.segments.forEach((entry) -> {
+            double amountTrue = entry.getKey();
+            double total = entry.getValue();
+//            if (amountTrue == null || size == -1 || amountTrue.length == 0) {
+//                this.segmentPercentages[temp.getAndIncrement()] = 1;
+//                return;
+//            }
 
-            double amountTrue = Arrays.stream(segment)
-                    .flatMap(array -> IntStream.range(0, array.length)
-                            .mapToObj(i -> array[i]))
-                    .filter(Boolean::booleanValue)
-                    .count();
+//            double amountTrue = Arrays.stream(amountTrue)
+//                    .flatMap(array -> IntStream.range(0, array.length)
+//                            .mapToObj(i -> array[i]))
+//                    .filter(Boolean::booleanValue)
+//                    .count();
 
 //            System.out.println("amountTrue = " + amountTrue + "/" + size);
 
-            double val = size == 0 ? 1 : amountTrue / (double) size;
+//            System.out.println((size == 0 ? 1 : amountTrue / (double) size));
+            double val = total == 0 ? 1 : amountTrue / total;
+            if (val == 0.3125D) {
+                System.out.println("1");
+            }
+
+            if (val != 1 && knownChar == '-') {
+                System.out.println("Non one!!!!!!!! " + val);
+            }
 //            if (val != 1) System.out.println("\t\t\t\tNot 1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 //            this.segmentPercentages.add(val); // TODO: Not sure if 0.5 is the best
             this.segmentPercentages[temp.getAndIncrement()] = val;
@@ -286,22 +300,35 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 //        System.out.println("\t\t\t\t\t\t\tsegmentPercentages = " + Arrays.toString(segmentPercentages));
     }
 
-    public void addSegment(boolean[][] segment, int size) {
+    public void addSegment(int total, int size) {
+        if (total == 5 && size == 16) {
+            System.out.println("SHIT!!!!");
+
+        }
+        this.segments.add(new AbstractMap.SimpleEntry<>(total, size));
 //        System.out.println("(" + width + "x" + height + ") Adding size: " + size + " = " + Arrays.deepToString(segment));
-        this.segments.put(segment, size);
+//        this.segments.put(segment, size);
     }
 
-    public void addPlaceholder() {
-        this.segments.put(new boolean[0][], -1);
+    public void addSegment(Map.Entry<Integer, Integer> entry) {
+        if (entry.getKey() == 5 && entry.getValue() == 16) {
+            System.out.println("SHIT 2");
+        }
+        this.segments.add(entry);
+    }
+
+//    public void addPlaceholder() {
+//        this.segments.put(new boolean[0][], -1);
+//        this.segments.put(new boolean[0][], -1);
 //        Map.Entry<boolean[][], Integer> first = this.segments.entrySet().stream().findFirst().orElseGet(() -> {
 //            return new AbstractMap.SimpleEntry<>(get2DFilledArray(true, , ))
 //        });
 //        this.segments.put(get2DFilledArray(true, first.getKey()[0].length, first.getKey().length), first.getValue());
-    }
+//    }
 
-    public Map<boolean[][], Integer> getSegments() {
-        return this.segments;
-    }
+//    public Map<boolean[][], Integer> getSegments() {
+//        return this.segments;
+//    }
 
     public double[] getSegmentPercentages() {
 //        return this.segmentPercentagesArray;
