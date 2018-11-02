@@ -1,7 +1,5 @@
 package com.uddernetworks.newocr.altsearcher;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -18,11 +16,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int height;
     private boolean hasDot;
     private LetterMeta letterMeta = LetterMeta.NONE;
-//    public LinkedHashMap<boolean[][], Integer> segments = new LinkedHashMap<>();
-    //                     black, total
-    public LinkedList<Map.Entry<Integer, Integer>> segments = new LinkedList<>();
-//    private List<Double> segmentPercentages = new LinkedList<>(); // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
-//    private double[] segmentPercentagesArray;
+    private List<Map.Entry<Integer, Integer>> segments = new LinkedList<>();
     private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
 
     public SearchCharacter(List<Map.Entry<Integer, Integer>> coordinates) {
@@ -105,25 +99,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         this.hasDot = true;
     }
 
-    public void drawTo(BufferedImage image) {
-        drawTo(image, Color.MAGENTA);
-    }
-
-    public void drawTo(BufferedImage image, Color color) {
-
-        // Top
-        Main.colorRow(image, color, y, x, width);
-
-        // Bottom
-        Main.colorRow(image, color, y + height, x, width + 1);
-
-        // Left
-        Main.colorColumn(image, color, x, y, height);
-
-        // Right
-        Main.colorColumn(image, color, x + width, y, height);
-    }
-
     public boolean[][] getValues() {
         return values;
     }
@@ -191,12 +166,12 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     public void applySections() {
         AtomicInteger index = new AtomicInteger();
-        Main.getHorizontalHalf(this.values)
-                .flatMap(Main::getVerticalHalf)
-                .forEach(section -> Main.getDiagonal(section, index.get() == 1 || index.getAndIncrement() == 2).forEach(this::addSegment));
+        OCRUtils.getHorizontalHalf(this.values)
+                .flatMap(OCRUtils::getVerticalHalf)
+                .forEach(section -> OCRUtils.getDiagonal(section, index.get() == 1 || index.getAndIncrement() == 2).forEach(this::addSegment));
 
-        Main.getHorizontalThird(this.values).forEach(values ->
-                Main.getVerticalThird(values).forEach(this::addSegment));
+        OCRUtils.getHorizontalThird(this.values).forEach(values ->
+                OCRUtils.getVerticalThird(values).forEach(this::addSegment));
     }
 
     public void analyzeSlices() {

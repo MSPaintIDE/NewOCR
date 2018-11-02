@@ -1,5 +1,9 @@
 package com.uddernetworks.newocr.altsearcher;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 public class DatabaseCharacter {
     private char letter;
     private double[] data = new double[17];
@@ -11,6 +15,7 @@ public class DatabaseCharacter {
     private double maxCenter; // Pixels from the top
     private boolean hasDot;
     private LetterMeta letterMeta;
+    private List<Map.Entry<Integer, Integer>> segments = new LinkedList<>();
 
     private int x;
     private int y;
@@ -72,14 +77,6 @@ public class DatabaseCharacter {
     public void setMaxFontSize(int maxFontSize) {
         this.maxFontSize = maxFontSize;
     }
-
-//    public double getCenter() {
-//        return center;
-//    }
-//
-//    public void setCenter(double center) {
-//        this.center = center;
-//    }
 
     public int getX() {
         return x;
@@ -145,7 +142,6 @@ public class DatabaseCharacter {
     }
 
     public void setHasDot(boolean hasDot) {
-//        if (!hasDot) System.out.println("Setting has!!!!!");
         this.hasDot = hasDot;
     }
 
@@ -175,5 +171,13 @@ public class DatabaseCharacter {
 
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    public List<Map.Entry<Integer, Integer>> getSegments() {
+        return segments;
+    }
+
+    public void setSegments(List<Map.Entry<Integer, Integer>> segments) {
+        this.segments = segments;
     }
 }

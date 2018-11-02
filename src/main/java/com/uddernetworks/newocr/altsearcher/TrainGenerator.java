@@ -8,17 +8,13 @@ import java.io.IOException;
 
 public class TrainGenerator {
 
+    private static String trainString = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
     public static final int UPPER_FONT_BOUND = 90;
-//    public static final int LOWER_FONT_BOUND = 89;
     public static final int LOWER_FONT_BOUND = 20;
 
     public static void main(String[] args) {
-        Main.trainString = "-";
         BufferedImage image = new BufferedImage(1500, 500, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = image.createGraphics();
-
-//        String message = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~";
-//        String message = "\"";
 
         RenderingHints rht = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics.setRenderingHints(rht);
@@ -34,8 +30,7 @@ public class TrainGenerator {
             size2--;
         }
 
-        System.out.println("newHeight = " + newHeight);
-        image = new BufferedImage(graphics.getFontMetrics().stringWidth(Main.trainString) + 50, newHeight, BufferedImage.TYPE_INT_ARGB);
+        image = new BufferedImage(graphics.getFontMetrics().stringWidth(trainString) + 50, newHeight, BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = 0; x < image.getWidth(); x++) {
                 image.setRGB(x, y, Color.WHITE.getRGB());
@@ -50,7 +45,7 @@ public class TrainGenerator {
         int size = UPPER_FONT_BOUND;
         int offset = UPPER_FONT_BOUND;
         for (int i = 0; i < UPPER_FONT_BOUND - LOWER_FONT_BOUND; i++) {
-            drawLine(graphics, Main.trainString, offset, size);
+            drawLine(graphics, trainString, offset, size);
             offset += size + 10;
             size--;
         }
@@ -68,19 +63,6 @@ public class TrainGenerator {
         drawTo.setPaint(Color.BLACK);
 
         drawTo.drawString(line, 10, yOffset);
-//        int xOffset = drawTo.getFontMetrics().stringWidth(line);
-
-//        drawSpace(drawTo, xOffset, yOffset, size);
-    }
-
-    private static void drawSpace(Graphics2D drawTo, int xOffset, int yOffset, int size) {
-        int width = drawTo.getFontMetrics().stringWidth(" ");
-
-        drawTo.setPaint(Color.RED);
-
-        System.out.println("drawTo = [" + drawTo + "], xOffset = [" + xOffset + "], yOffset = [" + yOffset + "], size = [" + size + "]");
-
-        drawTo.fillRect(xOffset + 25, yOffset, width, size);
     }
 
 }

@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,10 +34,10 @@ public class DatabaseManager {
 
     private final AtomicReference<Map<FontBounds, List<DatabaseCharacter>>> databaseCharacterCache = new AtomicReference<>(new HashMap<>());
 
-    public DatabaseManager(String url, String username, String password) {
+    public DatabaseManager(String databaseURL, String username, String password) throws IOException {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("com.mysql.jdbc.Driver");
-        config.setJdbcUrl(url);
+        config.setJdbcUrl(databaseURL);
         config.setUsername(username);
         config.setPassword(password);
         config.addDataSourceProperty("useServerPrepStmts", "true");
@@ -44,6 +45,24 @@ public class DatabaseManager {
         config.addDataSourceProperty("prepStmtCacheSize", "1000");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "8192");
         dataSource = new HikariDataSource(config);
+
+        Arrays.asList("letters.sql", "sectionData.sql").parallelStream().forEach(table -> {
+            try {
+                URL url = getClass().getClassLoader().getResource(table);
+                String tables = new BufferedReader(new InputStreamReader(url.openStream())).lines().collect(Collectors.joining("\n"));
+                try (Connection connection = dataSource.getConnection();
+                     PreparedStatement statement = connection.prepareStatement(tables)) {
+
+                    statement.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        initializeStatements();
     }
 
     public void initializeStatements() throws IOException {
@@ -58,16 +77,6 @@ public class DatabaseManager {
 
     private String getQuery(String name) throws IOException {
         return new BufferedReader(new InputStreamReader(Main.class.getClassLoader().getResource(name + ".sql").openStream())).lines().collect(Collectors.joining("\n"));
-    }
-
-    private void prepareStatement(String statementName, Consumer<PreparedStatement> preparedStatementConsumer) {
-        executor.execute(() -> {
-            try (Connection connection = dataSource.getConnection()) {
-                preparedStatementConsumer.accept(connection.prepareStatement(getQuery(statementName)));
-            } catch (SQLException | IOException e) {
-                e.printStackTrace();
-            }
-        });
     }
 
     public DataSource getDataSource() {
@@ -215,16 +224,10 @@ public class DatabaseManager {
                         double avgHeight = spaceResult.getDouble("avgHeight");
                         int minFontSize = spaceResult.getInt("minFontSize");
                         int maxFontSize = spaceResult.getInt("maxFontSize");
-//                        double minCenter = spaceResult.getDouble("minCenter");
-//                        double maxCenter = spaceResult.getDouble("maxCenter");
-//                        boolean hasDot = spaceResult.getBoolean("hasDot");
-//                        int letterMetaID = spaceResult.getInt("letterMeta");
 
                         DatabaseCharacter spaceCharacter = new DatabaseCharacter(' ');
                         spaceCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize);
                         databaseCharacters.add(spaceCharacter);
-
-//                        System.out.println("Got space! " + avgWidth + ", " + avgHeight);
                     }
                 }
 
@@ -233,10 +236,6 @@ public class DatabaseManager {
             }
 
             this.databaseCharacterCache.get().put(fontBounds, databaseCharacters);
-
-//            databaseCharacters.stream().filter(databaseCharacter -> !databaseCharacter.hasDot()).forEach(shit -> {
-//                System.out.println("Not have dot: " + shit.getLetter());
-//            });
 
             return databaseCharacters;
         });
