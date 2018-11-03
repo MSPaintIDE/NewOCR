@@ -73,10 +73,10 @@ public class OCRHandle {
             }
         });
 
-        Map<Integer, List<DatabaseCharacter>> lines = new LinkedHashMap<>();
+        Map<Integer, List<ImageLetter>> lines = new LinkedHashMap<>();
 
-        List<DatabaseCharacter> firstList = new LinkedList<>();
-        List<DatabaseCharacter> secondList = new LinkedList<>();
+        List<ImageLetter> firstList = new LinkedList<>();
+        List<ImageLetter> secondList = new LinkedList<>();
 
         searchLines.values()
                 .stream()
@@ -84,34 +84,36 @@ public class OCRHandle {
                 .parallel()
                 .map(this::getCharacterFor)
                 .filter(Objects::nonNull)
-                .sorted(Comparator.comparingInt(DatabaseCharacter::getX))
-                .forEachOrdered(databaseCharacter -> {
-                    if (       databaseCharacter.getLetter() == ','
-                            || databaseCharacter.getLetter() == '.'
-                            || databaseCharacter.getLetter() == '_'
-                            || databaseCharacter.getLetter() == '`'
-                            || databaseCharacter.getLetter() == '\''
-                            || databaseCharacter.getLetter() == '"'
-                            || databaseCharacter.getLetter() == '*'
+                .sorted(Comparator.comparingInt(ImageLetter::getX))
+                .forEachOrdered(imageLetter -> {
+                    if (       imageLetter.getLetter() == ','
+                            || imageLetter.getLetter() == '.'
+                            || imageLetter.getLetter() == '_'
+                            || imageLetter.getLetter() == '`'
+                            || imageLetter.getLetter() == '\''
+                            || imageLetter.getLetter() == '"'
+                            || imageLetter.getLetter() == '*'
                     ) {
-                        secondList.add(databaseCharacter);
+                        secondList.add(imageLetter);
                     } else {
-                        firstList.add(databaseCharacter);
+                        firstList.add(imageLetter);
                     }
                 });
 
         Arrays.asList(firstList, secondList)
                 .forEach(list -> {
-                    list.forEach(databaseCharacter -> {
-                        boolean subtract = databaseCharacter.getMaxCenter() < 0 && databaseCharacter.getMinCenter() < 0;
+                    list.forEach(imageLetter -> {
+                        double maxCenter = imageLetter.getDatabaseCharacter().getMaxCenter();
+                        double minCenter = imageLetter.getDatabaseCharacter().getMinCenter();
+                        boolean subtract = maxCenter < 0 && imageLetter.getDatabaseCharacter().getMinCenter() < 0;
                         double centerDiff = subtract ?
-                                databaseCharacter.getMaxCenter() + databaseCharacter.getMinCenter() :
-                                databaseCharacter.getMaxCenter() - databaseCharacter.getMinCenter();
+                                maxCenter + minCenter :
+                                maxCenter - minCenter;
                         centerDiff /= 2;
                         double threashold = Math.max(Math.abs(centerDiff * 1.1), 2D);
 
 
-                        int potentialY = (int) (databaseCharacter.getY() + centerDiff + (databaseCharacter.getMinCenter() > 0 ? databaseCharacter.getMinCenter() : 0));
+                        int potentialY = (int) (imageLetter.getY() + centerDiff + (minCenter > 0 ? minCenter : 0));
 
                         Optional<Integer> tempp = lines.keySet()
                                 .stream()
@@ -125,37 +127,37 @@ public class OCRHandle {
                             return potentialY;
                         });
 
-                        double ratio = databaseCharacter.getAvgWidth() / databaseCharacter.getAvgHeight();
+                        double ratio = imageLetter.getDatabaseCharacter().getAvgWidth() / imageLetter.getDatabaseCharacter().getAvgHeight();
 
-                        double diff = Math.max(ratio, databaseCharacter.getRatio()) - Math.min(ratio, databaseCharacter.getRatio());
+                        double diff = Math.max(ratio, imageLetter.getRatio()) - Math.min(ratio, imageLetter.getRatio());
                         if (diff > 0.2D) {
-                            System.err.println("Questionable ratio diff of " + diff + " on letter: " + databaseCharacter.getLetter() + " at (" + databaseCharacter.getX() + ", " + databaseCharacter.getY() + ")");
+                            System.err.println("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
                         }
 
-                        lines.get(center).add(databaseCharacter);
+                        lines.get(center).add(imageLetter);
                     });
                 });
 
         // End ordering
 
-        Map<Integer, List<DatabaseCharacter>> sortedLines = new LinkedHashMap<>();
+        Map<Integer, List<ImageLetter>> sortedLines = new LinkedHashMap<>();
 
         lines.keySet()
                 .stream()
                 .sorted()
                 .forEach(y -> {
-                    List<DatabaseCharacter> databaseCharacters = lines.get(y);
+                    List<ImageLetter> databaseCharacters = lines.get(y);
                     if (databaseCharacters.isEmpty()) return;
-                    databaseCharacters.sort(Comparator.comparingInt(DatabaseCharacter::getX));
+                    databaseCharacters.sort(Comparator.comparingInt(ImageLetter::getX));
                     sortedLines.put(y, databaseCharacters);
                 });
 
-        sortedLines.values().forEach(line -> line.addAll(getSpacesFor(line, line.stream().mapToInt(DatabaseCharacter::getHeight).max().getAsInt())));
+        sortedLines.values().forEach(line -> line.addAll(getSpacesFor(line, line.stream().mapToInt(ImageLetter::getHeight).max().getAsInt())));
 
         lines.clear();
         sortedLines.keySet().stream().sorted().forEach(y -> {
-            List<DatabaseCharacter> line = sortedLines.get(y);
-            lines.put(y, line.stream().sorted(Comparator.comparingInt(DatabaseCharacter::getX)).collect(Collectors.toList()));
+            List<ImageLetter> line = sortedLines.get(y);
+            lines.put(y, line.stream().sorted(Comparator.comparingInt(ImageLetter::getX)).collect(Collectors.toList()));
         });
 
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + "ms");
@@ -312,8 +314,8 @@ public class OCRHandle {
         System.out.println("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
     }
 
-    private List<DatabaseCharacter> getSpacesFor(List<DatabaseCharacter> line, int fontSize) {
-        List<DatabaseCharacter> ret = new ArrayList<>();
+    private List<ImageLetter> getSpacesFor(List<ImageLetter> line, int fontSize) {
+        List<ImageLetter> ret = new ArrayList<>();
         try {
             FontBounds fontBounds = matchNearestFontSize(fontSize);
             List<DatabaseCharacter> data = databaseManager.getAllCharacterSegments(fontBounds).get();
@@ -323,25 +325,23 @@ public class OCRHandle {
                 return line;
             }
 
-            DatabaseCharacter prev = null;
-            for (DatabaseCharacter databaseCharacter : line) {
+            ImageLetter prev = null;
+            for (ImageLetter searchCharacter : line) {
                 int leftX = prev == null ? 0 : prev.getX() + prev.getWidth() + 1;
-                int rightX = databaseCharacter.getX();
+                int rightX = searchCharacter.getX();
                 double gap = rightX - leftX;
 
                 double ratio = space.getAvgWidth() / space.getAvgHeight();
                 double usedWidth = ratio * fontSize;
 
                 String noRoundDownSpace = "!"; // Might be more in the future, that's why it's not testing equality of an inline string
-                int spaces = noRoundDownSpace.contains(databaseCharacter.getLetter() + "") ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
+                int spaces = noRoundDownSpace.contains(searchCharacter.getLetter() + "") ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
 
                 for (int i = 0; i < spaces; i++) {
-                    DatabaseCharacter insertingSpace = space.copy();
-                    insertingSpace.setX((int) (leftX + (usedWidth * i)));
-                    ret.add(insertingSpace);
+                    ret.add(new ImageLetter(space, (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, ratio, null));
                 }
 
-                prev = databaseCharacter;
+                prev = searchCharacter;
             }
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
@@ -455,8 +455,8 @@ public class OCRHandle {
         return Arrays.stream(FONT_BOUNDS).filter(fontBounds -> fontBounds.isInbetween(fontSize)).findFirst().get();
     }
 
-    private DatabaseCharacter getCharacterFor(SearchCharacter searchCharacter) {
-        Map<DatabaseCharacter, Double> diffs = new HashMap<>(); // The lower value the better
+    private ImageLetter getCharacterFor(SearchCharacter searchCharacter) {
+        Map<ImageLetter, Double> diffs = new HashMap<>(); // The lower value the better
 
         try {
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments(matchNearestFontSize(searchCharacter.getHeight())).get());
@@ -469,16 +469,19 @@ public class OCRHandle {
 
                         double value = Arrays.stream(charDifference).average().getAsDouble();
 
-                        DatabaseCharacter using = character.copy();
-                        using.setX(searchCharacter.getX());
-                        using.setY(searchCharacter.getY());
-                        using.setWidth(searchCharacter.getWidth());
-                        using.setHeight(searchCharacter.getHeight());
-                        using.setRatio(((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()));
+                        ImageLetter imageLetter = new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getSegments());
+
+
+//                        DatabaseCharacter using = character.copy();
+//                        using.setX(searchCharacter.getX());
+//                        using.setY(searchCharacter.getY());
+//                        using.setWidth(searchCharacter.getWidth());
+//                        using.setHeight(searchCharacter.getHeight());
+//                        using.setRatio(((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()));
 
 //                using.setCenterExact(searchCharacter.getY() + using.getCenter());
 
-                        diffs.put(using, value);
+                        diffs.put(imageLetter, value);
                     });
 
         } catch (InterruptedException | ExecutionException e) {
@@ -487,15 +490,15 @@ public class OCRHandle {
 
         // TODO: The following code can definitely be improved
 
-        List<Map.Entry<DatabaseCharacter, Double>> entries = new ArrayList<>(OCRUtils.sortByValue(diffs).entrySet());
+        List<Map.Entry<ImageLetter, Double>> entries = new ArrayList<>(OCRUtils.sortByValue(diffs).entrySet());
 
         if (entries.size() == 0) return null;
-        Map.Entry<DatabaseCharacter, Double> firstEntry = entries.get(0);
+        Map.Entry<ImageLetter, Double> firstEntry = entries.get(0);
         entries.removeIf(value -> !value.getValue().equals(firstEntry.getValue()));
 
         double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
 
-        entries.sort(Comparator.comparingDouble(entry -> getDiff(searchRatio, entry.getKey().getAvgWidth() / entry.getKey().getAvgHeight())));
+        entries.sort(Comparator.comparingDouble(entry -> getDiff(searchRatio, entry.getKey().getDatabaseCharacter().getAvgWidth() / entry.getKey().getDatabaseCharacter().getAvgHeight())));
 
         return entries.get(0).getKey();
     }

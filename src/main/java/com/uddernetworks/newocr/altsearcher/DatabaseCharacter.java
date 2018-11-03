@@ -17,11 +17,7 @@ public class DatabaseCharacter {
     private LetterMeta letterMeta;
     private List<Map.Entry<Integer, Integer>> segments = new LinkedList<>();
 
-    private int x;
-    private int y;
     private double ratio;
-    private int width;
-    private int height;
 
     public DatabaseCharacter(char letter) {
         this.letter = letter;
@@ -76,22 +72,6 @@ public class DatabaseCharacter {
 
     public void setMaxFontSize(int maxFontSize) {
         this.maxFontSize = maxFontSize;
-    }
-
-    public int getX() {
-        return x;
-    }
-
-    public void setX(int x) {
-        this.x = x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public void setY(int y) {
-        this.y = y;
     }
 
     public DatabaseCharacter copy() {
@@ -155,22 +135,6 @@ public class DatabaseCharacter {
 
     public void setLetterMeta(LetterMeta letterMeta) {
         this.letterMeta = letterMeta;
-    }
-
-    public void setWidth(int width) {
-        this.width = width;
-    }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
-
-    public void setHeight(int height) {
-        this.height = height;
     }
 
     public List<Map.Entry<Integer, Integer>> getSegments() {

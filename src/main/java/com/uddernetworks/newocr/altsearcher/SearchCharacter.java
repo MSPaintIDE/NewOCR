@@ -232,4 +232,8 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public void setLetterMeta(LetterMeta letterMeta) {
         this.letterMeta = letterMeta;
     }
+
+    public List<Map.Entry<Integer, Integer>> getSegments() {
+        return segments;
+    }
 }
