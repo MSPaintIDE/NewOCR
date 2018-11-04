@@ -1,9 +1,8 @@
 package com.uddernetworks.newocr;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
+/**
+ * Used for storage of data to go into our from the database.
+ */
 public class DatabaseCharacter {
     private char letter;
     private double[] data = new double[17];
@@ -15,76 +14,135 @@ public class DatabaseCharacter {
     private double maxCenter; // Pixels from the top
     private boolean hasDot;
     private LetterMeta letterMeta;
-    private List<Map.Entry<Integer, Integer>> segments = new LinkedList<>();
 
-    private double ratio;
-
+    /**
+     * Creates a DatabaseCharacter from the given character
+     * @param letter The letter of the object
+     */
     public DatabaseCharacter(char letter) {
         this.letter = letter;
     }
 
+    /**
+     * Gets the letter for the current DatabaseCharcater
+     * @return The current letter
+     */
     public char getLetter() {
         return letter;
     }
 
+    /**
+     * Gets the 16 sectioned percentages for the stored character
+     * @return An array of percentages <= 1 with a length of 17
+     */
     public double[] getData() {
         return data;
     }
 
+    /**
+     * Sets a percentage value to the data
+     * @param index The index of the data to set
+     * @param data The percentage of filled in pixels found
+     */
     public void addDataPoint(int index, double data) {
         this.data[index] = data;
     }
 
-    public void setData(double avgWidth, double avgHeight, int minFontSize, int maxFontSize) {
+    /**
+     * Sets multiple used data points
+     * @param avgWidth The average width across all used characters in the font sizes
+     * @param avgHeight The average height across all used characters in the font sizes
+     * @param minFontSize The minimum font size used in this character
+     * @param maxFontSize The maximum font size used in this character
+     * @param minCenter The minimum relative center value in the training ste for this character and font size
+     * @param maxCenter The maximum relative center value in the training ste for this character and font size
+     */
+    public void setData(double avgWidth, double avgHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter) {
         this.avgWidth = avgWidth;
         this.avgHeight = avgHeight;
         this.minFontSize = minFontSize;
         this.maxFontSize = maxFontSize;
+        this.minCenter = minCenter;
+        this.maxCenter = maxCenter;
     }
 
+    /**
+     * Gets the average width of the character
+     * @return The average width of the character
+     */
     public double getAvgWidth() {
         return avgWidth;
     }
 
-    public void setAvgWidth(double avgWidth) {
-        this.avgWidth = avgWidth;
-    }
-
+    /**
+     * Gets the average height of the character
+     * @return The average height of the character
+     */
     public double getAvgHeight() {
         return avgHeight;
     }
 
-    public void setAvgHeight(double avgHeight) {
-        this.avgHeight = avgHeight;
-    }
-
+    /**
+     * Gets the minimum font size used in the training ste for the character
+     * @return The minimum font size used in the training ste for the character
+     */
     public int getMinFontSize() {
         return minFontSize;
     }
 
-    public void setMinFontSize(int minFontSize) {
-        this.minFontSize = minFontSize;
-    }
-
+    /**
+     * Gets the maximum font size used in the training ste for the character
+     * @return The maximum font size used in the training ste for the character
+     */
     public int getMaxFontSize() {
         return maxFontSize;
     }
 
-    public void setMaxFontSize(int maxFontSize) {
-        this.maxFontSize = maxFontSize;
+    /**
+     * Gets the minimum relative center value from the top of the character found in the training set for this font size
+     * @return The minimum relative center value from the top of the character found in the training set for this font size
+     */
+    public double getMinCenter() {
+        return minCenter;
     }
 
-    public DatabaseCharacter copy() {
-        DatabaseCharacter copy = new DatabaseCharacter(this.letter);
-        copy.data = this.data;
-        copy.avgWidth = this.avgWidth;
-        copy.avgHeight = this.avgHeight;
-        copy.minFontSize = this.minFontSize;
-        copy.maxFontSize = this.maxFontSize;
-        copy.minCenter = this.minCenter;
-        copy.maxCenter = this.maxCenter;
-        copy.hasDot = this.hasDot;
-        return copy;
+    /**
+     * Gets the maximum relative center value from the top of the character found in the training set for this font size
+     * @return The maximum relative center value from the top of the character found in the training set for this font size
+     */
+    public double getMaxCenter() {
+        return maxCenter;
+    }
+
+    /**
+     * Sets if the current character has a dot at all in it
+     * @param hasDot If the current character has a dot at all in it
+     */
+    public void setHasDot(boolean hasDot) {
+        this.hasDot = hasDot;
+    }
+
+    /**
+     * Gets if the current character has a dot at all in it
+     * @return If the current character has a dot at all in it
+     */
+    public boolean hasDot() {
+        return this.hasDot;
+    }
+
+    /**
+     * Gets the {@link LetterMeta} of the current character
+     * @return The {@link LetterMeta} of the current character
+     */
+    public LetterMeta getLetterMeta() {
+        return letterMeta;
+    }
+
+    /**
+     * Sets the {@link LetterMeta} of the current character
+     */
+    public void setLetterMeta(LetterMeta letterMeta) {
+        this.letterMeta = letterMeta;
     }
 
     @Override
@@ -92,56 +150,8 @@ public class DatabaseCharacter {
         return String.valueOf(this.letter);
     }
 
-    public void setMinCenter(double minCenter) {
-        this.minCenter = minCenter;
-    }
-
-    public void setMaxCenter(double maxCenter) {
-        this.maxCenter = maxCenter;
-    }
-
-    public double getMinCenter() {
-        return minCenter;
-    }
-
-    public double getMaxCenter() {
-        return maxCenter;
-    }
-
-    public void setRatio(double ratio) {
-        this.ratio = ratio;
-    }
-
-    public double getRatio() {
-        return ratio;
-    }
-
     @Override
     public boolean equals(Object obj) {
         return obj instanceof DatabaseCharacter && ((DatabaseCharacter) obj).letter == this.letter;
-    }
-
-    public void setHasDot(boolean hasDot) {
-        this.hasDot = hasDot;
-    }
-
-    public boolean hasDot() {
-        return this.hasDot;
-    }
-
-    public LetterMeta getLetterMeta() {
-        return letterMeta;
-    }
-
-    public void setLetterMeta(LetterMeta letterMeta) {
-        this.letterMeta = letterMeta;
-    }
-
-    public List<Map.Entry<Integer, Integer>> getSegments() {
-        return segments;
-    }
-
-    public void setSegments(List<Map.Entry<Integer, Integer>> segments) {
-        this.segments = segments;
     }
 }
