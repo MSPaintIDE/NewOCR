@@ -18,7 +18,6 @@ public class FontBounds {
     }
 
     public boolean isInbetween(int font) {
-//        System.out.println("font = [" + font + "]");
         return minFont <= font && font <= maxFont;
     }
 

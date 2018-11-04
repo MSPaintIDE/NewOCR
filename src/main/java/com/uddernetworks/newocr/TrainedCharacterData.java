@@ -51,7 +51,6 @@ public class TrainedCharacterData {
     private List<double[]> recalculatingList = new ArrayList<>();
     private List<Double> recalculatingWidths = new ArrayList<>();
     private List<Double> recalculatingHeights = new ArrayList<>();
-    private List<Double> recalculatingCenters = new ArrayList<>();
 
     public void recalculateTo(double width, double height) {
         this.empty = false;
@@ -82,32 +81,12 @@ public class TrainedCharacterData {
 
         if (value == ' ') return;
 
-//        if (value == '-') {
-//            System.out.println("Dash = ");
-
-//        }
-
         this.segmentPercentages = new double[8 + 9];
         for (int i = 0; i < 8 + 9; i++) {
             int finalI = i;
             OptionalDouble optionalDouble = recalculatingList.stream().mapToDouble(t -> t[finalI]).average();
             this.segmentPercentages[i] = optionalDouble.isPresent() ? optionalDouble.getAsDouble() : 0;
         }
-
-        if (value == '-') {
-            System.out.println("=======================================");
-
-            System.out.println("222 Dash");
-            for (double[] doubles : recalculatingList) {
-                System.out.println(Arrays.toString(doubles));
-            }
-
-            System.out.println("segmentPercentages = " + Arrays.toString(segmentPercentages));
-
-            System.out.println("=======================================");
-        }
-
-//        this.center = this.recalculatingCenters.stream().mapToDouble(t -> t).average().orElse(0);
     }
 
     public Pair<Double, Double> getSimilarityWith(SearchCharacter searchCharacter) {
@@ -119,11 +98,8 @@ public class TrainedCharacterData {
 
         double checkingRatio = ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight());
         double ratioDifference = Math.max(checkingRatio, this.sizeRatio) - Math.min(checkingRatio, this.sizeRatio);
-//        System.out.println(value + "] " + Math.max(checkingRatio, this.sizeRatio) + " - " + Math.min(checkingRatio, this.sizeRatio));
-//        System.out.println(value + "] " + ratioDifference);
 
         return new Pair<>(1 - Arrays.stream(differences).average().getAsDouble(), ratioDifference); // / ratioDifference
-//        return ratioDifference;
     }
 
     public double getWidthAverage() {
@@ -134,21 +110,12 @@ public class TrainedCharacterData {
         return heightAverage;
     }
 
-//    public double getCenter() {
-//        return center;
-//    }
-
     @Override
     public String toString() {
         return String.valueOf(value);
     }
 
     public void recalculateCenter(double center) {
-//        if (center < 0) {
-//            System.out.println("Pushing bad center: " + center);
-//            System.out.println("PRE min: " + minCenter + " max: " + maxCenter);
-//        }
-
         if (minCenter == -1 && maxCenter == -1) {
             minCenter = center;
             maxCenter = center;
@@ -156,10 +123,6 @@ public class TrainedCharacterData {
             if (center > maxCenter) maxCenter = center;
             if (center < minCenter) minCenter = center;
         }
-
-//        if (center < 0) {
-//            System.out.println("POST min: " + minCenter + " max: " + maxCenter);
-//        }
     }
 
     public double getMinCenter() {

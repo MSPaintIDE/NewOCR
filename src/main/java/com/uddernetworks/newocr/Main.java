@@ -45,7 +45,7 @@ public class Main {
 
         OCRUtils.toGrid(input, values);
 
-        SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
+        SearchImage searchImage = new SearchImage(values);
 
         List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
 
@@ -60,15 +60,6 @@ public class Main {
 
         SearchCharacter searchCharacter = new SearchCharacter(coordinates);
         searchCharacter.applySections();
-
-        // 1 - top left left
-        // 2 - top left right
-        // 3 - top right right
-        // 4 - top right left
-        // 5 - bottom left right
-        // 6 - bottom left left
-        // 7 -
-        // 8 -
 
         System.out.println(searchCharacter.getSegments());
         System.out.println(searchCharacter.getSegments().stream().map(entry -> (double) entry.getKey() / (double) entry.getValue()).collect(Collectors.toList()));

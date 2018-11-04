@@ -1,7 +1,10 @@
 package com.uddernetworks.newocr;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Stream;
@@ -11,6 +14,10 @@ public class OCRUtils {
     /*
      * Advanced/Convenient Comparisons
      */
+
+    public static double getDiff(double one, double two) {
+        return Math.max(one, two) - Math.min(one, two);
+    }
 
     public static int getDiff(int one, int two) {
         return Math.max(one, two) - Math.min(one, two);
@@ -238,5 +245,47 @@ public class OCRUtils {
         ret.add(new AbstractMap.SimpleEntry<>(topTrue, topSize));
         ret.add(new AbstractMap.SimpleEntry<>(bottomTrue, bottomSize));
         return ret;
+    }
+
+    /*
+     * For debugging
+     */
+
+    private void makeImage(boolean[][] values, String name) {
+        try {
+            BufferedImage image = new BufferedImage(values[0].length, values.length, BufferedImage.TYPE_INT_ARGB);
+
+            for (int y = 0; y < image.getHeight(); y++) {
+                for (int x = 0; x < image.getWidth(); x++) {
+                    image.setRGB(x, y, (values[y][x] ? Color.BLACK : Color.WHITE).getRGB());
+                }
+            }
+
+            ImageIO.write(image, "png", new File("E:\\NewOCR\\" + name + ".png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void colorRow(BufferedImage image, Color color, int y, int x, int width) {
+        for (int x2 = 0; x2 < width; x2++) {
+            image.setRGB(x2 + x, y, color.getRGB());
+        }
+    }
+
+    public static void colorColumn(BufferedImage image, Color color, int x, int y, int height) {
+        for (int y2 = 0; y2 < height; y2++) {
+            image.setRGB(x, y + y2, color.getRGB());
+        }
+    }
+
+    public static void printOut(boolean[][] values) {
+        for (boolean[] row : values) {
+            for (boolean bool : row) {
+                System.out.print(bool ? "＃" : "　");
+            }
+
+            System.out.println("");
+        }
     }
 }
