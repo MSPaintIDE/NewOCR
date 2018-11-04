@@ -14,6 +14,8 @@ First, the letter is horizontally broken up into top and bottom sections. Then, 
 After that process has occurred, the second sectioning process starts. This one is more simple, in that it first horizontally separates it into thirds, then those sections into vertical thirds. The sections and their indices look like the following:  
 ![Section examples 2](/images/E2.png)
 
+### Applying the sections
+
 After the sections and their indices have been established, the system gets the percentage the pixels are black (Rather than white, as it's effectively binary image). Applied to our sections, this is what the values for sections of the letter **E** would look like (Depending on the size, these values may vary from your results):  
 ![Section values 1](/images/Eval1.png)  
 ![Section values 2](/images/Eval2.png)
@@ -24,6 +26,16 @@ With the indices applied, the value array would be:
 ```
 
 These values are then compared to the averaged out trained characters' data, and the closest match is given. Other things that affect its similarity to the trained database character are the width/height ratio, which helps distinguish characters like `_` and `-`. Some type meta can also be attached to the database character, but still has the percentage values stored. These meta values are things like if it had to append chunks of pixels together in such a way it has to be a percentage sign, if it appended pixels to the top of a base character (`!`, `i`, `j`), to a bottom of a character (`!`), and some others. The enum containing these values may be found here: [LetterMeta.java](/src/main/java/com/uddernetworks/newocr/LetterMeta.java).
+
+### Training
+A vital part in the OCR is its training. Though many OCRs require training for their Neural Networks, NewOCR uses a simple, fast method of training involving essentially averaging values form charcaters.
+
+The OCR starts off with a generated image of all the characters it can take advantage of through the [TrainGenerator](/src/main/java/com/uddernetworks/newocr/TrainGenerator.java) class, taking up fonts from an upper to lower bound. The system gets the character bounds for every character, then incrementally goes through the characters, putting the segmented percentages described above into a database, after averaging all the font sizes together. This is also done with the width and height of the character, for increased accuracy. The accuracy of the character segmentation is crucial in this step, as if one character is detected as say 2, it will throw off the entire line, resulting in a useless training data set. 
+
+With scaling fonts to smaller sizes where they get deformed by their pixelation, their percentages may be significantly different than the higher resolution variants. To circumvent this, the database is broken up into different sections of font bounds, e.g. from font size 0-12 values will be places together, 13-20, and 20+ will be grouped together. The bounds' values and count may be changed in the program.
+
+Example of a training image:  
+![Training image](/images/training.png)
 
 ## Resources
 The following papers were used as inspiration, ideas, knowledge gathering, whatever it may be towards the advancement of this OCR. I could have forgotten a few research papers, I read a lot of them. They might just be stuff I thought was really cool related to the subject, I'm generalizing this description to hell so I won't have to change it later.
