@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr.altsearcher;
+package com.uddernetworks.newocr;
 
 import javafx.util.Pair;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.uddernetworks.newocr.altsearcher.CharacterGettingUtils.*;
+import static com.uddernetworks.newocr.CharacterGettingUtils.*;
 
 public class OCRHandle {
 
@@ -37,7 +37,7 @@ public class OCRHandle {
         long start = System.currentTimeMillis();
 
         BufferedImage input = ImageIO.read(file);
-        boolean[][] values = createGrid(input);
+        boolean[][] values = OCRUtils.createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
         BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -45,7 +45,7 @@ public class OCRHandle {
         input = temp;
 
         filter(input);
-        toGrid(input, values);
+        OCRUtils.toGrid(input, values);
 
         SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
 
@@ -173,7 +173,7 @@ public class OCRHandle {
         Map<FontBounds, List<TrainedCharacterData>> trainedCharacterDataList = new HashMap<>();
         Arrays.stream(FONT_BOUNDS).forEach(fontBounds -> trainedCharacterDataList.put(fontBounds, new ArrayList<>()));
         BufferedImage input = ImageIO.read(file);
-        boolean[][] values = createGrid(input);
+        boolean[][] values = OCRUtils.createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
         BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -181,7 +181,7 @@ public class OCRHandle {
         input = temp;
 
         filter(input);
-        toGrid(input, values);
+        OCRUtils.toGrid(input, values);
 
         SearchImage searchImage = new SearchImage(values, input.getWidth(), input.getHeight());
 
@@ -631,19 +631,6 @@ public class OCRHandle {
         }
     }
 
-    private void toGrid(BufferedImage input, boolean[][] values) {
-        int arrX = 0;
-        int arrY = 0;
-        for (int y = 0; y < input.getHeight(); y++) {
-            for (int x = 0; x < input.getWidth(); x++) {
-                values[arrY][arrX++] = new Color(input.getRGB(x, y)).equals(Color.BLACK);
-            }
-
-            arrX = 0;
-            arrY++;
-        }
-    }
-
     private boolean isAllBlack(SearchCharacter searchCharacter) {
         for (boolean[] row : searchCharacter.getValues()) {
             for (boolean bool : row) {
@@ -664,18 +651,6 @@ public class OCRHandle {
         for (int y2 = 0; y2 < height; y2++) {
             image.setRGB(x, y + y2, color.getRGB());
         }
-    }
-
-    private boolean[][] createGrid(BufferedImage bufferedImage) {
-        boolean[][] values = new boolean[bufferedImage.getHeight()][];
-        for (int i = 0; i < values.length; i++) {
-            boolean[] row = new boolean[bufferedImage.getWidth()];
-            for (int i1 = 0; i1 < row.length; i1++) row[i1] = false;
-
-            values[i] = row;
-        }
-
-        return values;
     }
 
     public void printOut(boolean[][] values) {

@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr.altsearcher;
+package com.uddernetworks.newocr;
 
 import java.util.List;
 import java.util.Map;

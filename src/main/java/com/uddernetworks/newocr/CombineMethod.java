@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr.altsearcher;
+package com.uddernetworks.newocr;
 
 public enum CombineMethod {
     DOT,

@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr.altsearcher;
+package com.uddernetworks.newocr;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

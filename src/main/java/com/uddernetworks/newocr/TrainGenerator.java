@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr.altsearcher;
+package com.uddernetworks.newocr;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

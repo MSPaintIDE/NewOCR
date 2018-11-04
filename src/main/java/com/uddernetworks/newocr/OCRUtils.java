@@ -1,5 +1,8 @@
-package com.uddernetworks.newocr.altsearcher;
+package com.uddernetworks.newocr;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.List;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -74,6 +77,34 @@ public class OCRUtils {
         return result;
     }
 
+    /*
+     * Image-related methods
+     */
+
+    public static boolean[][] createGrid(BufferedImage bufferedImage) {
+        boolean[][] values = new boolean[bufferedImage.getHeight()][];
+        for (int i = 0; i < values.length; i++) {
+            boolean[] row = new boolean[bufferedImage.getWidth()];
+            for (int i1 = 0; i1 < row.length; i1++) row[i1] = false;
+
+            values[i] = row;
+        }
+
+        return values;
+    }
+
+    public static void toGrid(BufferedImage input, boolean[][] values) {
+        int arrX = 0;
+        int arrY = 0;
+        for (int y = 0; y < input.getHeight(); y++) {
+            for (int x = 0; x < input.getWidth(); x++) {
+                values[arrY][arrX++] = new Color(input.getRGB(x, y)).equals(Color.BLACK);
+            }
+
+            arrX = 0;
+            arrY++;
+        }
+    }
 
     /*
      * Getting array sections

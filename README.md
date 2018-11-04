@@ -1,5 +1,29 @@
 # NewOCR
-This project is meant to be a testing environment (Will migrate to a proper implementation later on) to create a new OCR for MS Paint IDE. It's a possibility nobody will ever see this repo, because 90% of the code is debug-related, uses horrible organization, and is nothing I would want to show anyone. Wait, why am I typing this just to remind myself? Huh, whatever.
+NewOCR is an OCR library made to suit [MS Paint IDE](https://github.com/RubbaBoy/MSPaintIDE)'s needs, though can be used in any project, as nothing is made specific to the IDE. The OCR can be trained with many fonts, though is geared towards fonts like **Verdana** and similar fonts. Other fonts _may_ require some tweaking of the character detector, but the main detection will work with no matter how different the characters are from Verdana (Hell you could modify it to work with emojis).
+
+## How it works
+### Summary
+NewOCR uses a super sketchy method of detecting characters, which in short breaks up each character into different subsections, then gets the percentage of filled in pixels each section contains, and puts them into an array. It then gets the closest matching array, which is decided as the closest pixel.
+
+### Sectioning
+Each letter is broken up into 16 sections. These aren't pixel-based, but percentage based. This allows them to be created on all sized letters with the same proportions.
+
+First, the letter is horizontally broken up into top and bottom sections. Then, each of those two sections are broken up vertically into another two sections. The remaining sections are broken up into diagonal sections, with their diagonals angling towards the center of the character. A visual of what the sections look like and their index of the value array (Will be used later) can be found here:
+![Section examples 1](/images/E1.png)
+
+After that process has occurred, the second sectioning process starts. This one is more simple, in that it first horizontally separates it into thirds, then those sections into vertical thirds. The sections and their indices look like the following:
+![Section examples 2](/images/E2.png)
+
+After the sections and their indices have been established, the system gets the percentage the pixels are black (Rather than white, as it's effectively binary image). Applied to our sections, this is what the values for sections of the letter **E** would look like (Depending on the size, these values may vary from your results):
+![Section values 1](/images/Eval1.png)
+![Section values 2](/images/Eval2.png)
+
+With the indices applied, the value array would be:
+```
+[0.86, 0.51, 0.46, 0.48, 0.46, 0.67, 0.43, 0.09, 0.77, 0.37, 0.37, 0.77, 0.36, 0.36, 0.77, 0.37, 0.37]
+```
+
+These values are then compared to the averaged out trained characters' data, and the closest match is given. Other things that affect its similarity to the trained database character are the width/height ratio, which helps distinguish characters like `_` and `-`. Some type meta can also be attached to the database character, but still has the percentage values stored. These meta values are things like if it had to append chunks of pixels together in such a way it has to be a percentage sign, if it appended pixels to the top of a base character (`!`, `i`, `j`), to a bottom of a character (`!`), and some others. The enum containing these values may be found here: [LetterMeta.java](/src/main/java/com/uddernetworks/newocr/LetterMeta.java).
 
 ## Resources
 The following papers were used as inspiration, ideas, knowledge gathering, whatever it may be towards the advancement of this OCR. I could have forgotten a few research papers, I read a lot of them. They might just be stuff I thought was really cool related to the subject, I'm generalizing this description to hell so I won't have to change it later.

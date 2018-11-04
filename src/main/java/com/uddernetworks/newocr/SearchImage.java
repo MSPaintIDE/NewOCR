@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr.altsearcher;
+package com.uddernetworks.newocr;
 
 import java.util.AbstractMap;
 import java.util.List;
@@ -32,9 +32,14 @@ public class SearchImage {
     }
 
     public boolean hasValue(int x, int y) {
+        if (x < 0 || y < 0 || y >= values.length || x >= values[y].length) return false;
         boolean value = values[y][x];
         values[y][x] = false;
         return value;
+    }
+
+    public boolean getValue(int x, int y) {
+        return values[y][x];
     }
 
     public boolean[][] getValues() {

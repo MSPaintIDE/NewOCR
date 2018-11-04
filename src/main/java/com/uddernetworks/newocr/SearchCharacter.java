@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr.altsearcher;
+package com.uddernetworks.newocr;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -170,8 +170,8 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
                 .flatMap(OCRUtils::getVerticalHalf)
                 .forEach(section -> OCRUtils.getDiagonal(section, index.get() == 1 || index.getAndIncrement() == 2).forEach(this::addSegment));
 
-        OCRUtils.getHorizontalThird(this.values).forEach(values ->
-                OCRUtils.getVerticalThird(values).forEach(this::addSegment));
+//        OCRUtils.getHorizontalThird(this.values).forEach(values ->
+//                OCRUtils.getVerticalThird(values).forEach(this::addSegment));
     }
 
     public void analyzeSlices() {
