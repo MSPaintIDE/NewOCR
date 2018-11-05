@@ -37,6 +37,23 @@ With scaling fonts to smaller sizes where they get deformed by their pixelation,
 Example of a training image:  
 ![Training image](/images/training.png)
 
+## Using It
+NewOCR is on Central, so it's insanely easy to get on both Maven and Gradle.
+
+Gradle:
+```Groovy
+compile 'com.uddernetworks.newocr:NewOCR:1.0.0'
+```
+
+Maven:
+```XML
+<dependency>
+    <groupId>com.uddernetworks.newocr</groupId>
+    <artifactId>NewOCR</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
 ## Resources
 The following papers were used as inspiration, ideas, knowledge gathering, whatever it may be towards the advancement of this OCR. I could have forgotten a few research papers, I read a lot of them. They might just be stuff I thought was really cool related to the subject, I'm generalizing this description to hell so I won't have to change it later.
 

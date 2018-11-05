@@ -89,7 +89,7 @@ public class TrainedCharacterData {
     /**
      * Does the same thing as {@link #recalculateTo(double, double)} but with a {@link SearchCharacter}, and it
      * includes its percentages as well.
-     * @param searchCharacter
+     * @param searchCharacter The {@link SearchCharacter} to be recalculated to
      */
     public void recalculateTo(SearchCharacter searchCharacter) {
         this.empty = false;

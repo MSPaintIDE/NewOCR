@@ -99,7 +99,7 @@ public class DatabaseManager {
 
     /**
      * Gets the {@link DataSource} used by the DatabaseManager
-     * @return
+     * @return The {@link DataSource} used by the DatabaseManager
      */
     public DataSource getDataSource() {
         return this.dataSource;

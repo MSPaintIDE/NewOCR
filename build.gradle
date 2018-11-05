@@ -1,9 +1,22 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3"
+    }
+}
+
 plugins {
     id 'java'
 }
 
+apply plugin: 'io.codearte.nexus-staging'
+
 group 'com.uddernetworks.newocr'
-version '1.0-SNAPSHOT'
+archivesBaseName = "NewOCR"
+version '1.0.0'
 
 sourceCompatibility = 1.8
 
@@ -16,4 +29,80 @@ dependencies {
 
     compile group: 'com.zaxxer', name: 'HikariCP', version: '2.7.8'
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
+}
+
+nexusStaging {
+    username = ossrhUser
+    password = ossrhPassword
+}
+
+javadoc {
+    failOnError = false
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+allprojects {
+    apply plugin: 'signing'
+    apply plugin: 'maven'
+
+    // Signature of artifacts
+    signing {
+        sign configurations.archives
+    }
+
+    // OSSRH publication
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                // POM signature
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                // Target repository
+                repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                    authentication(userName: ossrhUser, password: ossrhPassword)
+                }
+                pom.project {
+                    name 'NewOCR'
+                    description 'NewOCR is a library for simple but efficient OCR detection in pure Java.'
+                    packaging 'jar'
+                    url 'https://github.com/RubbaBoy/NewOCR'
+
+                    scm {
+                        connection 'scm:git:https://github.com/RubbaBoy/NewOCR.git'
+                        developerConnection 'scm:git:git@github.com:RubbaBoy/NewOCR.git'
+                        url 'https://github.com/RubbaBoy/NewOCR.git'
+                    }
+
+                    licenses {
+                        license {
+                            name 'The MIT License (MIT)'
+                            url 'http://opensource.org/licenses/MIT'
+                            distribution 'repo'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'RubbaBoy'
+                            name = 'Adam Yarris'
+                            email = 'adamyarris@gmail.com'
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }
