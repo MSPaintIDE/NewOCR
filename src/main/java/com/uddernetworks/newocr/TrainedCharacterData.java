@@ -1,12 +1,12 @@
 package com.uddernetworks.newocr;
 
-import javafx.util.Pair;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalDouble;
 
+/**
+ * This is an object meant for storing the data for characters in the training stage.
+ */
 public class TrainedCharacterData {
 
     private char value;
@@ -20,38 +20,65 @@ public class TrainedCharacterData {
     private boolean empty = true;
     private LetterMeta letterMeta = LetterMeta.NONE;
 
-    public TrainedCharacterData(char value) {
-        this.value = value;
-    }
-
-    public char getValue() {
-        return value;
-    }
-
-    public double[] getSegmentPercentages() {
-        return this.segmentPercentages;
-    }
-
-    public void setSegmentPercentages(double[] segmentPercentages) {
-        this.segmentPercentages = segmentPercentages;
-    }
-
-    public boolean hasDot() {
-        return this.hasDot;
-    }
-
-    public void setHasDot(boolean hasDot) {
-        if (!this.hasDot) this.hasDot = hasDot;
-    }
-
-    public double getSizeRatio() {
-        return sizeRatio;
-    }
-
     private List<double[]> recalculatingList = new ArrayList<>();
     private List<Double> recalculatingWidths = new ArrayList<>();
     private List<Double> recalculatingHeights = new ArrayList<>();
 
+    /**
+     * Creates a {@link TrainedCharacterData} from a character value
+     * @param value The known character value
+     */
+    public TrainedCharacterData(char value) {
+        this.value = value;
+    }
+
+    /**
+     * Gets the assigned character value
+     * @return The assigned character value
+     */
+    public char getValue() {
+        return value;
+    }
+
+    /**
+     * Gets the calculated array of the percentages for each section. The array is always 16 elements with everything
+     * being <= 1
+     * @return An array of percentages
+     */
+    public double[] getSegmentPercentages() {
+        return this.segmentPercentages;
+    }
+
+    /**
+     * Gets if the trained character has a dot.
+     * @return If the trained character has a dot
+     */
+    public boolean hasDot() {
+        return this.hasDot;
+    }
+
+    /**
+     * Sets if the trained character has a dot.
+     * @param hasDot If the trained character has a dot
+     */
+    public void setHasDot(boolean hasDot) {
+        if (!this.hasDot) this.hasDot = hasDot;
+    }
+
+    /**
+     * Gets the width/height size ratio.
+     * @return The width/height size ratio
+     */
+    public double getSizeRatio() {
+        return sizeRatio;
+    }
+
+    /**
+     * Adds the given width and height variables to the internal list to be put into calculations upon invoking
+     * {@link #finishRecalculations()}
+     * @param width The width of the character
+     * @param height The height of the character
+     */
     public void recalculateTo(double width, double height) {
         this.empty = false;
 
@@ -59,6 +86,11 @@ public class TrainedCharacterData {
         recalculatingHeights.add(height);
     }
 
+    /**
+     * Does the same thing as {@link #recalculateTo(double, double)} but with a {@link SearchCharacter}, and it
+     * includes its percentages as well.
+     * @param searchCharacter
+     */
     public void recalculateTo(SearchCharacter searchCharacter) {
         this.empty = false;
         double[] segmentPercentages = searchCharacter.getSegmentPercentages();
@@ -70,6 +102,11 @@ public class TrainedCharacterData {
         }
     }
 
+    /**
+     * Calculates everything based on the data inserted by {@link #recalculateTo(double, double)} and
+     * {@link #recalculateTo(SearchCharacter)} by averaging the width and heights provided, and averaging the
+     * percentages retrieved from {@link SearchCharacter}s.
+     */
     public void finishRecalculations() {
         OptionalDouble widthAverageOptional = recalculatingWidths.stream().mapToDouble(t -> t).average();
         this.widthAverage = widthAverageOptional.isPresent() ? widthAverageOptional.getAsDouble() : 0D;
@@ -89,32 +126,11 @@ public class TrainedCharacterData {
         }
     }
 
-    public Pair<Double, Double> getSimilarityWith(SearchCharacter searchCharacter) {
-        double[] otherPercentages = searchCharacter.getSegmentPercentages();
-        double[] differences = new double[8 + 9];
-        for (int i = 0; i < 8 + 9; i++) {
-            differences[i] = Math.max(this.segmentPercentages[i], otherPercentages[i]) - Math.min(otherPercentages[i], this.segmentPercentages[i]);
-        }
-
-        double checkingRatio = ((double) searchCharacter.getWidth() / (double) searchCharacter.getHeight());
-        double ratioDifference = Math.max(checkingRatio, this.sizeRatio) - Math.min(checkingRatio, this.sizeRatio);
-
-        return new Pair<>(1 - Arrays.stream(differences).average().getAsDouble(), ratioDifference); // / ratioDifference
-    }
-
-    public double getWidthAverage() {
-        return widthAverage;
-    }
-
-    public double getHeightAverage() {
-        return heightAverage;
-    }
-
-    @Override
-    public String toString() {
-        return String.valueOf(value);
-    }
-
+    /**
+     * If the given value is less than the minimum center, it's the new minimum center, and if it's bigger than the
+     * maximum center, it will be the new maximum center. (Retrievable via {@link #getMaxCenter() and {@link #getMinCenter()}})
+     * @param center The value to add as center
+     */
     public void recalculateCenter(double center) {
         if (minCenter == -1 && maxCenter == -1) {
             minCenter = center;
@@ -125,23 +141,65 @@ public class TrainedCharacterData {
         }
     }
 
+    /**
+     * Gets the average width for everything trained with this object.
+     * @return The average width. Will return 0 if {@link #finishRecalculations()} has not been invoked.
+     */
+    public double getWidthAverage() {
+        return widthAverage;
+    }
+
+    /**
+     * Gets the average height for everything trained with this object.
+     * @return The average height. Will return 0 if {@link #finishRecalculations()} has not been invoked.
+     */
+    public double getHeightAverage() {
+        return heightAverage;
+    }
+
+    /**
+     * Gets the minimum center value of all the training data used.
+     * @return The minimum center value of all the training data used
+     */
     public double getMinCenter() {
         return minCenter;
     }
 
+    /**
+     * Gets the maximum center value of all the training data used.
+     * @return The maximum center value of all the training data used
+     */
     public double getMaxCenter() {
         return maxCenter;
     }
 
+    /**
+     * Gets if anything has been recalcuated/prepared to be recalculated to the character, e.g. by using
+     * {@link #recalculateTo(double, double)} or {@link #recalculateTo(SearchCharacter)}.
+     * @return If anything has been recalculated
+     */
     public boolean isEmpty() {
         return this.empty;
     }
 
+    /**
+     * Gets the letter meta of the character.
+     * @return The letter meta of the character
+     */
     public LetterMeta getLetterMeta() {
         return letterMeta;
     }
 
+    /**
+     * Sets the letter meta of the character.
+     * @param letterMeta The letter meta of the character
+     */
     public void setLetterMeta(LetterMeta letterMeta) {
         this.letterMeta = letterMeta;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
     }
 }
