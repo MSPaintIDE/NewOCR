@@ -28,6 +28,22 @@ public class ScannedImage {
     }
 
     /**
+     * gets the amount of lines in the image.
+     * @return The amount of lines in the image
+     */
+    public int getLineCount() {
+        return this.grid.size();
+    }
+
+    /**
+     * Returns the raw, mutable grid of {@link ImageLetter}s internally used.
+     * @return The raw, mutable grid of values
+     */
+    public List<List<ImageLetter>> getGrid() {
+        return this.grid;
+    }
+
+    /**
      * Adds a line containing {@link ImageLetter}s
      * @param databaseCharacterList A list of {@link ImageLetter}s as the line
      */
