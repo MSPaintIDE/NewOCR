@@ -19,7 +19,7 @@ import static com.uddernetworks.newocr.CharacterGettingUtils.*;
 
 public class OCRHandle {
 
-    public static final FontBounds[] FONT_BOUNDS = {
+    private static final FontBounds[] FONT_BOUNDS = {
             new FontBounds(0, 12),
             new FontBounds(13, 20),
             new FontBounds(21, 30),
@@ -157,7 +157,7 @@ public class OCRHandle {
                         // This is signaled when the difference of the ratios are a value that is probably incorrect.
                         // If the ratio is very different, it should be looked into, as it could be from faulty detection.
                         if (diff > 0.2D) {
-                            System.err.println("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
+                            error("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
                         }
 
                         lines.get(center).add(imageLetter);
@@ -387,7 +387,7 @@ public class OCRHandle {
      * by default). This method adds the spaces to the end of the line currently, so a resort is needed.
      * @param line The line to add spaces to
      * @param fontSize The font size to base the space widths off of
-     * @return
+     * @return A copy of the input {@link ImageLetter} List, but with spaces appended to the end
      */
     private List<ImageLetter> getSpacesFor(List<ImageLetter> line, int fontSize) {
         List<ImageLetter> ret = new ArrayList<>();
@@ -398,7 +398,7 @@ public class OCRHandle {
             // Gets the space DatabaseCharcater used for the current font size from the database
             DatabaseCharacter space = data.stream().filter(databaseCharacter -> databaseCharacter.getLetter() == ' ').findFirst().orElse(null);
             if (space == null) {
-                System.err.println("No space found for current font size: " + fontSize);
+                error("No space found for current font size: " + fontSize);
                 return line;
             }
 
@@ -720,6 +720,14 @@ public class OCRHandle {
         } catch (ArrayIndexOutOfBoundsException e) {
             return true;
         }
+    }
+
+    /**
+     * Prints out an error message if the System property `newocr.error` is `true`.
+     * @param string The error to potentially print out
+     */
+    private void error(String string) {
+        if (Boolean.getBoolean("newocr.error")) System.err.println(string);
     }
 
     /**

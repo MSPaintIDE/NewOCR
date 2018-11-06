@@ -35,4 +35,13 @@ public class ScannedImage {
         grid.add(databaseCharacterList);
     }
 
+    /**
+     * Gets the line at the given Y index value.
+     * @param y The index of the line
+     * @return The line at the given Y index value
+     */
+    public List<ImageLetter> getLine(int y) {
+        return grid.get(y);
+    }
+
 }
