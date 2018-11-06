@@ -30,17 +30,17 @@ public class Main {
         if (inputLine.equalsIgnoreCase("yes") || inputLine.equalsIgnoreCase("y")) {
             System.out.println("Generating features...");
             long start = System.currentTimeMillis();
-            ocrHandle.trainImage(new File("E:\\NewOCR\\training.png"));
+            ocrHandle.trainImage(new File("training.png"));
             System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
             System.exit(0);
         }
 
-        ScannedImage scannedImage = ocrHandle.scanImage(new File("E:\\NewOCR\\HWTest.png"));
+        ScannedImage scannedImage = ocrHandle.scanImage(new File("HWTest.png"));
         System.out.println("Got:\n" + scannedImage.getPrettyString());
     }
 
     private void getSections(String[] args) throws IOException {
-        BufferedImage input = ImageIO.read(new File("E:\\NewOCR\\E.png"));
+        BufferedImage input = ImageIO.read(new File("E.png"));
         boolean[][] values = OCRUtils.createGrid(input);
 
         OCRUtils.toGrid(input, values);

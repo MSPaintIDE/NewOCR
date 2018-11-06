@@ -51,7 +51,7 @@ public class TrainGenerator {
         }
 
         try {
-            ImageIO.write(image, "png", new File("E:\\NewOCR\\training.png"));
+            ImageIO.write(image, "png", new File("training.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
