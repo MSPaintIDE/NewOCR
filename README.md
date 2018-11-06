@@ -42,7 +42,7 @@ NewOCR is on Central, so it's insanely easy to get on both Maven and Gradle.
 
 Gradle:
 ```Groovy
-compile 'com.uddernetworks.newocr:NewOCR:1.0.0'
+compile 'com.uddernetworks.newocr:NewOCR:1.0.1'
 ```
 
 Maven:
@@ -50,7 +50,7 @@ Maven:
 <dependency>
     <groupId>com.uddernetworks.newocr</groupId>
     <artifactId>NewOCR</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 

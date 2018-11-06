@@ -15,6 +15,7 @@ public class ImageLetter {
     private int height;
     private double ratio;
     private List<Map.Entry<Integer, Integer>> segments;
+    private Object data;
 
     /**
      * Creates an ImageLetter from collected data.
@@ -139,5 +140,32 @@ public class ImageLetter {
      */
     public char getLetter() {
         return this.databaseCharacter.getLetter();
+    }
+
+    /**
+     * Gets any data set to the {@link ImageLetter} object, useful for storing any needed data about the character to be
+     * used in the future.
+     * @return Data set to the character
+     */
+    public <T> T getData(Class<T> clazz) {
+        return clazz.isInstance(data) ? clazz.cast(data) : null;
+    }
+
+    /**
+     * Gets the raw data Object set to the {@link ImageLetter} object, useful for storing any needed data about the
+     * character to be used in the future.
+     * @return Data set to the character
+     */
+    public Object getData() {
+        return this.data;
+    }
+
+    /**
+     * Sets any data to the {@link ImageLetter} object, useful for storing any needed data about the character to be
+     * used in the future.
+     * @param data The data to be set
+     */
+    public void setData(Object data) {
+        this.data = data;
     }
 }
