@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -191,6 +192,94 @@ public class OCRUtils {
         }
     }
 
+    /**
+     * Gets if the row has any `true` (Black) values in it
+     * @param values The grid of image values
+     * @param y The Y coordinate of the row to check
+     * @return If the row has anything in it
+     */
+    public static boolean isRowPopulated(boolean[][] values, int y) {
+        for (int x = 0; x < values[y].length; x++) {
+            if (values[y][x]) return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Gets all the characters between the two Y values (The line bounds) form the {@link SearchCharacter} list.
+     * @param topY The top Y value of the line
+     * @param bottomY The bottom Y value of the line
+     * @param searchCharacters The {@link SearchCharacter} list to check from
+     * @return The {@link SearchCharacter} objects between the given Y values
+     */
+    public static List<SearchCharacter> findCharactersAtLine(int topY, int bottomY, List<SearchCharacter> searchCharacters) {
+        return searchCharacters
+                .stream()
+                .sorted()
+                .filter(searchCharacter -> OCRUtils.isWithin(topY, bottomY, searchCharacter.getY()))
+                .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    /**
+     * Sets all pixels from input to temp. When running in the program if the System property `newocr.rewrite` is set to
+     * true, it will write the image to stop any weird image decoding issues
+     * @param temp The empty image with the same size as the input that will be written to
+     * @param input The input that will be read from
+     */
+    public static void rewriteImage(BufferedImage temp, BufferedImage input) {
+        for (int y = 0; y < temp.getHeight(); y++) {
+            for (int x = 0; x < temp.getWidth(); x++) {
+                temp.setRGB(x, y, input.getRGB(x, y));
+            }
+        }
+    }
+
+    /**
+     * Gets if a {@link SearchCharacter} is fully black for things like . or the sections of =
+     * @param searchCharacter The input {@link SearchCharacter} to check
+     * @return If the input is all black
+     */
+    public static boolean isAllBlack(SearchCharacter searchCharacter) {
+        // TODO: Replace with a difference check with threshold and/or a circular check for other fonts
+        for (boolean[] row : searchCharacter.getValues()) {
+            for (boolean bool : row) {
+                if (!bool) return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Binarizes the input image, making all pixels wither black or white with an alpha of 255
+     * @param bufferedImage The input image to be mutated
+     */
+    public static void filter(BufferedImage bufferedImage) {
+        for (int y = 0; y < bufferedImage.getHeight(); y++) {
+            for (int x = 0; x < bufferedImage.getWidth(); x++) {
+                Color writeColor = isBlack(bufferedImage, x, y) ? new Color(0, 0, 0, 255) : new Color(255, 255, 255, 255);
+                bufferedImage.setRGB(x, y, writeColor.getRGB());
+            }
+        }
+    }
+
+    /**
+     * Gets if a pixel should be considered black.
+     * @param image The input image
+     * @param x The X coordinate to check
+     * @param y The Y coordinate to check
+     * @return If the pixel should be considered black
+     */
+    public static boolean isBlack(BufferedImage image, int x, int y) {
+        try {
+            Color pixel = new Color(image.getRGB(x, y));
+            return (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3 < 255 * 0.75;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return true;
+        }
+    }
+
     /*
      * Getting array sections
      */
@@ -361,7 +450,7 @@ public class OCRUtils {
      * @param values The values to convert into an image
      * @param path The path of the file
      */
-    private void makeImage(boolean[][] values, String path) {
+    public static void makeImage(boolean[][] values, String path) {
         try {
             BufferedImage image = new BufferedImage(values[0].length, values.length, BufferedImage.TYPE_INT_ARGB);
 

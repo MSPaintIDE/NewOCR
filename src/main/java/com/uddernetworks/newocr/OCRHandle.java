@@ -3,11 +3,9 @@ package com.uddernetworks.newocr;
 import javafx.util.Pair;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -49,11 +47,11 @@ public class OCRHandle {
 
         if (Boolean.getBoolean("newocr.rewrite")) {
             BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            rewriteImage(temp, input);
+            OCRUtils.rewriteImage(temp, input);
             input = temp;
         }
 
-        filter(input);
+        OCRUtils.filter(input);
         OCRUtils.toGrid(input, values);
 
         SearchImage searchImage = new SearchImage(values);
@@ -233,11 +231,11 @@ public class OCRHandle {
 
         if (Boolean.getBoolean("newocr.rewrite")) {
             BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            rewriteImage(temp, input);
+            OCRUtils.rewriteImage(temp, input);
             input = temp;
         }
 
-        filter(input);
+        OCRUtils.filter(input);
         OCRUtils.toGrid(input, values);
 
         boolean[][] valuesClone = clone2DArray(values);
@@ -271,7 +269,7 @@ public class OCRHandle {
         for (Pair<Integer, Integer> lineBound : lineBounds) {
             int lineHeight = lineBound.getValue() - lineBound.getKey();
             // Gets all characters found at the line bounds from the searchCharacters (Collected from the double for loops)
-            List<SearchCharacter> line = findCharactersAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
+            List<SearchCharacter> line = OCRUtils.findCharactersAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
 
             if (!line.isEmpty()) {
                 AtomicInteger letterIndex = new AtomicInteger(0);
@@ -453,7 +451,7 @@ public class OCRHandle {
      * @param searchCharacters The mutable list of SearchCharacters that will be added to when a group of pixels is found
      * @return If it count a group of pixels
      */
-    private boolean getLetterFrom(SearchImage searchImage, int x, int y, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
+    public static boolean getLetterFrom(SearchImage searchImage, int x, int y, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         SearchCharacter searchCharacter;
 
         searchImage.scanFrom(x, y, coordinates);
@@ -494,7 +492,7 @@ public class OCRHandle {
             return true;
         }
 
-        if (searchCharacter.isProbablyColon() && isAllBlack(searchCharacter) && !searchCharacter.hasDot()) {
+        if (searchCharacter.isProbablyColon() && OCRUtils.isAllBlack(searchCharacter) && !searchCharacter.hasDot()) {
             possibleDot = getBottomColon(searchCharacters, searchCharacter);
             if (possibleDot.isPresent()) {
                 combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON, LetterMeta.EVEN_DOTS);
@@ -583,14 +581,14 @@ public class OCRHandle {
      * @param values The 2D array of values derived from the image to check from
      * @return A list of the absolute top and bottom line values
      */
-    private List<Pair<Integer, Integer>> getLineBoundsForTesting(boolean[][] values) {
+    public static List<Pair<Integer, Integer>> getLineBoundsForTesting(boolean[][] values) {
         // Pair<topY, bottomY>
         List<Pair<Integer, Integer>> lines = new ArrayList<>();
 
         int height = 0;
         for (int y = 0; y < values.length; y++) {
             // If there's something on the line, add to their height of it.
-            if (isRowPopulated(values, y)) {
+            if (OCRUtils.isRowPopulated(values, y)) {
                 height++;
             } else if (height > 0) { // If the row has nothing on it and the line is populated, add it to the values
                 int heightUntil = 0;
@@ -605,7 +603,7 @@ public class OCRHandle {
                         break;
                     }
 
-                    if (isRowPopulated(values, y + i)) {
+                    if (OCRUtils.isRowPopulated(values, y + i)) {
                         if (finalSpace == -1) finalSpace = heightUntil;
                     } else {
                         heightUntil++;
@@ -632,94 +630,6 @@ public class OCRHandle {
         }
 
         return lines;
-    }
-
-    /**
-     * Gets if the row has any `true` (Black) values in it
-     * @param values The grid of image values
-     * @param y The Y coordinate of the row to check
-     * @return If the row has anything in it
-     */
-    private boolean isRowPopulated(boolean[][] values, int y) {
-        for (int x = 0; x < values[y].length; x++) {
-            if (values[y][x]) return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Gets all the characters between the two Y values (The line bounds) form the {@link SearchCharacter} list.
-     * @param topY The top Y value of the line
-     * @param bottomY The bottom Y value of the line
-     * @param searchCharacters The {@link SearchCharacter} list to check from
-     * @return The {@link SearchCharacter} objects between the given Y values
-     */
-    private List<SearchCharacter> findCharactersAtLine(int topY, int bottomY, List<SearchCharacter> searchCharacters) {
-        return searchCharacters
-                .stream()
-                .sorted()
-                .filter(searchCharacter -> OCRUtils.isWithin(topY, bottomY, searchCharacter.getY()))
-                .collect(Collectors.toCollection(LinkedList::new));
-    }
-
-    /**
-     * Sets all pixels from input to temp. When running in the program if the System property `newocr.rewrite` is set to
-     * true, it will write the image to stop any weird image decoding issues
-     * @param temp The empty image with the same size as the input that will be written to
-     * @param input The input that will be read from
-     */
-    private void rewriteImage(BufferedImage temp, BufferedImage input) {
-        for (int y = 0; y < temp.getHeight(); y++) {
-            for (int x = 0; x < temp.getWidth(); x++) {
-                temp.setRGB(x, y, input.getRGB(x, y));
-            }
-        }
-    }
-
-    /**
-     * Gets if a {@link SearchCharacter} is fully black for things like . or the sections of =
-     * @param searchCharacter The input {@link SearchCharacter} to check
-     * @return If the input is all black
-     */
-    private boolean isAllBlack(SearchCharacter searchCharacter) {
-        // TODO: Replace with a difference check with threshold and/or a circular check for other fonts
-        for (boolean[] row : searchCharacter.getValues()) {
-            for (boolean bool : row) {
-                if (!bool) return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Binarizes the input image, making all pixels wither black or white with an alpha of 255
-     * @param bufferedImage The input image to be mutated
-     */
-    private void filter(BufferedImage bufferedImage) {
-        for (int y = 0; y < bufferedImage.getHeight(); y++) {
-            for (int x = 0; x < bufferedImage.getWidth(); x++) {
-                Color writeColor = isBlack(bufferedImage, x, y) ? new Color(0, 0, 0, 255) : new Color(255, 255, 255, 255);
-                bufferedImage.setRGB(x, y, writeColor.getRGB());
-            }
-        }
-    }
-
-    /**
-     * Gets if a pixel should be considered black.
-     * @param image The input image
-     * @param x The X coordinate to check
-     * @param y The Y coordinate to check
-     * @return If the pixel should be considered black
-     */
-    private boolean isBlack(BufferedImage image, int x, int y) {
-        try {
-            Color pixel = new Color(image.getRGB(x, y));
-            return (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3 < 255 * 0.75;
-        } catch (ArrayIndexOutOfBoundsException e) {
-            return true;
-        }
     }
 
     /**

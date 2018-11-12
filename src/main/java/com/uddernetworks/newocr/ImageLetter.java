@@ -14,6 +14,7 @@ public class ImageLetter {
     private int width;
     private int height;
     private double ratio;
+    private boolean[][] values;
     private List<Map.Entry<Integer, Integer>> segments;
     private Object data;
 
@@ -167,5 +168,21 @@ public class ImageLetter {
      */
     public void setData(Object data) {
         this.data = data;
+    }
+
+    /**
+     * Gets the black (true) and white (false) pixels of the scanned character.
+     * @return The grid of black or white values
+     */
+    public boolean[][] getValues() {
+        return values;
+    }
+
+    /**
+     * Sets the black (true) and white (false) pixels of the scanned character.
+     * @param values The grid of black or white values. Will return `null` for spaces
+     */
+    public void setValues(boolean[][] values) {
+        this.values = values;
     }
 }
