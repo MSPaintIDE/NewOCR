@@ -15,6 +15,8 @@ import java.util.stream.Stream;
  */
 public class OCRUtils {
 
+    public static final AbstractMap.SimpleEntry<Integer, Integer> ZERO_PLACEHOLDER = new AbstractMap.SimpleEntry<>(0, 0);
+
     /*
      * Advanced/Convenient Comparisons
      */
@@ -371,7 +373,7 @@ public class OCRUtils {
      * @return A stream of 3 thirds: left, middle, and right
      */
     public static Stream<AbstractMap.SimpleEntry<Integer, Integer>> getVerticalThird(boolean[][] values) {
-        if (values.length == 0) return Stream.of(null, null, null);
+        if (values.length == 0) return Stream.of(ZERO_PLACEHOLDER, ZERO_PLACEHOLDER, ZERO_PLACEHOLDER);
         int leftHeight = values[0].length / 3;
         int middleHeight = values[0].length - leftHeight * 2;
 
