@@ -196,7 +196,7 @@ public class OCRHandle {
 
         ScannedImage scannedImage = new ScannedImage();
 
-        lines.values().forEach(scannedImage::addLine);
+        lines.forEach(scannedImage::addLine);
 
         return scannedImage;
     }
@@ -564,7 +564,8 @@ public class OCRHandle {
         // If there's no characters found, don't continue
         if (entries.size() == 0) return null;
         Map.Entry<ImageLetter, Double> firstEntry = entries.get(0); // The most similar character
-        entries.removeIf(value -> !value.getValue().equals(firstEntry.getValue())); // Removes any character without the
+        double allowedDouble = firstEntry.getValue() * 0.1D;
+        entries.removeIf(value -> OCRUtils.getDiff(value.getValue(), firstEntry.getValue()) > allowedDouble); // Removes any character without the
         // same difference (Most often a similarity of 0)
 
         double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
@@ -572,7 +573,9 @@ public class OCRHandle {
         // Sorts the equally matching characters by their width to height ratios, the first being most similar
         entries.sort(Comparator.comparingDouble(entry -> OCRUtils.getDiff(searchRatio, entry.getKey().getDatabaseCharacter().getAvgWidth() / entry.getKey().getDatabaseCharacter().getAvgHeight())));
 
-        return entries.get(0).getKey();
+        ImageLetter first = entries.get(0).getKey();
+        first.setValues(searchCharacter.getValues());
+        return first;
     }
 
     /**

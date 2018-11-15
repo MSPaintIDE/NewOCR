@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
 public class Main {
 
     public static void main(String[] args) throws IOException { // alphabet48
-//        new Main().run(args);
-        new Main().getSections(args);
+        new Main().run(args);
+//        new Main().getSections(args);
     }
 
     private void run(String[] args) throws IOException {
