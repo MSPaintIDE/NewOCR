@@ -42,7 +42,7 @@ NewOCR is on Central, so it's insanely easy to get on both Maven and Gradle.
 
 Gradle:
 ```Groovy
-compile 'com.uddernetworks.newocr:NewOCR:1.0.2'
+compile 'com.uddernetworks.newocr:NewOCR:1.0.3'
 ```
 
 Maven:
@@ -50,7 +50,7 @@ Maven:
 <dependency>
     <groupId>com.uddernetworks.newocr</groupId>
     <artifactId>NewOCR</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
@@ -65,6 +65,12 @@ To use NewOCR, a MySQL database is required. This is to store all the section da
 You will _not_ be required to run any queries manually once you have created a table for the OCR; the program will do that for you.
 
 Before you do anything with detecting characters you must train the OCR. It does not use any Neural Networks as shown in the explanation above, but it needs to register how the font works. In order to get this working in `Main.java`, make sure in the main method you have `new Main().run(args)` uncommented, and that more down the file that `new File("training.png")` and  `new File("HWTest.png")` points to valid paths, the first one being the training image as described above, and then your input image. When you run the program, type `yes` when it asks if you want to train, and then wait a minute or so. When the program exits, you should be able to run it again, answer `no` to that question, and after a few seconds it should give its output.  
+
+### System properties used
+NewOCR uses a few system properties for some extra options for debugging and other things. Here is a list of them (More may be added in the future):
+- **newocr.rewrite** [Boolean] - Rewrites the image to a new BufferedImage before it's scanned. This could fix some weird encoding issues happening in the past
+- **newocr.error** [Boolean] - If the system should output certain problems it thinks may have occurred (NOT stacktraces, those are always shown)
+- **newocr.debug** [Boolean] - If the system should display some certain debug messages used in the program
 
 ## Resources
 The following papers were used as inspiration, ideas, knowledge gathering, whatever it may be towards the advancement of this OCR. I could have forgotten a few research papers, I read a lot of them. They might just be stuff I thought was really cool related to the subject, I'm generalizing this description to hell so I won't have to change it later.

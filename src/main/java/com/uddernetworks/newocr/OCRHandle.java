@@ -103,18 +103,8 @@ public class OCRHandle {
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparingInt(ImageLetter::getX))
                 .forEachOrdered(imageLetter -> {
-                    if (       imageLetter.getLetter() == ','
-                            || imageLetter.getLetter() == '.'
-                            || imageLetter.getLetter() == '_'
-                            || imageLetter.getLetter() == '`'
-                            || imageLetter.getLetter() == '\''
-                            || imageLetter.getLetter() == '"'
-                            || imageLetter.getLetter() == '*'
-                    ) {
-                        secondList.add(imageLetter);
-                    } else {
-                        firstList.add(imageLetter);
-                    }
+                    char cha = imageLetter.getLetter();
+                    (cha == ',' || cha == '.' || cha == '_' || cha == '`' || cha == '\'' || cha == '"' || cha == '*' ? secondList : firstList).add(imageLetter);
                 });
 
         // Orders characters in their correct lines.
