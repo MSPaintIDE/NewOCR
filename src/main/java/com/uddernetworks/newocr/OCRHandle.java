@@ -14,8 +14,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -348,27 +348,19 @@ public class OCRHandle {
 
         // Inserts all character data into the database after recalculating the
         trainedCharacterDataList
-                .forEach((fontBounds, databaseTrainedCharacters) -> databaseTrainedCharacters
-                        .parallelStream().forEach(databaseTrainedCharacter -> {
+                .forEach((fontBounds, databaseTrainedCharacters) -> databaseTrainedCharacters.forEach(databaseTrainedCharacter -> {
                             try {
                                 if (databaseTrainedCharacter.isEmpty()) return;
                                 databaseTrainedCharacter.finishRecalculations();
                                 char letter = databaseTrainedCharacter.getValue();
 
-                                Future databaseFuture = databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont());
-                                while (!databaseFuture.isDone()) {
-                                }
-
-                                databaseFuture = databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' ');
-                                while (!databaseFuture.isDone()) {
-                                }
-
-                                if (letter != ' ') {
-                                    databaseFuture = databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
-                                    while (!databaseFuture.isDone()) {
-                                    }
-                                }
-
+                                CompletableFuture.runAsync(() -> databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont()))
+                                        .thenRunAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
+                                        .thenRunAsync(() -> {
+                                            if (letter != ' ') {
+                                                databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
+                                            }
+                                        });
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }

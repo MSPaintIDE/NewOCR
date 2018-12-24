@@ -17,17 +17,19 @@ import java.util.stream.Collectors;
 
 public class Main {
 
-    public static void main(String[] args) throws IOException { // alphabet48
+    public static void main(String[] args) throws IOException, InterruptedException { // alphabet48
         new Main().run(args);
 //        new Main().getSections(args);
     }
 
-    private void run(String[] args) throws IOException {
-        DatabaseManager databaseManager = new OCRDatabaseManager(args[0], args[1], args[2]);
+    private void run(String[] args) throws IOException, InterruptedException {
+        DatabaseManager databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db"));
 
         Scanner scanner = new Scanner(System.in);
 
         OCRHandle ocrHandle = new OCRHandle(databaseManager);
+
+        System.setProperty("newocr.debug", "true");
 
         System.out.println("Do you want to train? yes/no");
 
@@ -37,11 +39,16 @@ public class Main {
             long start = System.currentTimeMillis();
             ocrHandle.trainImage(new File("training.png"));
             System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
-            System.exit(0);
+
+            Thread.sleep(1000); // HSQLDB freaks out and kills the database file after writing if it doesn't have some kind of delay before killing the threads
+            databaseManager.shutdown();
+            return;
         }
 
         ScannedImage scannedImage = ocrHandle.scanImage(new File("HWTest.png"));
         System.out.println("Got:\n" + scannedImage.getPrettyString());
+
+        databaseManager.shutdown();
     }
 
     private void getSections(String[] args) throws IOException {

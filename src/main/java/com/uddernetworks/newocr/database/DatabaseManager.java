@@ -29,7 +29,7 @@ public interface DatabaseManager {
      * @param isLetter If the charcater is a letter (true) or if it is a space (false)
      * @return A Future
      */
-    Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter);
+    void createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter);
 
     /**
      * Clears all data revolving around a character from both the `letters` and `sectionData` table.
@@ -38,7 +38,7 @@ public interface DatabaseManager {
      * @param maxFontSize The maximum font size to clear
      * @return A Future
      */
-    Future clearLetterSegments(char letter, int minFontSize, int maxFontSize);
+    void clearLetterSegments(char letter, int minFontSize, int maxFontSize);
 
     /**
      * Adds segments (Percentage data points) to the database for a certain character.
@@ -48,7 +48,7 @@ public interface DatabaseManager {
      * @param segments An array with a length of 17 all <= 1 as percentage data points
      * @return A Future
      */
-    Future addLetterSegments(char letter, int minFontSize, int maxFontSize, double[] segments);
+    void addLetterSegments(char letter, int minFontSize, int maxFontSize, double[] segments);
 
     /**
      * Gets all the {@link DatabaseCharacter}s between the given {@link FontBounds}.
@@ -56,4 +56,15 @@ public interface DatabaseManager {
      * @return A Future of all the {@link DatabaseCharacter}s
      */
     Future<List<DatabaseCharacter>> getAllCharacterSegments(FontBounds fontBounds);
+
+    /**
+     * Shuts down all executor threads when the program is ready to be terminated.
+     */
+    void shutdown();
+
+    /**
+     * Gets if the database manager is running off of the internal HSQLDB database or the external MySQL database.
+     * @return If the database manager is using the internal HSQLDB database
+     */
+    boolean usesInternal();
 }

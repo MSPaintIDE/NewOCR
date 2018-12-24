@@ -411,30 +411,32 @@ public class OCRUtils {
      * @return A List of 2 halves
      */
     public static List<Map.Entry<Integer, Integer>> getDiagonal(boolean[][] values, boolean increasing) {
-        double slope = (double) values.length / (double) values[0].length;
-
-        List<Integer> yPositions = new ArrayList<>();
-
-        for (int x = 0; x < values[0].length; x++) {
-            double y = slope * x;
-            if (increasing) y = values.length - y;
-            yPositions.add((int) y);
-        }
-
         int topSize = 0;
         int topTrue = 0;
         int bottomSize = 0;
         int bottomTrue = 0;
 
-        for (int x = 0; x < values[0].length; x++) {
-            int yPos = yPositions.get(x);
-            for (int y = 0; y < values.length; y++) {
-                if (y < yPos) {
-                    if (values[y][x]) bottomTrue++;
-                    bottomSize++;
-                } else {
-                    if (values[y][x]) topTrue++;
-                    topSize++;
+        if (values != null) {
+            double slope = (double) values.length / (double) values[0].length;
+
+            List<Integer> yPositions = new ArrayList<>();
+
+            for (int x = 0; x < values[0].length; x++) {
+                double y = slope * x;
+                if (increasing) y = values.length - y;
+                yPositions.add((int) y);
+            }
+
+            for (int x = 0; x < values[0].length; x++) {
+                int yPos = yPositions.get(x);
+                for (int y = 0; y < values.length; y++) {
+                    if (y < yPos) {
+                        if (values[y][x]) bottomTrue++;
+                        bottomSize++;
+                    } else {
+                        if (values[y][x]) topTrue++;
+                        topSize++;
+                    }
                 }
             }
         }

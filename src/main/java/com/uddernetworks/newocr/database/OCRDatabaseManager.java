@@ -8,6 +8,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 public class OCRDatabaseManager implements DatabaseManager {
 
+    private final boolean useInternal;
     private DataSource dataSource;
     private ExecutorService executor = Executors.newCachedThreadPool();
     private String createLetterEntry;
@@ -39,17 +41,42 @@ public class OCRDatabaseManager implements DatabaseManager {
 
     /**
      * Connects to the database with the given credentials, and executes the queries found in letters.sql and sectionData.sql
+     *
      * @param databaseURL The URL to the database
-     * @param username The username of the connecting account
-     * @param password The password of the connecting account
+     * @param username    The username of the connecting account
+     * @param password    The password of the connecting account
      * @throws IOException
      */
     public OCRDatabaseManager(String databaseURL, String username, String password) throws IOException {
+        this(false, null, databaseURL, username, password);
+    }
+
+    /**
+     * Connects to the internal database provided by HSQLDB in the given location, and executes the queries found in
+     * letters.sql and sectionData.sql. This option can be over 12x faster than the MySQL variant.
+     *
+     * @param filePath The file without an extension of the database. If this doesn't exist, it will be created
+     * @throws IOException
+     */
+    public OCRDatabaseManager(File filePath) throws IOException {
+        this(true, filePath, null, null, null);
+    }
+
+    public OCRDatabaseManager(boolean useInternal, File filePath, String databaseURL, String username, String password) throws IOException {
+        this.useInternal = useInternal;
         HikariConfig config = new HikariConfig();
-        config.setDriverClassName("com.mysql.jdbc.Driver");
-        config.setJdbcUrl(databaseURL);
-        config.setUsername(username);
-        config.setPassword(password);
+        if (useInternal) {
+//            filePath.getParentFile().mkdirs();
+            config.setJdbcUrl("jdbc:hsqldb:file:" + filePath);
+            config.setUsername("SA");
+            config.setPassword("");
+        } else {
+            config.setDriverClassName("com.mysql.jdbc.Driver");
+            config.setJdbcUrl(databaseURL);
+            config.setUsername(username);
+            config.setPassword(password);
+        }
+
         config.addDataSourceProperty("useServerPrepStmts", "true");
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "1000");
@@ -78,6 +105,7 @@ public class OCRDatabaseManager implements DatabaseManager {
     /**
      * Ran internally after the DatabaseManager has been created to read the *.sql files in the /resources/ directory
      * for future queries.
+     *
      * @throws IOException
      */
     private void initializeStatements() throws IOException {
@@ -92,6 +120,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
     /**
      * Gets the string query from the resource file given.
+     *
      * @param name The resource file to read
      * @return The string contents of it
      * @throws IOException
@@ -106,30 +135,28 @@ public class OCRDatabaseManager implements DatabaseManager {
     }
 
     @Override
-    public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
-        return executor.submit(() -> {
-            try (Connection connection = dataSource.getConnection();
-                PreparedStatement createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
-                createLetterEntry.setInt(1, letter);
-                createLetterEntry.setDouble(2, averageWidth);
-                createLetterEntry.setDouble(3, averageHeight);
-                createLetterEntry.setInt(4, minFontSize);
-                createLetterEntry.setInt(5, maxFontSize);
-                createLetterEntry.setDouble(6, minCenter);
-                createLetterEntry.setDouble(7, maxCenter);
-                createLetterEntry.setBoolean(8, hasDot);
-                createLetterEntry.setInt(9, letterMeta.getID());
-                createLetterEntry.setBoolean(10, isLetter);
-                createLetterEntry.executeUpdate();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        });
+    public void createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
+            createLetterEntry.setInt(1, letter);
+            createLetterEntry.setDouble(2, averageWidth);
+            createLetterEntry.setDouble(3, averageHeight);
+            createLetterEntry.setInt(4, minFontSize);
+            createLetterEntry.setInt(5, maxFontSize);
+            createLetterEntry.setDouble(6, minCenter);
+            createLetterEntry.setDouble(7, maxCenter);
+            createLetterEntry.setBoolean(8, hasDot);
+            createLetterEntry.setInt(9, letterMeta.getID());
+            createLetterEntry.setBoolean(10, isLetter);
+            createLetterEntry.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
-    public Future clearLetterSegments(char letter, int minFontSize, int maxFontSize) {
-        return executor.submit(() -> Arrays.asList("letters", "sectionData").forEach(table -> {
+    public void clearLetterSegments(char letter, int minFontSize, int maxFontSize) {
+        Arrays.asList("letters", "sectionData").forEach(table -> {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement clearLetterSegments = connection.prepareStatement(String.format(this.clearLetterSegments, table))) {
                 clearLetterSegments.setInt(1, letter);
@@ -139,32 +166,31 @@ public class OCRDatabaseManager implements DatabaseManager {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-        }));
+        });
     }
 
     @Override
-    public Future addLetterSegments(char letter, int minFontSize, int maxFontSize, double[] segments) {
-        return executor.submit(() -> {
-            try (Connection connection = dataSource.getConnection();
-                 PreparedStatement addLetterSegment = connection.prepareStatement(this.addLetterSegment)) {
-                for (int i = 0; i < segments.length; i++) {
-                    addLetterSegment.setInt(1, letter);
-                    addLetterSegment.setInt(2, minFontSize);
-                    addLetterSegment.setInt(3, maxFontSize);
-                    addLetterSegment.setInt(4, i);
-                    addLetterSegment.setDouble(5, segments[i]);
-                    addLetterSegment.executeUpdate();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
+    public void addLetterSegments(char letter, int minFontSize, int maxFontSize, double[] segments) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement addLetterSegment = connection.prepareStatement(this.addLetterSegment)) {
+            for (int i = 0; i < segments.length; i++) {
+                addLetterSegment.setInt(1, letter);
+                addLetterSegment.setInt(2, minFontSize);
+                addLetterSegment.setInt(3, maxFontSize);
+                addLetterSegment.setInt(4, i);
+                addLetterSegment.setDouble(5, segments[i]);
+                addLetterSegment.executeUpdate();
             }
-        });
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Future<List<DatabaseCharacter>> getAllCharacterSegments(FontBounds fontBounds) {
         return executor.submit(() -> {
-            if (this.databaseCharacterCache.get().get(fontBounds) != null && !this.databaseCharacterCache.get().get(fontBounds).isEmpty()) return this.databaseCharacterCache.get().get(fontBounds);
+            if (this.databaseCharacterCache.get().get(fontBounds) != null && !this.databaseCharacterCache.get().get(fontBounds).isEmpty())
+                return this.databaseCharacterCache.get().get(fontBounds);
 
             List<DatabaseCharacter> databaseCharacters = new ArrayList<>();
 
@@ -236,13 +262,24 @@ public class OCRDatabaseManager implements DatabaseManager {
         });
     }
 
+    @Override
+    public void shutdown() {
+        if (!this.executor.isShutdown()) this.executor.shutdown();
+    }
+
+    @Override
+    public boolean usesInternal() {
+        return this.useInternal;
+    }
+
     /**
      * Gets the {@link DatabaseCharacter} with the character value given from a list of {@link DatabaseCharacter}s.
      * If one is not found, one is created.
+     *
      * @param databaseCharacters The list of {@link DatabaseCharacter}s to search from
-     * @param letter The character the value must match
-     * @param onCreate An action to do when a {@link DatabaseCharacter} is created, usually adding more info from it
-     *                 from a database.
+     * @param letter             The character the value must match
+     * @param onCreate           An action to do when a {@link DatabaseCharacter} is created, usually adding more info from it
+     *                           from a database.
      * @return The created {@link DatabaseCharacter}
      */
     private DatabaseCharacter getDatabaseCharacter(List<DatabaseCharacter> databaseCharacters, char letter, Consumer<DatabaseCharacter> onCreate) {
