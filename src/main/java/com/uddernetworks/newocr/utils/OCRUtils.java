@@ -1,4 +1,6 @@
-package com.uddernetworks.newocr;
+package com.uddernetworks.newocr.utils;
+
+import com.uddernetworks.newocr.character.SearchCharacter;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

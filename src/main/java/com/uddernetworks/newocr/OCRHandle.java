@@ -1,5 +1,12 @@
 package com.uddernetworks.newocr;
 
+import com.uddernetworks.newocr.character.ImageLetter;
+import com.uddernetworks.newocr.character.SearchCharacter;
+import com.uddernetworks.newocr.database.DatabaseCharacter;
+import com.uddernetworks.newocr.database.DatabaseManager;
+import com.uddernetworks.newocr.train.TrainGenerator;
+import com.uddernetworks.newocr.train.TrainedCharacterData;
+import com.uddernetworks.newocr.utils.OCRUtils;
 import javafx.util.Pair;
 
 import javax.imageio.ImageIO;
@@ -13,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.uddernetworks.newocr.CharacterGettingUtils.*;
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.*;
 
 public class OCRHandle {
 

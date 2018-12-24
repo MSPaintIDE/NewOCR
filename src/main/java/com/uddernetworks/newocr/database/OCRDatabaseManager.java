@@ -1,5 +1,8 @@
-package com.uddernetworks.newocr;
+package com.uddernetworks.newocr.database;
 
+import com.uddernetworks.newocr.FontBounds;
+import com.uddernetworks.newocr.LetterMeta;
+import com.uddernetworks.newocr.Main;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -20,10 +23,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class DatabaseManager {
+public class OCRDatabaseManager implements DatabaseManager {
 
     private DataSource dataSource;
-    private ExecutorService executor = Executors.newFixedThreadPool(25);
+    private ExecutorService executor = Executors.newCachedThreadPool();
     private String createLetterEntry;
     private String clearLetterSegments;
     private String addLetterSegment;
@@ -41,7 +44,7 @@ public class DatabaseManager {
      * @param password The password of the connecting account
      * @throws IOException
      */
-    public DatabaseManager(String databaseURL, String username, String password) throws IOException {
+    public OCRDatabaseManager(String databaseURL, String username, String password) throws IOException {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("com.mysql.jdbc.Driver");
         config.setJdbcUrl(databaseURL);
@@ -97,28 +100,12 @@ public class DatabaseManager {
         return new BufferedReader(new InputStreamReader(Main.class.getClassLoader().getResource(name + ".sql").openStream())).lines().collect(Collectors.joining("\n"));
     }
 
-    /**
-     * Gets the {@link DataSource} used by the DatabaseManager
-     * @return The {@link DataSource} used by the DatabaseManager
-     */
+    @Override
     public DataSource getDataSource() {
         return this.dataSource;
     }
 
-    /**
-     * Inserts into the `letters` table.
-     * @param letter The character to insert
-     * @param averageWidth The average width of the character
-     * @param averageHeight The average height of the character
-     * @param minFontSize The minimum font size populated by this character
-     * @param maxFontSize The maximum font size populate by this character
-     * @param minCenter The minimum relative center from the top found in the training ste for the font size
-     * @param maxCenter The maximum relative center from the top found in the training ste for the font size
-     * @param hasDot If the character has a dot in it
-     * @param letterMeta The {@link LetterMeta} of the character
-     * @param isLetter If the charcater is a letter (true) or if it is a space (false)
-     * @return A Future
-     */
+    @Override
     public Future createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
         return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
@@ -140,13 +127,7 @@ public class DatabaseManager {
         });
     }
 
-    /**
-     * Clears all data revolving around a character from both the `letters` and `sectionData` table.
-     * @param letter The charcater to cleare
-     * @param minFontSize The minimum font size to clear
-     * @param maxFontSize The maximum font size to clear
-     * @return A Future
-     */
+    @Override
     public Future clearLetterSegments(char letter, int minFontSize, int maxFontSize) {
         return executor.submit(() -> Arrays.asList("letters", "sectionData").forEach(table -> {
             try (Connection connection = dataSource.getConnection();
@@ -161,14 +142,7 @@ public class DatabaseManager {
         }));
     }
 
-    /**
-     * Adds segments (Percentage data points) to the database for a certain character.
-     * @param letter The character to add segments to
-     * @param minFontSize The minimum font size for the character
-     * @param maxFontSize The maximum font size for the character
-     * @param segments An array with a length of 17 all <= 1 as percentage data points
-     * @return A Future
-     */
+    @Override
     public Future addLetterSegments(char letter, int minFontSize, int maxFontSize, double[] segments) {
         return executor.submit(() -> {
             try (Connection connection = dataSource.getConnection();
@@ -187,11 +161,7 @@ public class DatabaseManager {
         });
     }
 
-    /**
-     * Gets all the {@link DatabaseCharacter}s between the given {@link FontBounds}.
-     * @param fontBounds The {@link FontBounds} get the characters between
-     * @return A Future of all the {@link DatabaseCharacter}s
-     */
+    @Override
     public Future<List<DatabaseCharacter>> getAllCharacterSegments(FontBounds fontBounds) {
         return executor.submit(() -> {
             if (this.databaseCharacterCache.get().get(fontBounds) != null && !this.databaseCharacterCache.get().get(fontBounds).isEmpty()) return this.databaseCharacterCache.get().get(fontBounds);

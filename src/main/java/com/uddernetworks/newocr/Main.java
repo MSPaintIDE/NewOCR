@@ -1,5 +1,10 @@
 package com.uddernetworks.newocr;
 
+import com.uddernetworks.newocr.character.SearchCharacter;
+import com.uddernetworks.newocr.database.DatabaseManager;
+import com.uddernetworks.newocr.database.OCRDatabaseManager;
+import com.uddernetworks.newocr.utils.OCRUtils;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -18,7 +23,7 @@ public class Main {
     }
 
     private void run(String[] args) throws IOException {
-        DatabaseManager databaseManager = new DatabaseManager(args[0], args[1], args[2]);
+        DatabaseManager databaseManager = new OCRDatabaseManager(args[0], args[1], args[2]);
 
         Scanner scanner = new Scanner(System.in);
 

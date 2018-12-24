@@ -1,5 +1,7 @@
 package com.uddernetworks.newocr;
 
+import com.uddernetworks.newocr.character.ImageLetter;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

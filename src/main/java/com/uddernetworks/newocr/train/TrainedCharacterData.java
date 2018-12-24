@@ -1,4 +1,7 @@
-package com.uddernetworks.newocr;
+package com.uddernetworks.newocr.train;
+
+import com.uddernetworks.newocr.LetterMeta;
+import com.uddernetworks.newocr.character.SearchCharacter;
 
 import java.util.ArrayList;
 import java.util.List;

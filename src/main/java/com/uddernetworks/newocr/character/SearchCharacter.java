@@ -1,4 +1,7 @@
-package com.uddernetworks.newocr;
+package com.uddernetworks.newocr.character;
+
+import com.uddernetworks.newocr.LetterMeta;
+import com.uddernetworks.newocr.utils.OCRUtils;
 
 import java.util.LinkedList;
 import java.util.List;

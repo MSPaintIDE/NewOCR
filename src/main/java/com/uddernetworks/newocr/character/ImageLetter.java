@@ -1,4 +1,6 @@
-package com.uddernetworks.newocr;
+package com.uddernetworks.newocr.character;
+
+import com.uddernetworks.newocr.database.DatabaseCharacter;
 
 import java.util.List;
 import java.util.Map;

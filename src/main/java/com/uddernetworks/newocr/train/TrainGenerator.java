@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr;
+package com.uddernetworks.newocr.train;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
