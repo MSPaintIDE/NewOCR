@@ -66,7 +66,7 @@ public class OCRDatabaseManager implements DatabaseManager {
         this.useInternal = useInternal;
         HikariConfig config = new HikariConfig();
         if (useInternal) {
-//            filePath.getParentFile().mkdirs();
+            filePath.getParentFile().mkdirs();
             config.setJdbcUrl("jdbc:hsqldb:file:" + filePath);
             config.setUsername("SA");
             config.setPassword("");
