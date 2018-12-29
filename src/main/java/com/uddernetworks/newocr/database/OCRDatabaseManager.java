@@ -65,6 +65,13 @@ public class OCRDatabaseManager implements DatabaseManager {
     public OCRDatabaseManager(boolean useInternal, File filePath, String databaseURL, String username, String password) throws IOException {
         this.useInternal = useInternal;
         HikariConfig config = new HikariConfig();
+
+        try {
+            Class.forName(useInternal ? "org.hsqldb.jdbcDriver" : "com.mysql.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
         if (useInternal) {
             filePath.getParentFile().mkdirs();
             config.setJdbcUrl("jdbc:hsqldb:file:" + filePath);
