@@ -16,7 +16,7 @@ apply plugin: 'io.codearte.nexus-staging'
 
 group 'com.uddernetworks.newocr'
 archivesBaseName = "NewOCR"
-version '1.0.3'
+version '1.1.0'
 
 sourceCompatibility = 1.8
 

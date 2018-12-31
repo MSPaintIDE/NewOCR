@@ -10,11 +10,9 @@ import com.uddernetworks.newocr.utils.OCRUtils;
 import javafx.util.Pair;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -118,10 +116,6 @@ public class OCRHandle {
                 });
 
         // Orders characters in their correct lines.
-
-        final boolean[] fin = new boolean[] {true};
-
-        BufferedImage finalInput = input;
         Arrays.asList(firstList, secondList)
                 .forEach(list -> {
                     list.forEach(imageLetter -> {
@@ -135,51 +129,23 @@ public class OCRHandle {
                         // The tolerance of how far away a character can be from the line's center for it to be included
                         double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff * 1.2), 2D));
 
-                        System.out.println("==========================================");
-                        System.out.println("tolerance = " + tolerance);
-//                        System.out.println("centerDiff = " + centerDiff);
-//                        System.out.println(maxCenter + ", " + minCenter + " sub = " + subtract);
-//                        System.out.println("tolerance = " + tolerance);
-
                         int exactMin = (int) Math.round(imageLetter.getY() + minCenter);
                         int exactMax = (int) Math.round(imageLetter.getY() + maxCenter);
-
-                        System.out.println("Normal: " + exactMin + ", " + exactMax);
 
                         int exactTolerantMin = (int) Math.max(exactMin - tolerance, 0);
                         int exactTolerantMax = (int) (exactMax + tolerance);
 
-                        System.out.println("Tolerant: " + exactTolerantMin + ", " + exactTolerantMax);
-
                         int potentialY = (int) Math.round(imageLetter.getY() + centerDiff);
-
-                        if (fin[0]) { // T
-                            fin[0] = false;
-                            OCRUtils.colorRow(finalInput, Color.RED, exactMin, 0, finalInput.getWidth());
-                            OCRUtils.colorRow(finalInput, Color.RED, exactMax, 0, finalInput.getWidth());
-                            System.out.println("T: " + exactMin + ", " + exactMax);
-
-                            OCRUtils.colorRow(finalInput, Color.ORANGE, potentialY, 0, finalInput.getWidth());
-//                            OCRUtils.colorRow(finalInput, Color.MAGENTA, (int) Math.round(imageLetter.getY() + centerDiff), 0, finalInput.getWidth());
-                        } else { // e
-                            OCRUtils.colorRow(finalInput, Color.GREEN, exactMin, 0, finalInput.getWidth());
-                            OCRUtils.colorRow(finalInput, Color.GREEN, exactMax, 0, finalInput.getWidth());
-                            System.out.println("E: " + exactMin + ", " + exactMax);
-//                            OCRUtils.colorRow(finalInput, Color.MAGENTA,(int) Math.round(imageLetter.getY() + centerDiff), 0, finalInput.getWidth());
-                        }
 
                         // Gets the nearest line and its Y value, if any
                         Optional<Map.Entry<Integer, Integer>> tempp = lines.keySet()
                                 .stream()
                                 .filter(centers -> {
-                                    System.out.println("centers = " + centers);
                                     int x1 = centers.getKey();
                                     int y1 = centers.getValue();
                                     int x2 = exactTolerantMin;
                                     int y2 = exactTolerantMax;
-                                    boolean overlap = Math.max(y1, y2) - Math.min(x1, x2) < (y1 - x1) + (y2 - x2);
-                                    System.out.println("(" + x1 + ", " + y1 + ") overlaps (" + x2 + ", " + y2 + "): " + overlap);
-                                    return overlap;
+                                    return Math.max(y1, y2) - Math.min(x1, x2) < (y1 - x1) + (y2 - x2);
                                 })
                                 .min(Comparator.comparing(centers -> {
                                     double min = centers.getKey();
@@ -188,17 +154,12 @@ public class OCRHandle {
                                     return OCRUtils.getDiff(centerBeginningY, potentialY);
                                 }));
 
-                        System.out.println("tempp = " + tempp);
-
                         Map.Entry<Integer, Integer> center = tempp.orElseGet(() -> {
                             Map.Entry<Integer, Integer> entry = new AbstractMap.SimpleEntry<>(exactTolerantMin, exactTolerantMax); // Included tolerance
-                            System.out.println("Adding " + entry);
                             lines.put(entry, new LinkedList<>());
 
                             return entry;
                         });
-
-                        System.out.println("center = " + center);
 
                         double ratio = imageLetter.getDatabaseCharacter().getAvgWidth() / imageLetter.getDatabaseCharacter().getAvgHeight();
 
@@ -213,8 +174,6 @@ public class OCRHandle {
                         lines.get(center).add(imageLetter);
                     });
                 });
-
-        ImageIO.write(finalInput, "png", new File("C:\\Users\\RubbaBoy\\Desktop\\MS Paint IDE Demo\\out.png"));
 
         // End ordering
 
@@ -320,8 +279,6 @@ public class OCRHandle {
 
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
 
-        BufferedImage finalInput = input;
-
         // Goes through each line found
         for (Pair<Integer, Integer> lineBound : lineBounds) {
             int lineHeight = lineBound.getValue() - lineBound.getKey();
@@ -380,13 +337,6 @@ public class OCRHandle {
                     double middleToTopChar = (double) searchCharacter.getY() - (double) lineBound.getKey();
                     double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
 
-                    if (current == 'e') {
-                        System.out.println(topOfLetterToCenter);
-                        OCRUtils.colorRow(finalInput, Color.RED, (int) (searchCharacter.getY()), 0, finalInput.getWidth());
-                        OCRUtils.colorRow(finalInput, Color.RED, (int) (searchCharacter.getY() + searchCharacter.getHeight()), 0, finalInput.getWidth());
-                        OCRUtils.colorRow(finalInput, Color.GREEN, (int) (searchCharacter.getY() + topOfLetterToCenter), 0, finalInput.getWidth());
-                    }
-
                     // Sets the current center to be calculated, along with any meta it may have
                     trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
                     trainedSearchCharacter.setHasDot(searchCharacter.hasDot());
@@ -422,9 +372,7 @@ public class OCRHandle {
                                 char letter = databaseTrainedCharacter.getValue();
 
                                 CompletableFuture.runAsync(() -> databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont()))
-                                        .thenRunAsync(() -> {
-                                            databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' ');
-                                        })
+                                        .thenRunAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
                                         .thenRunAsync(() -> {
                                             if (letter != ' ') {
                                                 databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
@@ -434,8 +382,6 @@ public class OCRHandle {
                                 e.printStackTrace();
                             }
                         }));
-
-        ImageIO.write(finalInput, "png", new File("C:\\Users\\RubbaBoy\\Desktop\\MS Paint IDE Demo\\out-train.png"));
 
         debug("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
     }
