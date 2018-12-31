@@ -45,7 +45,7 @@ public class Main {
             return;
         }
 
-        ScannedImage scannedImage = ocrHandle.scanImage(new File("HWTest.png"));
+        ScannedImage scannedImage = ocrHandle.scanImage(new File("E:\\MSPaintIDE\\src\\main\\resources\\tmp\\test.png"));
         System.out.println("Got:\n" + scannedImage.getPrettyString());
 
         databaseManager.shutdown();

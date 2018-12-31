@@ -52,7 +52,6 @@ public class OCRUtils {
      */
     public static boolean isWithin(int one, int two, double within) {
         double diff = Math.max((double) one, (double) two) - Math.min((double) one, (double) two);
-        System.out.println("diff = " + diff + " <= " + within);
         return diff <= within;
     }
 

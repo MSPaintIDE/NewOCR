@@ -131,23 +131,35 @@ public class OCRHandle {
                         double centerDiff = subtract ?
                                 maxCenter + minCenter :
                                 maxCenter - minCenter;
-                        centerDiff /= 2;
-                        // The threshold of how far away a character can be from the line's center for it to be included
-                        double threshold = Math.max(Math.abs(centerDiff * 1.1), 2D);
+//                        centerDiff /= 2;
+                        // The tolerance of how far away a character can be from the line's center for it to be included
+                        double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff * 1.2), 2D));
 
                         System.out.println("==========================================");
+                        System.out.println("tolerance = " + tolerance);
 //                        System.out.println("centerDiff = " + centerDiff);
 //                        System.out.println(maxCenter + ", " + minCenter + " sub = " + subtract);
-//                        System.out.println("threshold = " + threshold);
+//                        System.out.println("tolerance = " + tolerance);
 
                         int exactMin = (int) Math.round(imageLetter.getY() + minCenter);
                         int exactMax = (int) Math.round(imageLetter.getY() + maxCenter);
+
+                        System.out.println("Normal: " + exactMin + ", " + exactMax);
+
+                        int exactTolerantMin = (int) Math.max(exactMin - tolerance, 0);
+                        int exactTolerantMax = (int) (exactMax + tolerance);
+
+                        System.out.println("Tolerant: " + exactTolerantMin + ", " + exactTolerantMax);
+
+                        int potentialY = (int) Math.round(imageLetter.getY() + centerDiff);
 
                         if (fin[0]) { // T
                             fin[0] = false;
                             OCRUtils.colorRow(finalInput, Color.RED, exactMin, 0, finalInput.getWidth());
                             OCRUtils.colorRow(finalInput, Color.RED, exactMax, 0, finalInput.getWidth());
                             System.out.println("T: " + exactMin + ", " + exactMax);
+
+                            OCRUtils.colorRow(finalInput, Color.ORANGE, potentialY, 0, finalInput.getWidth());
 //                            OCRUtils.colorRow(finalInput, Color.MAGENTA, (int) Math.round(imageLetter.getY() + centerDiff), 0, finalInput.getWidth());
                         } else { // e
                             OCRUtils.colorRow(finalInput, Color.GREEN, exactMin, 0, finalInput.getWidth());
@@ -156,8 +168,6 @@ public class OCRHandle {
 //                            OCRUtils.colorRow(finalInput, Color.MAGENTA,(int) Math.round(imageLetter.getY() + centerDiff), 0, finalInput.getWidth());
                         }
 
-                        int potentialY = (int) Math.round(imageLetter.getY() + centerDiff + (minCenter > 0 ? minCenter : 0));
-
                         // Gets the nearest line and its Y value, if any
                         Optional<Map.Entry<Integer, Integer>> tempp = lines.keySet()
                                 .stream()
@@ -165,8 +175,8 @@ public class OCRHandle {
                                     System.out.println("centers = " + centers);
                                     int x1 = centers.getKey();
                                     int y1 = centers.getValue();
-                                    int x2 = exactMin;
-                                    int y2 = exactMax;
+                                    int x2 = exactTolerantMin;
+                                    int y2 = exactTolerantMax;
                                     boolean overlap = Math.max(y1, y2) - Math.min(x1, x2) < (y1 - x1) + (y2 - x2);
                                     System.out.println("(" + x1 + ", " + y1 + ") overlaps (" + x2 + ", " + y2 + "): " + overlap);
                                     return overlap;
@@ -181,7 +191,7 @@ public class OCRHandle {
                         System.out.println("tempp = " + tempp);
 
                         Map.Entry<Integer, Integer> center = tempp.orElseGet(() -> {
-                            Map.Entry<Integer, Integer> entry = new AbstractMap.SimpleEntry<>(exactMin, exactMax);
+                            Map.Entry<Integer, Integer> entry = new AbstractMap.SimpleEntry<>(exactTolerantMin, exactTolerantMax); // Included tolerance
                             System.out.println("Adding " + entry);
                             lines.put(entry, new LinkedList<>());
 
@@ -208,7 +218,7 @@ public class OCRHandle {
 
         // End ordering
 
-        Map<Map.Entry<Integer, Integer>, List<ImageLetter>> sortedLines = new LinkedHashMap<>();
+        Map<Integer, List<ImageLetter>> sortedLines = new LinkedHashMap<>();
 
         // Sorts the characters again based on their X value in their respective lines. This must be done again because
         // the two different lists (firstList and secondList) will have caused a mixup of X positions from normal
@@ -216,9 +226,13 @@ public class OCRHandle {
 
         lines.keySet()
                 .stream()
-                .sorted(Comparator.comparingInt(Map.Entry::getKey))
-                .forEach(y -> {
-                    List<ImageLetter> databaseCharacters = lines.get(y);
+                .map(entry -> new AbstractMap.SimpleEntry<>(entry, (int) Math.round(((double) entry.getValue() - (double) entry.getKey()) / 2D + entry.getKey())))
+                .sorted()
+                .forEach(nestedEntry -> {
+                    Map.Entry<Integer, Integer> linesEntry = nestedEntry.getKey();
+                    int y = nestedEntry.getValue();
+
+                    List<ImageLetter> databaseCharacters = lines.get(linesEntry);
                     if (databaseCharacters.isEmpty()) return;
                     databaseCharacters.sort(Comparator.comparingInt(ImageLetter::getX));
                     sortedLines.put(y, databaseCharacters);
@@ -230,19 +244,14 @@ public class OCRHandle {
 
         // Sorts the lines again based on X values, to move spaces from the back to their proper locations in the line.
 
-        lines.clear();
-        sortedLines.keySet().stream().sorted(Comparator.comparingInt(Map.Entry::getKey)).forEach(y -> {
+        ScannedImage scannedImage = new ScannedImage();
+
+        sortedLines.keySet().stream().sorted().forEach(y -> {
             List<ImageLetter> line = sortedLines.get(y);
-            lines.put(y, line.stream().sorted(Comparator.comparingInt(ImageLetter::getX)).collect(Collectors.toList()));
+            scannedImage.addLine(y, line.stream().sorted(Comparator.comparingInt(ImageLetter::getX)).collect(Collectors.toList()));
         });
 
         debug("Finished in " + (System.currentTimeMillis() - start) + "ms");
-
-        ScannedImage scannedImage = new ScannedImage();
-
-        lines.forEach((y, databaseCharacterList) -> {
-            scannedImage.addLine(y.getValue() - y.getKey(), databaseCharacterList);
-        });
 
         return scannedImage;
     }
