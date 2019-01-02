@@ -1,3 +1,8 @@
+<a href="https://discord.gg/RXmPkPJ">
+        <img src="https://img.shields.io/discord/528423806453415972.svg?logo=discord"
+            alt="NewOCR and MS Paint IDE's Discord server">
+</a>
+
 # NewOCR
 NewOCR is an OCR library made to suit [MS Paint IDE](https://github.com/RubbaBoy/MSPaintIDE)'s needs, though can be used in any project, as nothing is made specific to the IDE. The OCR can be trained with many fonts, though is geared towards fonts like **Verdana** and similar fonts. Other fonts _may_ require some tweaking of the character detector, but the main detection will work with no matter how different the characters are from Verdana (Hell you could modify it to work with emojis).
 
@@ -42,7 +47,7 @@ NewOCR is on Central, so it's insanely easy to get on both Maven and Gradle.
 
 Gradle:
 ```Groovy
-compile 'com.uddernetworks.newocr:NewOCR:1.0.3'
+compile 'com.uddernetworks.newocr:NewOCR:1.1.0'
 ```
 
 Maven:
@@ -50,7 +55,7 @@ Maven:
 <dependency>
     <groupId>com.uddernetworks.newocr</groupId>
     <artifactId>NewOCR</artifactId>
-    <version>1.0.3</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
