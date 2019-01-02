@@ -125,9 +125,8 @@ public class OCRHandle {
                         double centerDiff = subtract ?
                                 maxCenter + minCenter :
                                 maxCenter - minCenter;
-//                        centerDiff /= 2;
                         // The tolerance of how far away a character can be from the line's center for it to be included
-                        double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff * 1.2), 2D));
+                        double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff / 2 * 1.1), 2D));
 
                         int exactMin = (int) Math.round(imageLetter.getY() + minCenter);
                         int exactMax = (int) Math.round(imageLetter.getY() + maxCenter);
@@ -186,7 +185,7 @@ public class OCRHandle {
         lines.keySet()
                 .stream()
                 .map(entry -> new AbstractMap.SimpleEntry<>(entry, (int) Math.round(((double) entry.getValue() - (double) entry.getKey()) / 2D + entry.getKey())))
-                .sorted()
+                .sorted(Comparator.comparingInt(AbstractMap.SimpleEntry::getValue))
                 .forEach(nestedEntry -> {
                     Map.Entry<Integer, Integer> linesEntry = nestedEntry.getKey();
                     int y = nestedEntry.getValue();
@@ -197,9 +196,13 @@ public class OCRHandle {
                     sortedLines.put(y, databaseCharacters);
                 });
 
+//        System.out.println("sortedLines = " + sortedLines);
+
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.
         sortedLines.values().forEach(line -> line.addAll(getSpacesFor(line, line.stream().mapToInt(ImageLetter::getHeight).max().getAsInt())));
+
+//        System.out.println("sortedLines = " + sortedLines);
 
         // Sorts the lines again based on X values, to move spaces from the back to their proper locations in the line.
 
@@ -207,6 +210,7 @@ public class OCRHandle {
 
         sortedLines.keySet().stream().sorted().forEach(y -> {
             List<ImageLetter> line = sortedLines.get(y);
+//            System.out.println("Adding: " + line);
             scannedImage.addLine(y, line.stream().sorted(Comparator.comparingInt(ImageLetter::getX)).collect(Collectors.toList()));
         });
 

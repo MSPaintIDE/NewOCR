@@ -1,6 +1,7 @@
 package com.uddernetworks.newocr;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,12 +26,12 @@ public class SearchImage {
      * Adds the surrounding black pixels from the given coordinate to the coordinates parameter.
      * When a new value sis count, it is set to false to stop duplicates without checking each entry
      * of the map.
-     * @param x The X location of the current black pixel
-     * @param y The Y location of the current black pixel
+     * @param originalX The X location of the current black pixel
+     * @param originalY The Y location of the current black pixel
      * @param coordinates The mutable list of coordinates that will have each new coordinate added to it
      */
-    public void scanFrom(int x, int y, List<Map.Entry<Integer, Integer>> coordinates) {
-        if (hasValue(x, y)) {
+    public void scanFrom(int originalX, int originalY, List<Map.Entry<Integer, Integer>> coordinates) {
+        /* if (hasValue(x, y)) {
             coordinates.add(new AbstractMap.SimpleEntry<>(x, y));
 
             scanFrom(x, y + 1, coordinates);
@@ -41,6 +42,35 @@ public class SearchImage {
             scanFrom(x + 1, y - 1, coordinates);
             scanFrom(x - 1, y + 1, coordinates);
             scanFrom(x - 1, y - 1, coordinates);
+        } */
+
+        if (!hasValue(originalX, originalY)) return;
+
+        List<Map.Entry<Integer, Integer>> nextProcessing = new ArrayList<>();
+        List<Map.Entry<Integer, Integer>> processingBuffer = new ArrayList<>();
+        nextProcessing.add(new AbstractMap.SimpleEntry<>(originalX, originalY));
+
+        while (true) {
+            for (Map.Entry<Integer, Integer> entry : nextProcessing) {
+                coordinates.add(entry);
+                int x = entry.getKey();
+                int y = entry.getValue();
+                if (hasValue(x, y + 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x, y + 1));
+                if (hasValue(x, y - 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x, y - 1));
+                if (hasValue(x + 1, y)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x + 1, y));
+                if (hasValue(x - 1, y)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x - 1, y));
+                if (hasValue(x + 1, y + 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x + 1, y + 1));
+                if (hasValue(x + 1, y - 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x + 1, y - 1));
+                if (hasValue(x - 1, y + 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x - 1, y + 1));
+                if (hasValue(x - 1, y - 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x - 1, y - 1));
+            }
+
+            if (processingBuffer.isEmpty()) return;
+
+            nextProcessing.clear();
+            List<Map.Entry<Integer, Integer>> temp = nextProcessing;
+            nextProcessing = processingBuffer;
+            processingBuffer = temp;
         }
     }
 
