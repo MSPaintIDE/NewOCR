@@ -2,6 +2,7 @@ package com.uddernetworks.newocr.database;
 
 import com.uddernetworks.newocr.FontBounds;
 import com.uddernetworks.newocr.LetterMeta;
+import com.uddernetworks.newocr.character.SearchCharacter;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -33,10 +34,9 @@ public interface DatabaseManager {
 
     /**
      * Clears all data revolving around a character from both the `letters` and `sectionData` table.
-     * @param letter The charcater to cleare
+     * @param letter The character to clear
      * @param minFontSize The minimum font size to clear
      * @param maxFontSize The maximum font size to clear
-     * @return A Future
      */
     void clearLetterSegments(char letter, int minFontSize, int maxFontSize);
 
@@ -56,6 +56,22 @@ public interface DatabaseManager {
      * @return A Future of all the {@link DatabaseCharacter}s
      */
     Future<List<DatabaseCharacter>> getAllCharacterSegments(FontBounds fontBounds);
+
+    /**
+     * Adds the letter sizes to the `sizing` table to accurately detect sizing of fonts on a character basis
+     * @param fontSize The font size to be inserted
+     * @param searchCharacterList The list of {@link SearchCharacter}s to insert
+     */
+    void addLetterSize(int fontSize, List<SearchCharacter> searchCharacterList);
+
+    /**
+     * Gets the font size of the given character based on its dimensions
+     * @param character The character being detected
+     * @param width The width of the character
+     * @param height The height of the character
+     * @return The nearest font size, with -1 being if no data was found for the character for some reason
+     */
+    Future<Integer> getLetterSize(char character, int width, int height);
 
     /**
      * Shuts down all executor threads when the program is ready to be terminated.

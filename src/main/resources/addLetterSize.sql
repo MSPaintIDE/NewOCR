@@ -1,0 +1,1 @@
+INSERT INTO sizing VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE letter = letter;

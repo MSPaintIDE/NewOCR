@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -283,6 +284,8 @@ public class OCRHandle {
 
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
 
+        int startingSize = 20;
+
         // Goes through each line found
         for (Pair<Integer, Integer> lineBound : lineBounds) {
             int lineHeight = lineBound.getValue() - lineBound.getKey();
@@ -352,10 +355,14 @@ public class OCRHandle {
                     }
                 });
 
+                databaseManager.addLetterSize(startingSize, line);
+
                 // Removes any used letters from the line in searchCharacters, so none will be duplicated and to
                 // increase performance.
                 searchCharacters.removeAll(line);
             }
+
+            startingSize++;
         }
 
         searchCharacters = searchCharactersCopy;
@@ -529,6 +536,16 @@ public class OCRHandle {
         coordinates.clear();
 
         return false;
+    }
+
+    /**
+     * Gets the estimated font size based on the given letter's character and dimensions from the stored values in the
+     * database after training.
+     * @param imageLetter The {@link ImageLetter} to check the size of
+     * @return The estimated font size
+     */
+    public Future<Integer> getFontSize(ImageLetter imageLetter) {
+        return this.databaseManager.getLetterSize(imageLetter.getLetter(), imageLetter.getWidth(), imageLetter.getHeight());
     }
 
     /**

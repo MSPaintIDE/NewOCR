@@ -3,6 +3,7 @@ package com.uddernetworks.newocr.database;
 import com.uddernetworks.newocr.FontBounds;
 import com.uddernetworks.newocr.LetterMeta;
 import com.uddernetworks.newocr.Main;
+import com.uddernetworks.newocr.character.SearchCharacter;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -36,6 +37,8 @@ public class OCRDatabaseManager implements DatabaseManager {
     private String selectAllSegments;
     private String getLetterEntry;
     private String getSpaceEntry;
+    private String addLetterSize;
+    private String getLetterSize;
 
     private final AtomicReference<Map<FontBounds, List<DatabaseCharacter>>> databaseCharacterCache = new AtomicReference<>(new HashMap<>());
 
@@ -90,7 +93,7 @@ public class OCRDatabaseManager implements DatabaseManager {
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "8192");
         dataSource = new HikariDataSource(config);
 
-        Arrays.asList("letters.sql", "sectionData.sql").parallelStream().forEach(table -> {
+        Arrays.asList("letters.sql", "sectionData.sql", "sizing.sql").parallelStream().forEach(table -> {
             try {
                 URL url = getClass().getClassLoader().getResource(table);
                 String tables = new BufferedReader(new InputStreamReader(url.openStream())).lines().collect(Collectors.joining("\n"));
@@ -107,6 +110,13 @@ public class OCRDatabaseManager implements DatabaseManager {
         });
 
         initializeStatements();
+
+        try (Connection connection = this.dataSource.getConnection();
+            PreparedStatement useMySQL = connection.prepareStatement("SET DATABASE SQL SYNTAX MYS TRUE")) {
+            useMySQL.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -123,6 +133,8 @@ public class OCRDatabaseManager implements DatabaseManager {
         this.selectAllSegments = getQuery("selectAllSegments");
         this.getLetterEntry = getQuery("getLetterEntry");
         this.getSpaceEntry = getQuery("getSpaceEntry");
+        this.addLetterSize = getQuery("addLetterSize");
+        this.getLetterSize = getQuery("getLetterSize");
     }
 
     /**
@@ -266,6 +278,49 @@ public class OCRDatabaseManager implements DatabaseManager {
             this.databaseCharacterCache.get().put(fontBounds, databaseCharacters);
 
             return databaseCharacters;
+        });
+    }
+
+    @Override
+    public void addLetterSize(int fontSize, List<SearchCharacter> searchCharacterList) {
+        executor.execute(() -> {
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement insertSize = connection.prepareStatement(this.addLetterSize)) {
+
+                for (SearchCharacter searchCharacter : searchCharacterList) {
+                    insertSize.setInt(1, searchCharacter.getKnownChar());
+                    insertSize.setInt(2, fontSize);
+                    insertSize.setInt(3, searchCharacter.getHeight());
+                    insertSize.addBatch();
+                    insertSize.clearParameters();
+                }
+
+                insertSize.executeBatch();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    @Override
+    public Future<Integer> getLetterSize(char character, int width, int height) {
+        return executor.submit(() -> {
+            int result = -1;
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement getSize = connection.prepareStatement(this.getLetterSize)) {
+
+                getSize.setInt(1, character);
+                getSize.setInt(2, height);
+
+                ResultSet resultSet = getSize.executeQuery();
+
+                if (resultSet.next()) result = resultSet.getInt(2);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            return result;
         });
     }
 
