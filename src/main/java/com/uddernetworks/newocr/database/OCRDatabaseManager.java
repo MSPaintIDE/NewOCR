@@ -315,7 +315,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
                 ResultSet resultSet = getSize.executeQuery();
 
-                if (resultSet.next()) result = resultSet.getInt(2);
+                if (resultSet.next()) result = (int) Math.round(resultSet.getInt(2) / (4D/3D));
             } catch (SQLException e) {
                 e.printStackTrace();
             }

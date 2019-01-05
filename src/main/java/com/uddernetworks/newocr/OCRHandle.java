@@ -284,7 +284,7 @@ public class OCRHandle {
 
         List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
 
-        int startingSize = 20;
+        int startingSize = 90;
 
         // Goes through each line found
         for (Pair<Integer, Integer> lineBound : lineBounds) {
@@ -355,14 +355,12 @@ public class OCRHandle {
                     }
                 });
 
-                databaseManager.addLetterSize(startingSize, line);
+                databaseManager.addLetterSize(startingSize--, line);
 
                 // Removes any used letters from the line in searchCharacters, so none will be duplicated and to
                 // increase performance.
                 searchCharacters.removeAll(line);
             }
-
-            startingSize++;
         }
 
         searchCharacters = searchCharactersCopy;
