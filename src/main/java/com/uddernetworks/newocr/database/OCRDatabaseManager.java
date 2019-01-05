@@ -303,7 +303,7 @@ public class OCRDatabaseManager implements DatabaseManager {
     }
 
     @Override
-    public Future<Integer> getLetterSize(char character, int width, int height) {
+    public Future<Integer> getLetterSize(char character, int height) {
         return executor.submit(() -> {
             int result = -1;
 
@@ -315,7 +315,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
                 ResultSet resultSet = getSize.executeQuery();
 
-                if (resultSet.next()) result = (int) Math.round(resultSet.getInt(2) / (4D/3D));
+                if (resultSet.next()) result = (int) Math.round(resultSet.getInt(1) / (4D/3D));
             } catch (SQLException e) {
                 e.printStackTrace();
             }

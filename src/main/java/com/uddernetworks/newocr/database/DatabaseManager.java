@@ -67,11 +67,10 @@ public interface DatabaseManager {
     /**
      * Gets the font size of the given character based on its dimensions
      * @param character The character being detected
-     * @param width The width of the character
      * @param height The height of the character
      * @return The nearest font size, with -1 being if no data was found for the character for some reason
      */
-    Future<Integer> getLetterSize(char character, int width, int height);
+    Future<Integer> getLetterSize(char character, int height);
 
     /**
      * Shuts down all executor threads when the program is ready to be terminated.

@@ -543,7 +543,7 @@ public class OCRHandle {
      * @return The estimated font size
      */
     public Future<Integer> getFontSize(ImageLetter imageLetter) {
-        return this.databaseManager.getLetterSize(imageLetter.getLetter(), imageLetter.getWidth(), imageLetter.getHeight());
+        return this.databaseManager.getLetterSize(imageLetter.getLetter(), imageLetter.getHeight());
     }
 
     /**

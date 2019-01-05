@@ -1,1 +1,1 @@
-SELECT * FROM sizing WHERE letter = ? ORDER BY ABS(height - /* inputHeight */ ?);
+SELECT size FROM sizing WHERE letter = ? ORDER BY ABS(height - /* inputHeight */ ?);
