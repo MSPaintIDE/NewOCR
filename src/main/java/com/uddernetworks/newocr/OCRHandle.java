@@ -306,7 +306,7 @@ public class OCRHandle {
                                     fontBounds.isInbetween(searchCharacter.getHeight()))
                             .findFirst();
 
-                    if (currentFontBoundsOptional.isPresent()) return;
+                    if (!currentFontBoundsOptional.isPresent()) return;
 
                     Optional<TrainedCharacterData> trainedSearchCharacterOptional = trainedCharacterDataList.get(currentFontBoundsOptional.get())
                             .stream()

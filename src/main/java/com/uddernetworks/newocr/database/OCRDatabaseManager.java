@@ -198,8 +198,10 @@ public class OCRDatabaseManager implements DatabaseManager {
                 addLetterSegment.setInt(3, maxFontSize);
                 addLetterSegment.setInt(4, i);
                 addLetterSegment.setDouble(5, segments[i]);
-                addLetterSegment.executeUpdate();
+                addLetterSegment.addBatch();
             }
+
+            addLetterSegment.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
         }
