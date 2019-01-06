@@ -245,7 +245,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize, minCenter, maxCenter);
                             newDatabaseCharacter.setHasDot(hasDot);
-                            newDatabaseCharacter.setLetterMeta(LetterMeta.fromID(letterMetaID));
+                            LetterMeta.fromID(letterMetaID).ifPresent(newDatabaseCharacter::setLetterMeta);
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }

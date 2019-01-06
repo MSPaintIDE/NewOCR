@@ -28,6 +28,19 @@ public class ImageLetter {
      * @param width The width of this character
      * @param height The height of this character
      * @param ratio The width/height ratio of this character
+     */
+    public ImageLetter(DatabaseCharacter databaseCharacter, int x, int y, int width, int height, double ratio) {
+        this(databaseCharacter, x, y, width, height, ratio, null);
+    }
+
+    /**
+     * Creates an ImageLetter from collected data.
+     * @param databaseCharacter The {@link DatabaseCharacter} that is decided to be related to this character
+     * @param x The X coordinate of this character
+     * @param y The Y coordinate of this character
+     * @param width The width of this character
+     * @param height The height of this character
+     * @param ratio The width/height ratio of this character
      * @param segments The data segments of this character (In form of [Black, Total])
      */
     public ImageLetter(DatabaseCharacter databaseCharacter, int x, int y, int width, int height, double ratio, List<Map.Entry<Integer, Integer>> segments) {

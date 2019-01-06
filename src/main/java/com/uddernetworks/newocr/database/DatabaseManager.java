@@ -46,7 +46,6 @@ public interface DatabaseManager {
      * @param minFontSize The minimum font size for the character
      * @param maxFontSize The maximum font size for the character
      * @param segments An array with a length of 17 all <= 1 as percentage data points
-     * @return A Future
      */
     void addLetterSegments(char letter, int minFontSize, int maxFontSize, double[] segments);
 

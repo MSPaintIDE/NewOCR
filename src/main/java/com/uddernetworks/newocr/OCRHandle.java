@@ -41,6 +41,7 @@ public class OCRHandle {
 
     /**
      * Scans the input image and returns a {@link ScannedImage} containing all the characters and their info.
+     *
      * @param file The input image to be scanned
      * @return A {@link ScannedImage} containing all scanned character data
      * @throws IOException
@@ -97,82 +98,84 @@ public class OCRHandle {
         // Key = Entry<MinCenter, MaxCenter>  centers are ABSOLUTE
         Map<Map.Entry<Integer, Integer>, List<ImageLetter>> lines = new LinkedHashMap<>();
 
-        List<ImageLetter> firstList = new LinkedList<>();
-        List<ImageLetter> secondList = new LinkedList<>();
-
         // Gets the closest matching character (According to the database values) using OCRHandle#getCharacterFor(SearchCharacter),
-        // then it orders them by their X values, and the groups them into tro lists, one to process first, one for
-        // second. The ones in the second list are for characters that may not snap to the nearest line correctly.
+        // then it orders them by their X values, and then sorts the ImageLetters so certain ones go first, allowing the
+        // characters to go to the correct lines
 
         searchLines.values()
                 .stream()
                 .flatMap(List::stream)
-                .parallel()
                 .map(this::getCharacterFor)
-                .filter(Objects::nonNull)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .sorted(Comparator.comparingInt(ImageLetter::getX))
-                .forEachOrdered(imageLetter -> {
-                    char cha = imageLetter.getLetter();
-                    (cha == ',' || cha == '.' || cha == '_' || cha == '`' || cha == '\'' || cha == '"' || cha == '*' ? secondList : firstList).add(imageLetter);
-                });
+                .sorted((o1, o2) -> {
+                    if (o1.equals(o2)) return 0;
+                    char cha = o1.getLetter();
+                    char cha2 = o2.getLetter();
 
-        // Orders characters in their correct lines.
-        Arrays.asList(firstList, secondList)
-                .forEach(list -> {
-                    list.forEach(imageLetter -> {
-                        double maxCenter = imageLetter.getDatabaseCharacter().getMaxCenter();
-                        double minCenter = imageLetter.getDatabaseCharacter().getMinCenter();
-                        boolean subtract = maxCenter < 0 && imageLetter.getDatabaseCharacter().getMinCenter() < 0;
-                        double centerDiff = subtract ?
-                                maxCenter + minCenter :
-                                maxCenter - minCenter;
-                        // The tolerance of how far away a character can be from the line's center for it to be included
-                        double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff / 2 * 1.1), 2D));
+                    if (cha == ',' ^ cha2 == ',') return cha2 == ',' ? 1 : -1;
+                    if (cha == '.' ^ cha2 == '.') return cha2 == '.' ? 1 : -1;
+                    if (cha == '_' ^ cha2 == '_') return cha2 == '_' ? 1 : -1;
+                    if (cha == '`' ^ cha2 == '`') return cha2 == '`' ? 1 : -1;
+                    if (cha == '\'' ^ cha2 == '\'') return cha2 == '\'' ? 1 : -1;
+                    if (cha == '"' ^ cha2 == '"') return cha2 == '"' ? 1 : -1;
+                    if (cha == '*' ^ cha2 == '*') return cha2 == '*' ? 1 : -1;
+                    return -1;
+                })
+                .forEach(imageLetter -> {
+                    double maxCenter = imageLetter.getDatabaseCharacter().getMaxCenter();
+                    double minCenter = imageLetter.getDatabaseCharacter().getMinCenter();
+                    boolean subtract = maxCenter < 0 && imageLetter.getDatabaseCharacter().getMinCenter() < 0;
+                    double centerDiff = subtract ?
+                            maxCenter + minCenter :
+                            maxCenter - minCenter;
+                    // The tolerance of how far away a character can be from the line's center for it to be included
+                    double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff / 2 * 1.1), 2D));
 
-                        int exactMin = (int) Math.round(imageLetter.getY() + minCenter);
-                        int exactMax = (int) Math.round(imageLetter.getY() + maxCenter);
+                    int exactMin = (int) Math.round(imageLetter.getY() + minCenter);
+                    int exactMax = (int) Math.round(imageLetter.getY() + maxCenter);
 
-                        int exactTolerantMin = (int) Math.max(exactMin - tolerance, 0);
-                        int exactTolerantMax = (int) (exactMax + tolerance);
+                    int exactTolerantMin = (int) Math.max(exactMin - tolerance, 0);
+                    int exactTolerantMax = (int) (exactMax + tolerance);
 
-                        int potentialY = (int) Math.round(imageLetter.getY() + centerDiff);
+                    int potentialY = (int) Math.round(imageLetter.getY() + centerDiff);
 
-                        // Gets the nearest line and its Y value, if any
-                        Optional<Map.Entry<Integer, Integer>> tempp = lines.keySet()
-                                .stream()
-                                .filter(centers -> {
-                                    int x1 = centers.getKey();
-                                    int y1 = centers.getValue();
-                                    int x2 = exactTolerantMin;
-                                    int y2 = exactTolerantMax;
-                                    return Math.max(y1, y2) - Math.min(x1, x2) < (y1 - x1) + (y2 - x2);
-                                })
-                                .min(Comparator.comparing(centers -> {
-                                    double min = centers.getKey();
-                                    double max = centers.getValue();
-                                    double centerBeginningY = ((max - min) / 2) + min;
-                                    return OCRUtils.getDiff(centerBeginningY, potentialY);
-                                }));
+                    // Gets the nearest line and its Y value, if any
+                    Optional<Map.Entry<Integer, Integer>> tempp = lines.keySet()
+                            .stream()
+                            .filter(centers -> {
+                                int x1 = centers.getKey();
+                                int y1 = centers.getValue();
+                                int x2 = exactTolerantMin;
+                                int y2 = exactTolerantMax;
+                                return Math.max(y1, y2) - Math.min(x1, x2) < (y1 - x1) + (y2 - x2);
+                            })
+                            .min(Comparator.comparing(centers -> {
+                                double min = centers.getKey();
+                                double max = centers.getValue();
+                                double centerBeginningY = ((max - min) / 2) + min;
+                                return OCRUtils.getDiff(centerBeginningY, potentialY);
+                            }));
 
-                        Map.Entry<Integer, Integer> center = tempp.orElseGet(() -> {
-                            Map.Entry<Integer, Integer> entry = new AbstractMap.SimpleEntry<>(exactTolerantMin, exactTolerantMax); // Included tolerance
-                            lines.put(entry, new LinkedList<>());
+                    Map.Entry<Integer, Integer> center = tempp.orElseGet(() -> {
+                        Map.Entry<Integer, Integer> entry = new AbstractMap.SimpleEntry<>(exactTolerantMin, exactTolerantMax); // Included tolerance
+                        lines.put(entry, new LinkedList<>());
 
-                            return entry;
-                        });
-
-                        double ratio = imageLetter.getDatabaseCharacter().getAvgWidth() / imageLetter.getDatabaseCharacter().getAvgHeight();
-
-                        double diff = Math.max(ratio, imageLetter.getRatio()) - Math.min(ratio, imageLetter.getRatio());
-
-                        // This is signaled when the difference of the ratios are a value that is probably incorrect.
-                        // If the ratio is very different, it should be looked into, as it could be from faulty detection.
-                        if (diff > 0.2D) {
-                            error("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
-                        }
-
-                        lines.get(center).add(imageLetter);
+                        return entry;
                     });
+
+                    double ratio = imageLetter.getDatabaseCharacter().getAvgWidth() / imageLetter.getDatabaseCharacter().getAvgHeight();
+
+                    double diff = Math.max(ratio, imageLetter.getRatio()) - Math.min(ratio, imageLetter.getRatio());
+
+                    // This is signaled when the difference of the ratios are a value that is probably incorrect.
+                    // If the ratio is very different, it should be looked into, as it could be from faulty detection.
+                    if (diff > 0.2D) {
+                        error("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
+                    }
+
+                    lines.get(center).add(imageLetter);
                 });
 
         // End ordering
@@ -197,13 +200,9 @@ public class OCRHandle {
                     sortedLines.put(y, databaseCharacters);
                 });
 
-//        System.out.println("sortedLines = " + sortedLines);
-
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.
         sortedLines.values().forEach(line -> line.addAll(getSpacesFor(line, line.stream().mapToInt(ImageLetter::getHeight).max().getAsInt())));
-
-//        System.out.println("sortedLines = " + sortedLines);
 
         // Sorts the lines again based on X values, to move spaces from the back to their proper locations in the line.
 
@@ -211,7 +210,6 @@ public class OCRHandle {
 
         sortedLines.keySet().stream().sorted().forEach(y -> {
             List<ImageLetter> line = sortedLines.get(y);
-//            System.out.println("Adding: " + line);
             scannedImage.addLine(y, line.stream().sorted(Comparator.comparingInt(ImageLetter::getX)).collect(Collectors.toList()));
         });
 
@@ -235,6 +233,7 @@ public class OCRHandle {
     /**
      * Scans the input image and creates training data based off of it. It must be an input image created from
      * {@link TrainGenerator} or something of a similar format.
+     *
      * @param file The input image to be trained from
      * @throws IOException
      */
@@ -301,24 +300,23 @@ public class OCRHandle {
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex.getAndIncrement());
 
                     // TODO: Improve and cache these following 3 variables
-                    FontBounds currentFontBounds = trainedCharacterDataList.keySet()
+                    Optional<FontBounds> currentFontBoundsOptional = trainedCharacterDataList.keySet()
                             .stream()
                             .filter(fontBounds ->
                                     fontBounds.isInbetween(searchCharacter.getHeight()))
-                            .findFirst()
-                            .orElse(null);
+                            .findFirst();
 
-                    TrainedCharacterData trainedSearchCharacter = trainedCharacterDataList.get(currentFontBounds)
+                    if (currentFontBoundsOptional.isPresent()) return;
+
+                    Optional<TrainedCharacterData> trainedSearchCharacterOptional = trainedCharacterDataList.get(currentFontBoundsOptional.get())
                             .stream()
                             .filter(trainedCharacterData -> trainedCharacterData.getValue() == current)
-                            .findFirst()
-                            .orElse(null);
+                            .findFirst();
 
-                    TrainedCharacterData spaceTrainedCharacter = trainedCharacterDataList.get(currentFontBounds)
+                    Optional<TrainedCharacterData> spaceTrainedCharacterOptional = trainedCharacterDataList.get(currentFontBoundsOptional.get())
                             .stream()
                             .filter(trainedCharacterData -> trainedCharacterData.getValue() == ' ')
-                            .findFirst()
-                            .orElse(null);
+                            .findFirst();
 
                     // If the current character is the FIRST `W`, sets beforeSpaceX to the current far right coordinate
                     // of the space (X + width), and go up another character (Skipping the space in trainString)
@@ -327,27 +325,29 @@ public class OCRHandle {
                         letterIndex.incrementAndGet();
                         return;
 
-                    // If it's the last character, add the space based on beforeSpaceX and the current X, (Getting the
-                    // width of the space) and reset the line
+                        // If it's the last character, add the space based on beforeSpaceX and the current X, (Getting the
+                        // width of the space) and reset the line
                     } else if (letterIndex.get() == trainString.length()) {
-                        spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX.get(), lineHeight);
+                        spaceTrainedCharacterOptional.ifPresent(trainedCharacterData -> trainedCharacterData.recalculateTo(searchCharacter.getX() - beforeSpaceX.get(), lineHeight));
                         letterIndex.set(0);
                         return;
                     } else {
                         searchCharacter.setKnownChar(current);
                     }
 
-                    // Adds the current segment values of the current searchCharacter to the trainedSearchCharacter
-                    trainedSearchCharacter.recalculateTo(searchCharacter);
+                    trainedSearchCharacterOptional.ifPresent(trainedSearchCharacter -> {
+                        // Adds the current segment values of the current searchCharacter to the trainedSearchCharacter
+                        trainedSearchCharacter.recalculateTo(searchCharacter);
 
-                    double halfOfLineHeight = ((double) lineBound.getValue() - (double) lineBound.getKey()) / 2;
-                    double middleToTopChar = (double) searchCharacter.getY() - (double) lineBound.getKey();
-                    double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
+                        double halfOfLineHeight = ((double) lineBound.getValue() - (double) lineBound.getKey()) / 2;
+                        double middleToTopChar = (double) searchCharacter.getY() - (double) lineBound.getKey();
+                        double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
 
-                    // Sets the current center to be calculated, along with any meta it may have
-                    trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
-                    trainedSearchCharacter.setHasDot(searchCharacter.hasDot());
-                    trainedSearchCharacter.setLetterMeta(searchCharacter.getLetterMeta());
+                        // Sets the current center to be calculated, along with any meta it may have
+                        trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
+                        trainedSearchCharacter.setHasDot(searchCharacter.hasDot());
+                        trainedSearchCharacter.setLetterMeta(searchCharacter.getLetterMeta());
+                    });
 
                     // Resets the current letter
                     if (letterIndex.get() >= trainString.length()) {
@@ -375,22 +375,22 @@ public class OCRHandle {
         // Inserts all character data into the database after recalculating the
         trainedCharacterDataList
                 .forEach((fontBounds, databaseTrainedCharacters) -> databaseTrainedCharacters.forEach(databaseTrainedCharacter -> {
-                            try {
-                                if (databaseTrainedCharacter.isEmpty()) return;
-                                databaseTrainedCharacter.finishRecalculations();
-                                char letter = databaseTrainedCharacter.getValue();
+                    try {
+                        if (databaseTrainedCharacter.isEmpty()) return;
+                        databaseTrainedCharacter.finishRecalculations();
+                        char letter = databaseTrainedCharacter.getValue();
 
-                                CompletableFuture.runAsync(() -> databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont()))
-                                        .thenRunAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
-                                        .thenRunAsync(() -> {
-                                            if (letter != ' ') {
-                                                databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
-                                            }
-                                        });
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }));
+                        CompletableFuture.runAsync(() -> databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont()))
+                                .thenRunAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
+                                .thenRunAsync(() -> {
+                                    if (letter != ' ') {
+                                        databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
+                                    }
+                                });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }));
 
         debug("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
     }
@@ -398,7 +398,8 @@ public class OCRHandle {
     /**
      * Gets and inserts all the spaces of the current line based on the font size given (The first character of the line
      * by default). This method adds the spaces to the end of the line currently, so a resort is needed.
-     * @param line The line to add spaces to
+     *
+     * @param line     The line to add spaces to
      * @param fontSize The font size to base the space widths off of
      * @return A copy of the input {@link ImageLetter} List, but with spaces appended to the end
      */
@@ -408,12 +409,15 @@ public class OCRHandle {
             FontBounds fontBounds = matchNearestFontSize(fontSize);
             List<DatabaseCharacter> data = databaseManager.getAllCharacterSegments(fontBounds).get();
 
-            // Gets the space DatabaseCharcater used for the current font size from the database
-            DatabaseCharacter space = data.stream().filter(databaseCharacter -> databaseCharacter.getLetter() == ' ').findFirst().orElse(null);
-            if (space == null) {
+            // Gets the space DatabaseCharacter used for the current font size from the database
+            Optional<DatabaseCharacter> spaceOptional = data.stream().filter(databaseCharacter -> databaseCharacter.getLetter() == ' ').findFirst();
+
+            if (!spaceOptional.isPresent()) {
                 error("No space found for current font size: " + fontSize);
                 return line;
             }
+
+            DatabaseCharacter space = spaceOptional.get();
 
             ImageLetter prev = null;
             for (ImageLetter searchCharacter : line) {
@@ -428,7 +432,7 @@ public class OCRHandle {
                 int spaces = noRoundDownSpace.contains(searchCharacter.getLetter() + "") ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
 
                 for (int i = 0; i < spaces; i++) {
-                    ret.add(new ImageLetter(space, (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, ratio, null));
+                    ret.add(new ImageLetter(space, (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, ratio));
                 }
 
                 prev = searchCharacter;
@@ -444,6 +448,7 @@ public class OCRHandle {
      * Gets the full space character count for the blank gap divided by the space width. This is calculated by getting
      * the amount of times the space can fit in evenly (x % 1) and if the remaining value is within 0.2 of 1, it is
      * considered a space.
+     *
      * @param input The amount of spaces that fit in the gap (gap / spaceWidth)
      * @return The amount of spaces that is found as a whole number
      */
@@ -459,10 +464,11 @@ public class OCRHandle {
     /**
      * Puts all touching black characters together and adds them to `coordinates`. This is the method where most incorrect
      * detections will result from.
-     * @param searchImage The SearchImage to read from
-     * @param x The X coordinate to start at
-     * @param y The Y coordinate to start at
-     * @param coordinates The mutable list of coordinate values that will be added to when a new black pixel is found
+     *
+     * @param searchImage      The SearchImage to read from
+     * @param x                The X coordinate to start at
+     * @param y                The Y coordinate to start at
+     * @param coordinates      The mutable list of coordinate values that will be added to when a new black pixel is found
      * @param searchCharacters The mutable list of SearchCharacters that will be added to when a group of pixels is found
      * @return If it count a group of pixels
      */
@@ -517,14 +523,15 @@ public class OCRHandle {
         }
 
         if (searchCharacter.isProbablyApostraphe()) {
-            SearchCharacter leftApostrophe = getLeftApostrophe(searchCharacters, searchCharacter).orElse(null);
-            if (leftApostrophe != null) {
+            Optional<SearchCharacter> leftApostropheOptional = getLeftApostrophe(searchCharacters, searchCharacter);
+            leftApostropheOptional.ifPresent(leftApostrophe -> {
                 combine(leftApostrophe, searchCharacter, coordinates, CombineMethod.APOSTROPHE, LetterMeta.QUOTE);
                 leftApostrophe.setHasDot(true);
                 searchCharacter.setHasDot(true);
                 searchCharacters.remove(searchCharacter);
-                return true;
-            }
+            });
+
+            if (leftApostropheOptional.isPresent()) return true;
         }
 
         searchCharacter.applySections();
@@ -539,6 +546,7 @@ public class OCRHandle {
     /**
      * Gets the estimated font size based on the given letter's character and dimensions from the stored values in the
      * database after training.
+     *
      * @param imageLetter The {@link ImageLetter} to check the size of
      * @return The estimated font size
      */
@@ -548,6 +556,7 @@ public class OCRHandle {
 
     /**
      * Gets the nearest {@link FontBounds} object for the exact font size (Height) given
+     *
      * @param fontSize The exact font size (Height)
      * @return The nearest matching {@link FontBounds} object
      */
@@ -557,10 +566,11 @@ public class OCRHandle {
 
     /**
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
+     *
      * @param searchCharacter The input {@link SearchCharacter} to match to
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
-    private ImageLetter getCharacterFor(SearchCharacter searchCharacter) {
+    private Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter) {
         Map<ImageLetter, Double> diffs = new HashMap<>(); // The lower value the better
 
         try {
@@ -570,13 +580,12 @@ public class OCRHandle {
             data.stream()
                     .filter(character -> character.hasDot() == searchCharacter.hasDot())
                     .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
-                    .forEach(character -> {
-                        double[] charDifference = OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData());
-                        double value = Arrays.stream(charDifference).average().getAsDouble(); // Gets the difference of
-                        // the database character and searchCharacter (Lower is better)
-
-                        diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getSegments()), value);
-                    });
+                    .forEach(character ->
+                            OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference ->
+                                    Arrays.stream(charDifference).average().ifPresent(value -> {
+                                        // Gets the difference of the database character and searchCharacter (Lower is better)
+                                        diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getSegments()), value);
+                                    })));
 
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
@@ -587,7 +596,7 @@ public class OCRHandle {
         List<Map.Entry<ImageLetter, Double>> entries = new ArrayList<>(OCRUtils.sortByValue(diffs).entrySet());
 
         // If there's no characters found, don't continue
-        if (entries.size() == 0) return null;
+        if (entries.size() == 0) return Optional.empty();
         Map.Entry<ImageLetter, Double> firstEntry = entries.get(0); // The most similar character
         double allowedDouble = firstEntry.getValue() * 0.1D;
         entries.removeIf(value -> OCRUtils.getDiff(value.getValue(), firstEntry.getValue()) > allowedDouble); // Removes any character without the
@@ -600,12 +609,13 @@ public class OCRHandle {
 
         ImageLetter first = entries.get(0).getKey();
         first.setValues(searchCharacter.getValues());
-        return first;
+        return Optional.of(first);
     }
 
     /**
      * Gets the top and bottom line bounds found from the value 2D array. This is used for getting characters for
      * training data.
+     *
      * @param values The 2D array of values derived from the image to check from
      * @return A list of the absolute top and bottom line values
      */
@@ -662,6 +672,7 @@ public class OCRHandle {
 
     /**
      * Prints out an error message if the System property `newocr.error` is `true`.
+     *
      * @param string The error to potentially print out
      */
     private void error(String string) {
@@ -670,6 +681,7 @@ public class OCRHandle {
 
     /**
      * Prints out a debug message if the System property `newocr.debug` is `true`.
+     *
      * @param string The string to potentially print out
      */
     private void debug(String string) {

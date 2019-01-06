@@ -20,15 +20,14 @@ public class CharacterGettingUtils {
      */
     public static boolean doDotStuff(SearchCharacter dotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         if (!dotCharacter.isProbablyDot()) return false;
-        SearchCharacter baseCharacter = getBaseOfDot(searchCharacters, dotCharacter).orElse(null);
-        if (baseCharacter != null) {
+        Optional<SearchCharacter> baseCharacterOptional = getBaseOfDot(searchCharacters, dotCharacter);
+        baseCharacterOptional.ifPresent(baseCharacter -> {
             combine(baseCharacter, dotCharacter, coordinates, CombineMethod.DOT, LetterMeta.DOT_ABOVE);
             baseCharacter.setHasDot(true);
             dotCharacter.setHasDot(true);
-            return true;
-        }
+        });
 
-        return false;
+        return baseCharacterOptional.isPresent();
     }
 
     /**
@@ -40,15 +39,14 @@ public class CharacterGettingUtils {
      */
     public static boolean doPercentStuff(SearchCharacter percentDotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         if (!percentDotCharacter.isProbablyCircleOfPercent()) return false;
-        SearchCharacter baseCharacter = getBaseForPercent(searchCharacters, percentDotCharacter).orElse(null);
-        if (baseCharacter != null) {
+        Optional<SearchCharacter> baseCharacterOptional = getBaseForPercent(searchCharacters, percentDotCharacter);
+        baseCharacterOptional.ifPresent(baseCharacter -> {
             combine(baseCharacter, percentDotCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE, LetterMeta.PERCENT);
             baseCharacter.setHasDot(true);
             percentDotCharacter.setHasDot(true);
-            return true;
-        }
+        });
 
-        return false;
+        return baseCharacterOptional.isPresent();
     }
 
     /**
@@ -60,15 +58,14 @@ public class CharacterGettingUtils {
      */
     public static boolean doApostropheStuff(SearchCharacter rightApostrophe, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
         if (!rightApostrophe.isProbablyApostraphe()) return false;
-        SearchCharacter leftApostrophe = getLeftApostrophe(searchCharacters, rightApostrophe).orElse(null);
-        if (leftApostrophe != null) {
+        Optional<SearchCharacter> leftApostropheOptional = getLeftApostrophe(searchCharacters, rightApostrophe);
+        leftApostropheOptional.ifPresent(leftApostrophe -> {
             combine(leftApostrophe, rightApostrophe, coordinates, CombineMethod.APOSTROPHE, LetterMeta.QUOTE);
             leftApostrophe.setHasDot(true);
             rightApostrophe.setHasDot(true);
-            return true;
-        }
+        });
 
-        return false;
+        return leftApostropheOptional.isPresent();
     }
 
     /**
