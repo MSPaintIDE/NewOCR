@@ -4,6 +4,7 @@ import com.uddernetworks.newocr.FontBounds;
 import com.uddernetworks.newocr.LetterMeta;
 import com.uddernetworks.newocr.Main;
 import com.uddernetworks.newocr.character.SearchCharacter;
+import com.uddernetworks.newocr.utils.ConversionUtils;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -317,7 +318,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
                 ResultSet resultSet = getSize.executeQuery();
 
-                if (resultSet.next()) result = (int) Math.round(resultSet.getInt(1) / (4D/3D));
+                if (resultSet.next()) result = ConversionUtils.pixelToPoint(resultSet.getInt(1));
             } catch (SQLException e) {
                 e.printStackTrace();
             }
