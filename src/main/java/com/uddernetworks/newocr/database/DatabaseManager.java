@@ -58,7 +58,7 @@ public interface DatabaseManager {
 
     /**
      * Adds the letter sizes to the `sizing` table to accurately detect sizing of fonts on a character basis
-     * @param fontSize The font size to be inserted
+     * @param fontSize The font size in pixels to be inserted
      * @param searchCharacterList The list of {@link SearchCharacter}s to insert
      */
     void addLetterSize(int fontSize, List<SearchCharacter> searchCharacterList);
@@ -67,7 +67,7 @@ public interface DatabaseManager {
      * Gets the font size of the given character based on its dimensions
      * @param character The character being detected
      * @param height The height of the character
-     * @return The nearest font size, with -1 being if no data was found for the character for some reason
+     * @return The nearest font size in points, with -1 being if no data was found for the character for some reason
      */
     Future<Integer> getLetterSize(char character, int height);
 

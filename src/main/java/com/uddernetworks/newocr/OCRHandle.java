@@ -355,12 +355,14 @@ public class OCRHandle {
                     }
                 });
 
-                databaseManager.addLetterSize(startingSize--, line);
+                databaseManager.addLetterSize(startingSize, line);
 
                 // Removes any used letters from the line in searchCharacters, so none will be duplicated and to
                 // increase performance.
                 searchCharacters.removeAll(line);
             }
+
+            startingSize--;
         }
 
         searchCharacters = searchCharactersCopy;
@@ -548,7 +550,7 @@ public class OCRHandle {
      * database after training.
      *
      * @param imageLetter The {@link ImageLetter} to check the size of
-     * @return The estimated font size
+     * @return The estimated font size in Points
      */
     public Future<Integer> getFontSize(ImageLetter imageLetter) {
         return this.databaseManager.getLetterSize(imageLetter.getLetter(), imageLetter.getHeight());
