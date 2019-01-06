@@ -110,10 +110,10 @@ public class OCRHandle {
                 .map(Optional::get)
                 .sorted(Comparator.comparingInt(ImageLetter::getX))
                 .sorted((o1, o2) -> {
-                    if (o1.equals(o2)) return 0;
                     char cha = o1.getLetter();
                     char cha2 = o2.getLetter();
 
+                    if (cha == cha2) return 0;
                     if (cha == ',' ^ cha2 == ',') return cha2 == ',' ? 1 : -1;
                     if (cha == '.' ^ cha2 == '.') return cha2 == '.' ? 1 : -1;
                     if (cha == '_' ^ cha2 == '_') return cha2 == '_' ? 1 : -1;
