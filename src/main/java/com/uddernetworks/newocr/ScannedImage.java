@@ -2,17 +2,27 @@ package com.uddernetworks.newocr;
 
 import com.uddernetworks.newocr.character.ImageLetter;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * An object to store line data for {@link ImageLetter}s on a scanned image.
  */
 public class ScannedImage {
 
+    private transient File originalFile;
+    private transient BufferedImage originalImage;
     private Map<Integer, List<ImageLetter>> grid = new LinkedHashMap<>();
+
+    public ScannedImage(File originalFile, BufferedImage originalImage) {
+        this.originalFile = originalFile;
+        this.originalImage = originalImage;
+    }
 
     /**
      * Gets the string of a scanned image
@@ -29,6 +39,27 @@ public class ScannedImage {
         });
 
         return stringBuilder.toString();
+    }
+
+    /**
+     * Gets the first font size found in points.
+     *
+     * @param ocrHandle The OCRHandle used
+     * @return The font size in points
+     */
+    public int getFirstFontSize(OCRHandle ocrHandle) {
+        try {
+            for (Map.Entry<Integer, List<ImageLetter>> entry : grid.entrySet()) {
+                for (ImageLetter imageLetter : entry.getValue()) {
+                    int size = ocrHandle.getFontSize(imageLetter).get();
+                    if (size != -1) return size;
+                }
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
     }
 
     /**
@@ -75,4 +106,21 @@ public class ScannedImage {
         return new ArrayList<>(grid.entrySet()).get(y);
     }
 
+    /**
+     * Gets the original image scanned by the OCR.
+     *
+     * @return The original image, which may be null if pulled from caches
+     */
+    public BufferedImage getOriginalImage() {
+        return originalImage;
+    }
+
+    /**
+     * Gets the original {@link File} scanned by the OCR.
+     *
+     * @return The original File, which may be null if pulled from caches
+     */
+    public File getOriginalFile() {
+        return originalFile;
+    }
 }

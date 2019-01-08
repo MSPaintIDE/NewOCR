@@ -37,6 +37,7 @@ public class OCRHandle {
 
     public OCRHandle(DatabaseManager databaseManager) {
         this.databaseManager = databaseManager;
+        ImageIO.setUseCache(false);
     }
 
     /**
@@ -206,7 +207,7 @@ public class OCRHandle {
 
         // Sorts the lines again based on X values, to move spaces from the back to their proper locations in the line.
 
-        ScannedImage scannedImage = new ScannedImage();
+        ScannedImage scannedImage = new ScannedImage(file, input);
 
         sortedLines.keySet().stream().sorted().forEach(y -> {
             List<ImageLetter> line = sortedLines.get(y);
