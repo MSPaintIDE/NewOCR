@@ -52,7 +52,7 @@ public class Main {
     }
 
     private void getSections(String[] args) throws IOException {
-        BufferedImage input = ImageIO.read(new File("E.png"));
+        BufferedImage input = OCRUtils.readImage(new File("E.png"));
         boolean[][] values = OCRUtils.createGrid(input);
 
         OCRUtils.toGrid(input, values);

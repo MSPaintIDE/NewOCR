@@ -51,7 +51,7 @@ public class OCRHandle {
         long start = System.currentTimeMillis();
 
         // Preparing image
-        BufferedImage input = ImageIO.read(file);
+        BufferedImage input = OCRUtils.readImage(file);
         boolean[][] values = OCRUtils.createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 
@@ -244,7 +244,7 @@ public class OCRHandle {
 
         // Preparing image
 
-        BufferedImage input = ImageIO.read(file);
+        BufferedImage input = OCRUtils.readImage(file);
         boolean[][] values = OCRUtils.createGrid(input);
         List<SearchCharacter> searchCharacters = new ArrayList<>();
 

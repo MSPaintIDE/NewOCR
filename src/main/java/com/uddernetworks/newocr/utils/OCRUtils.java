@@ -3,10 +3,12 @@ package com.uddernetworks.newocr.utils;
 import com.uddernetworks.newocr.character.SearchCharacter;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,12 +21,34 @@ public class OCRUtils {
 
     public static final AbstractMap.SimpleEntry<Integer, Integer> ZERO_PLACEHOLDER = new AbstractMap.SimpleEntry<>(0, 0);
 
+    /**
+     * An ImageIO.read() replacement, which in tests can be up to 15x faster. This has shown to significantly improve
+     * the OCR's performance both in training and actual usage.
+     *
+     * @param input The file to read
+     * @return The BufferedImage of the file
+     */
+    public static BufferedImage readImage(File input) {
+        BufferedImage bufferedImage = null;
+        try {
+            ImageIcon imageIcon = new ImageIcon(input.toURI().toURL());
+            bufferedImage = new BufferedImage(imageIcon.getIconWidth(), imageIcon.getIconHeight(), BufferedImage.TYPE_INT_RGB);
+            Graphics graphics = bufferedImage.getGraphics();
+            graphics.drawImage(imageIcon.getImage(), 0, 0, null);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        return bufferedImage;
+    }
+
     /*
      * Advanced/Convenient Comparisons
      */
 
     /**
      * Gets the difference between two doubles.
+     *
      * @param one The first number
      * @param two The second number
      * @return The difference
@@ -35,6 +59,7 @@ public class OCRUtils {
 
     /**
      * Gets the difference between two ints
+     *
      * @param one The first number
      * @param two The second number
      * @return The difference
@@ -45,8 +70,9 @@ public class OCRUtils {
 
     /**
      * Gets if two ints are within a given double.
-     * @param one Bound 1
-     * @param two Bound 2
+     *
+     * @param one    Bound 1
+     * @param two    Bound 2
      * @param within The number
      * @return If one and two are within `within`
      */
@@ -57,8 +83,9 @@ public class OCRUtils {
 
     /**
      * Gets if the difference of the two given ints are between both of the two doubles given.
-     * @param one The first number
-     * @param two The second number
+     *
+     * @param one        The first number
+     * @param two        The second number
      * @param lowerBound The lower bound to check
      * @param upperBound The upper bound to check
      * @return If the difference of the two given ints are between both of the two doubles given
@@ -70,6 +97,7 @@ public class OCRUtils {
 
     /**
      * Gets the percentage difference of two different 2D boolean arrays.
+     *
      * @param input1 The first 2D array
      * @param input2 The second 2D array
      * @return The percentage difference <= 1
@@ -88,6 +116,7 @@ public class OCRUtils {
 
     /**
      * Gets the difference of two arrays' values.
+     *
      * @param input1 The first array
      * @param input2 The second array
      * @return An array with the same length as the inputs containing the difference of both arrays' respective values
@@ -108,9 +137,10 @@ public class OCRUtils {
 
     /**
      * Gets if a given number is within two bounds. The same as {@link #isWithin(double, double, double)} but with ints.
+     *
      * @param lowerBound The lower bound to check
      * @param upperBound The upper bound to check
-     * @param value The value to check
+     * @param value      The value to check
      * @return If the two values are within the given bounds
      */
     public static boolean isWithin(int lowerBound, int upperBound, int value) {
@@ -119,9 +149,10 @@ public class OCRUtils {
 
     /**
      * Gets if a given number is within two bounds. The same as {@link #isWithin(int, int, double)} but with doubles.
+     *
      * @param lowerBound The lower bound to check
      * @param upperBound The upper bound to check
-     * @param value The value to check
+     * @param value      The value to check
      * @return If the two values are within the given bounds
      */
     public static boolean isWithin(double lowerBound, double upperBound, double value) {
@@ -130,8 +161,9 @@ public class OCRUtils {
 
     /**
      * Gets if the difference or two doubles is less than or equal to another given double.
-     * @param num1 The first number
-     * @param num2 The second number
+     *
+     * @param num1   The first number
+     * @param num2   The second number
      * @param amount The inclusive amount the difference can be
      * @return If the difference is less than or equal to the `amount`
      */
@@ -141,6 +173,7 @@ public class OCRUtils {
 
     /**
      * Sorts a Map by its values
+     *
      * @param map The Map to sort
      * @return The sorted map
      */
@@ -162,6 +195,7 @@ public class OCRUtils {
 
     /**
      * Creates a grid of booleans from a {@link BufferedImage} with the same dimensions as the image.
+     *
      * @param bufferedImage The input {@link BufferedImage}
      * @return The created grid
      */
@@ -180,7 +214,8 @@ public class OCRUtils {
     /**
      * Populates a boolean 2D array with the same dimensions as the input image where each pixel is represented by a
      * boolean value, black being `true`, white being `false`.
-     * @param input The input image
+     *
+     * @param input  The input image
      * @param values The mutable empty grid
      */
     public static void toGrid(BufferedImage input, boolean[][] values) {
@@ -198,8 +233,9 @@ public class OCRUtils {
 
     /**
      * Gets if the row has any `true` (Black) values in it
+     *
      * @param values The grid of image values
-     * @param y The Y coordinate of the row to check
+     * @param y      The Y coordinate of the row to check
      * @return If the row has anything in it
      */
     public static boolean isRowPopulated(boolean[][] values, int y) {
@@ -212,8 +248,9 @@ public class OCRUtils {
 
     /**
      * Gets all the characters between the two Y values (The line bounds) form the {@link SearchCharacter} list.
-     * @param topY The top Y value of the line
-     * @param bottomY The bottom Y value of the line
+     *
+     * @param topY             The top Y value of the line
+     * @param bottomY          The bottom Y value of the line
      * @param searchCharacters The {@link SearchCharacter} list to check from
      * @return The {@link SearchCharacter} objects between the given Y values
      */
@@ -228,7 +265,8 @@ public class OCRUtils {
     /**
      * Sets all pixels from input to temp. When running in the program if the System property `newocr.rewrite` is set to
      * true, it will write the image to stop any weird image decoding issues
-     * @param temp The empty image with the same size as the input that will be written to
+     *
+     * @param temp  The empty image with the same size as the input that will be written to
      * @param input The input that will be read from
      */
     public static void rewriteImage(BufferedImage temp, BufferedImage input) {
@@ -241,6 +279,7 @@ public class OCRUtils {
 
     /**
      * Gets if a {@link SearchCharacter} is fully black for things like . or the sections of =
+     *
      * @param searchCharacter The input {@link SearchCharacter} to check
      * @return If the input is all black
      */
@@ -257,6 +296,7 @@ public class OCRUtils {
 
     /**
      * Binarizes the input image, making all pixels wither black or white with an alpha of 255
+     *
      * @param bufferedImage The input image to be mutated
      */
     public static void filter(BufferedImage bufferedImage) {
@@ -270,9 +310,10 @@ public class OCRUtils {
 
     /**
      * Gets if a pixel should be considered black.
+     *
      * @param image The input image
-     * @param x The X coordinate to check
-     * @param y The Y coordinate to check
+     * @param x     The X coordinate to check
+     * @param y     The Y coordinate to check
      * @return If the pixel should be considered black
      */
     public static boolean isBlack(BufferedImage image, int x, int y) {
@@ -290,6 +331,7 @@ public class OCRUtils {
 
     /**
      * Splits a grid of values in half horizontally
+     *
      * @param values The grid to split
      * @return A stream of 2 halves, top and bottom
      */
@@ -313,6 +355,7 @@ public class OCRUtils {
 
     /**
      * Splits a grid of values in thirds horizontally
+     *
      * @param values The grid to split
      * @return A stream of 3 thirds: top, middle, and bottom
      */
@@ -340,6 +383,7 @@ public class OCRUtils {
 
     /**
      * Splits a grid of values in half vertically
+     *
      * @param values The grid to split
      * @return A stream of 2 halves, left and right
      */
@@ -371,6 +415,7 @@ public class OCRUtils {
 
     /**
      * Splits a grid of values in thirds vertically
+     *
      * @param values The grid to split
      * @return A stream of 3 thirds: left, middle, and right
      */
@@ -406,7 +451,8 @@ public class OCRUtils {
     /**
      * Splits a grid of values in half diagonally. The diagonal line will be going from the top left to bototm right if
      * `increasing` is `true`, and top left to bottom right if it is `false`.
-     * @param values The grid to split into halves diagonally
+     *
+     * @param values     The grid to split into halves diagonally
      * @param increasing The line's slope will be positive when `true`, and negative when `false`.
      * @return A List of 2 halves
      */
@@ -453,8 +499,9 @@ public class OCRUtils {
 
     /**
      * Creates an image from a grid of booleans, `true` being black and `false` being white.
+     *
      * @param values The values to convert into an image
-     * @param path The path of the file
+     * @param path   The path of the file
      */
     public static void makeImage(boolean[][] values, String path) {
         try {
@@ -474,10 +521,11 @@ public class OCRUtils {
 
     /**
      * Colors in a horizontal line of an image.
+     *
      * @param image The image to color on
      * @param color The color to use
-     * @param y The Y value of the horizontal line
-     * @param x The X start position of the line
+     * @param y     The Y value of the horizontal line
+     * @param x     The X start position of the line
      * @param width The width of the line to draw
      */
     public static void colorRow(BufferedImage image, Color color, int y, int x, int width) {
@@ -488,10 +536,11 @@ public class OCRUtils {
 
     /**
      * Colors in a vertical line of an image.
-     * @param image The image to color on
-     * @param color The color to use
-     * @param y The Y start position of the line
-     * @param x The X value of the vertical line
+     *
+     * @param image  The image to color on
+     * @param color  The color to use
+     * @param y      The Y start position of the line
+     * @param x      The X value of the vertical line
      * @param height The height of the line to draw
      */
     public static void colorColumn(BufferedImage image, Color color, int x, int y, int height) {
@@ -503,6 +552,7 @@ public class OCRUtils {
     /**
      * Prints a grid of booleans to console using full width characters so it will appear proportional and not skewed
      * with spaces and the filling character.
+     *
      * @param values The values to print out
      */
     public static void printOut(boolean[][] values) {
