@@ -95,7 +95,7 @@ allprojects {
                         authentication(userName: ossrhUser, password: ossrhPassword)
                     }
                 }
-
+                
                 pom.project {
                     name 'NewOCR'
                     description 'NewOCR is a library for simple but efficient OCR detection in pure Java.'
