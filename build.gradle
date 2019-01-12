@@ -39,8 +39,10 @@ dependencies {
 }
 
 nexusStaging {
-    username = ossrhUser
-    password = ossrhPassword
+    if (project.hasProperty("ossrhUser") && project.hasProperty("ossrhPassword")) {
+        username = ossrhUser
+        password = ossrhPassword
+    }
 }
 
 javadoc {
@@ -76,10 +78,14 @@ allprojects {
             mavenDeployer {
                 // POM signature
                 beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-                // Target repository
-                repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                    authentication(userName: ossrhUser, password: ossrhPassword)
+
+                if (project.hasProperty("ossrhUser") && project.hasProperty("ossrhPassword")) {
+                    // Target repository
+                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                        authentication(userName: ossrhUser, password: ossrhPassword)
+                    }
                 }
+                
                 pom.project {
                     name 'NewOCR'
                     description 'NewOCR is a library for simple but efficient OCR detection in pure Java.'
