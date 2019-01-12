@@ -3,15 +3,14 @@ package com.uddernetworks.newocr;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import java.io.File;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertTrue;
 
@@ -37,10 +36,11 @@ public class OCRHandleTest {
     public void characterSizeRecognizer() throws ExecutionException, InterruptedException {
         int characterDepth = 20;
 
-        List<Double> def = new ArrayList<>();
-        List<Double> gen = new ArrayList<>();
+        var def = new DoubleArrayList();
+        var gen = new DoubleArrayList();
+        
         for (int i = 0; i < this.trainImage.getLineCount() * characterDepth; i++) {
-            def.add((double) i);
+            def.add(i);
             gen.add(0D);
         }
 
@@ -59,8 +59,8 @@ public class OCRHandleTest {
             }
         }
 
-        double[] defArray = def.stream().filter(val -> val != -2).mapToDouble(Double::doubleValue).toArray();
-        double[] genArray = gen.stream().filter(val -> val != -2).mapToDouble(Double::doubleValue).toArray();
+        double[] defArray = def.stream().mapToDouble(Double::doubleValue).filter(val -> val != -2D).toArray();
+        double[] genArray = gen.stream().mapToDouble(Double::doubleValue).filter(val -> val != -2).toArray();
 
         double coeff = Math.abs(new PearsonsCorrelation().correlation(defArray, genArray));
 
@@ -68,4 +68,5 @@ public class OCRHandleTest {
 
         assertTrue(coeff >= ACCURACY);
     }
+    
 }

@@ -1,25 +1,28 @@
 package com.uddernetworks.newocr.utils;
 
 import com.uddernetworks.newocr.character.SearchCharacter;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.*;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.*;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 
 /**
  * Some various utility methods used by the OCR that may assist others using the library.
  */
 public class OCRUtils {
 
-    public static final AbstractMap.SimpleEntry<Integer, Integer> ZERO_PLACEHOLDER = new AbstractMap.SimpleEntry<>(0, 0);
+    public static final IntPair ZERO_PLACEHOLDER = new IntPair(0, 0);
 
     /**
      * An ImageIO.read() replacement, which in tests can be up to 15x faster. This has shown to significantly improve
@@ -171,24 +174,6 @@ public class OCRUtils {
         return Math.max(num1, num2) - Math.min(num1, num2) <= amount;
     }
 
-    /**
-     * Sorts a Map by its values
-     *
-     * @param map The Map to sort
-     * @return The sorted map
-     */
-    public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
-        List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
-        list.sort(Map.Entry.comparingByValue());
-
-        Map<K, V> result = new LinkedHashMap<>();
-        for (Map.Entry<K, V> entry : list) {
-            result.put(entry.getKey(), entry.getValue());
-        }
-
-        return result;
-    }
-
     /*
      * Image-related methods
      */
@@ -200,15 +185,7 @@ public class OCRUtils {
      * @return The created grid
      */
     public static boolean[][] createGrid(BufferedImage bufferedImage) {
-        boolean[][] values = new boolean[bufferedImage.getHeight()][];
-        for (int i = 0; i < values.length; i++) {
-            boolean[] row = new boolean[bufferedImage.getWidth()];
-            for (int i1 = 0; i1 < row.length; i1++) row[i1] = false;
-
-            values[i] = row;
-        }
-
-        return values;
+        return new boolean[bufferedImage.getHeight()][bufferedImage.getWidth()];
     }
 
     /**
@@ -419,7 +396,7 @@ public class OCRUtils {
      * @param values The grid to split
      * @return A stream of 3 thirds: left, middle, and right
      */
-    public static Stream<AbstractMap.SimpleEntry<Integer, Integer>> getVerticalThird(boolean[][] values) {
+    public static Stream<IntPair> getVerticalThird(boolean[][] values) {
         if (values.length == 0) return Stream.of(ZERO_PLACEHOLDER, ZERO_PLACEHOLDER, ZERO_PLACEHOLDER);
         int leftHeight = values[0].length / 3;
         int middleHeight = values[0].length - leftHeight * 2;
@@ -431,21 +408,28 @@ public class OCRUtils {
         for (boolean[] line : values) {
             for (int x = 0; x < values[0].length; x++) {
                 if (x < leftHeight) {
-                    if (line[x]) leftTrue++;
+                    if (line[x]) {
+                        leftTrue++;
+                    }
+                    
                     leftSize++;
                 } else if (x < middleHeight + leftHeight) {
-                    if (line[x]) middleTrue++;
+                    if (line[x]){
+                        middleTrue++;
+                    }
+                    
                     middleSize++;
                 } else {
-                    if (line[x]) rightTrue++;
+                    if (line[x]) {
+                        rightTrue++;
+                    }
+                    
                     rightSize++;
                 }
             }
         }
 
-        return Stream.of(new AbstractMap.SimpleEntry<>(leftTrue, leftSize),
-                new AbstractMap.SimpleEntry<>(middleTrue, middleSize),
-                new AbstractMap.SimpleEntry<>(rightTrue, rightSize)).sequential();
+        return Stream.of(new IntPair(leftTrue, leftSize), new IntPair(middleTrue, middleSize), new IntPair(rightTrue, rightSize));
     }
 
     /**
@@ -456,7 +440,7 @@ public class OCRUtils {
      * @param increasing The line's slope will be positive when `true`, and negative when `false`.
      * @return A List of 2 halves
      */
-    public static List<Map.Entry<Integer, Integer>> getDiagonal(boolean[][] values, boolean increasing) {
+    public static List<IntPair> getDiagonal(boolean[][] values, boolean increasing) {
         int topSize = 0;
         int topTrue = 0;
         int bottomSize = 0;
@@ -465,31 +449,44 @@ public class OCRUtils {
         if (values != null) {
             double slope = (double) values.length / (double) values[0].length;
 
-            List<Integer> yPositions = new ArrayList<>();
+            IntList yPositions = new IntArrayList();
 
             for (int x = 0; x < values[0].length; x++) {
                 double y = slope * x;
-                if (increasing) y = values.length - y;
+                
+                if (increasing) {
+                    y = values.length - y;
+                }
+                
                 yPositions.add((int) y);
             }
 
             for (int x = 0; x < values[0].length; x++) {
                 int yPos = yPositions.get(x);
+                
                 for (int y = 0; y < values.length; y++) {
                     if (y < yPos) {
-                        if (values[y][x]) bottomTrue++;
+                        if (values[y][x]) {
+                            bottomTrue++;
+                        }
+                        
                         bottomSize++;
                     } else {
-                        if (values[y][x]) topTrue++;
+                        if (values[y][x]) {
+                            topTrue++;
+                        }
+                        
                         topSize++;
                     }
                 }
             }
         }
 
-        List<Map.Entry<Integer, Integer>> ret = new LinkedList<>();
-        ret.add(new AbstractMap.SimpleEntry<>(topTrue, topSize));
-        ret.add(new AbstractMap.SimpleEntry<>(bottomTrue, bottomSize));
+        List<IntPair> ret = new LinkedList<>();
+        
+        ret.add(new IntPair(topTrue, topSize));
+        ret.add(new IntPair(bottomTrue, bottomSize));
+        
         return ret;
     }
 

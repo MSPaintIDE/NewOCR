@@ -6,33 +6,55 @@ import com.uddernetworks.newocr.database.DatabaseCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.train.TrainGenerator;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
+import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
-import javafx.util.Pair;
-
-import javax.imageio.ImageIO;
+import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.imageio.ImageIO;
 
-import static com.uddernetworks.newocr.utils.CharacterGettingUtils.*;
+
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.combine;
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.doApostropheStuff;
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.doDotStuff;
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.doPercentStuff;
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.getBaseForPercent;
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.getBaseOfDot;
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.getBottomColon;
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.getDotUnderLetter;
+import static com.uddernetworks.newocr.utils.CharacterGettingUtils.getLeftApostrophe;
 
 public class OCRHandle {
 
     private static final FontBounds[] FONT_BOUNDS = {
-            new FontBounds(0, 12),
-            new FontBounds(13, 20),
-            new FontBounds(21, 30),
-            new FontBounds(31, 100),
+        new FontBounds(0, 12),
+        new FontBounds(13, 20),
+        new FontBounds(21, 30),
+        new FontBounds(31, 100),
     };
 
     private static String trainString = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
+    
     private DatabaseManager databaseManager;
 
     public OCRHandle(DatabaseManager databaseManager) {
@@ -45,18 +67,17 @@ public class OCRHandle {
      *
      * @param file The input image to be scanned
      * @return A {@link ScannedImage} containing all scanned character data
-     * @throws IOException
      */
-    public ScannedImage scanImage(File file) throws IOException {
-        long start = System.currentTimeMillis();
+    public ScannedImage scanImage(File file) {
+        var start = System.currentTimeMillis();
 
         // Preparing image
-        BufferedImage input = OCRUtils.readImage(file);
-        boolean[][] values = OCRUtils.createGrid(input);
-        List<SearchCharacter> searchCharacters = new ArrayList<>();
+        var input = OCRUtils.readImage(file);
+        var values = OCRUtils.createGrid(input);
+        var searchCharacters = new ArrayList<SearchCharacter>();
 
         if (Boolean.getBoolean("newocr.rewrite")) {
-            BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            var temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
             OCRUtils.rewriteImage(temp, input);
             input = temp;
         }
@@ -64,13 +85,13 @@ public class OCRHandle {
         OCRUtils.filter(input);
         OCRUtils.toGrid(input, values);
 
-        SearchImage searchImage = new SearchImage(values);
+        var searchImage = new SearchImage(values);
 
-        List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
+        var coordinates = new ArrayList<IntPair>();
 
         // Goes through coordinates of image and adds any connecting pixels to `coordinates`
 
-        for (int y = input.getHeight(); 0 <= --y; ) {
+        for (int y = input.getHeight(); 0 <= --y;) {
             for (int x = 0; x < input.getWidth(); x++) {
                 getLetterFrom(searchImage, x, y, coordinates, searchCharacters);
             }
@@ -97,7 +118,7 @@ public class OCRHandle {
         });
 
         // Key = Entry<MinCenter, MaxCenter>  centers are ABSOLUTE
-        Map<Map.Entry<Integer, Integer>, List<ImageLetter>> lines = new LinkedHashMap<>();
+        Map<IntPair, List<ImageLetter>> lines = new LinkedHashMap<>();
 
         // Gets the closest matching character (According to the database values) using OCRHandle#getCharacterFor(SearchCharacter),
         // then it orders them by their X values, and then sorts the ImageLetters so certain ones go first, allowing the
@@ -143,7 +164,7 @@ public class OCRHandle {
                     int potentialY = (int) Math.round(imageLetter.getY() + centerDiff);
 
                     // Gets the nearest line and its Y value, if any
-                    Optional<Map.Entry<Integer, Integer>> tempp = lines.keySet()
+                    var tempp = lines.keySet()
                             .stream()
                             .filter(centers -> {
                                 int x1 = centers.getKey();
@@ -159,15 +180,13 @@ public class OCRHandle {
                                 return OCRUtils.getDiff(centerBeginningY, potentialY);
                             }));
 
-                    Map.Entry<Integer, Integer> center = tempp.orElseGet(() -> {
-                        Map.Entry<Integer, Integer> entry = new AbstractMap.SimpleEntry<>(exactTolerantMin, exactTolerantMax); // Included tolerance
-                        lines.put(entry, new LinkedList<>());
-
-                        return entry;
+                    var center = tempp.orElseGet(() -> {
+                        var pair = new IntPair(exactTolerantMin, exactTolerantMax); // Included tolerance
+                        lines.put(pair, new LinkedList<>());
+                        return pair;
                     });
 
                     double ratio = imageLetter.getDatabaseCharacter().getAvgWidth() / imageLetter.getDatabaseCharacter().getAvgHeight();
-
                     double diff = Math.max(ratio, imageLetter.getRatio()) - Math.min(ratio, imageLetter.getRatio());
 
                     // This is signaled when the difference of the ratios are a value that is probably incorrect.
@@ -180,9 +199,8 @@ public class OCRHandle {
                 });
 
         // End ordering
-
-        Map<Integer, List<ImageLetter>> sortedLines = new LinkedHashMap<>();
-
+        var sortedLines = new Int2ObjectLinkedOpenHashMap<List<ImageLetter>>();
+        
         // Sorts the characters again based on their X value in their respective lines. This must be done again because
         // the two different lists (firstList and secondList) will have caused a mixup of X positions from normal
         // characters, and the ones in secondList
@@ -192,11 +210,15 @@ public class OCRHandle {
                 .map(entry -> new AbstractMap.SimpleEntry<>(entry, (int) Math.round(((double) entry.getValue() - (double) entry.getKey()) / 2D + entry.getKey())))
                 .sorted(Comparator.comparingInt(AbstractMap.SimpleEntry::getValue))
                 .forEach(nestedEntry -> {
-                    Map.Entry<Integer, Integer> linesEntry = nestedEntry.getKey();
+                    var linesEntry = nestedEntry.getKey();
                     int y = nestedEntry.getValue();
 
                     List<ImageLetter> databaseCharacters = lines.get(linesEntry);
-                    if (databaseCharacters.isEmpty()) return;
+                    
+                    if (databaseCharacters.isEmpty()) {
+                        return;
+                    }
+                    
                     databaseCharacters.sort(Comparator.comparingInt(ImageLetter::getX));
                     sortedLines.put(y, databaseCharacters);
                 });
@@ -215,17 +237,14 @@ public class OCRHandle {
         });
 
         debug("Finished in " + (System.currentTimeMillis() - start) + "ms");
-
         return scannedImage;
     }
 
     private boolean[][] clone2DArray(boolean[][] input) {
         boolean[][] clone = new boolean[input.length][input[0].length];
+        
         for (int y = 0; y < input.length; y++) {
-            boolean[] row = new boolean[input[y].length];
-            if (input[y].length >= 0) System.arraycopy(input[y], 0, row, 0, input[y].length);
-
-            clone[y] = row;
+            clone[y] = Arrays.copyOf(input[y], input[y].length);
         }
 
         return clone;
@@ -240,16 +259,17 @@ public class OCRHandle {
      */
     public void trainImage(File file) throws IOException {
         Map<FontBounds, List<TrainedCharacterData>> trainedCharacterDataList = new HashMap<>();
-        Arrays.stream(FONT_BOUNDS).forEach(fontBounds -> trainedCharacterDataList.put(fontBounds, new ArrayList<>()));
+        
+        List.of(FONT_BOUNDS).forEach(fontBounds -> trainedCharacterDataList.put(fontBounds, new ArrayList<>()));
 
         // Preparing image
 
-        BufferedImage input = OCRUtils.readImage(file);
-        boolean[][] values = OCRUtils.createGrid(input);
-        List<SearchCharacter> searchCharacters = new ArrayList<>();
+        var input = OCRUtils.readImage(file);
+        var values = OCRUtils.createGrid(input);
+        var searchCharacters = new ArrayList<SearchCharacter>();
 
         if (Boolean.getBoolean("newocr.rewrite")) {
-            BufferedImage temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            var temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
             OCRUtils.rewriteImage(temp, input);
             input = temp;
         }
@@ -257,14 +277,13 @@ public class OCRHandle {
         OCRUtils.filter(input);
         OCRUtils.toGrid(input, values);
 
-        boolean[][] valuesClone = clone2DArray(values);
+        var valuesClone = clone2DArray(values);
 
-        SearchImage searchImage = new SearchImage(values);
+        var searchImage = new SearchImage(values);
 
-        List<Map.Entry<Integer, Integer>> coordinates = new ArrayList<>();
+        var coordinates = new ArrayList<IntPair>();
 
         // Goes through coordinates of image and adds any connecting pixels to `coordinates`
-
         for (int y = input.getHeight(); 0 <= --y; ) {
             for (int x = 0; x < input.getWidth(); x++) {
                 getLetterFrom(searchImage, x, y, coordinates, searchCharacters);
@@ -280,20 +299,21 @@ public class OCRHandle {
 
         // Pair<topY, bottomY> (Absolute coordinates)
         // Gets the top and bottom line bounds of every line
-        List<Pair<Integer, Integer>> lineBounds = getLineBoundsForTesting(valuesClone);
+        var lineBounds = getLineBoundsForTesting(valuesClone);
 
-        List<SearchCharacter> searchCharactersCopy = new ArrayList<>(searchCharacters);
+        var searchCharactersCopy = new ArrayList<>(searchCharacters);
 
         int startingSize = 90;
 
         // Goes through each line found
-        for (Pair<Integer, Integer> lineBound : lineBounds) {
+        for (var lineBound : lineBounds) {
             int lineHeight = lineBound.getValue() - lineBound.getKey();
+            
             // Gets all characters found at the line bounds from the searchCharacters (Collected from the double for loops)
-            List<SearchCharacter> line = OCRUtils.findCharactersAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
+            var line = OCRUtils.findCharactersAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
 
             if (!line.isEmpty()) {
-                AtomicInteger letterIndex = new AtomicInteger(0);
+                AtomicInteger letterIndex = new AtomicInteger();
                 AtomicInteger beforeSpaceX = new AtomicInteger();
 
                 line.forEach(searchCharacter -> {
@@ -301,20 +321,21 @@ public class OCRHandle {
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex.getAndIncrement());
 
                     // TODO: Improve and cache these following 3 variables
-                    Optional<FontBounds> currentFontBoundsOptional = trainedCharacterDataList.keySet()
+                    var currentFontBoundsOptional = trainedCharacterDataList.keySet()
                             .stream()
-                            .filter(fontBounds ->
-                                    fontBounds.isInbetween(searchCharacter.getHeight()))
+                            .filter(fontBounds -> fontBounds.isInbetween(searchCharacter.getHeight()))
                             .findFirst();
 
-                    if (!currentFontBoundsOptional.isPresent()) return;
+                    if (currentFontBoundsOptional.isEmpty()) {
+                        return;
+                    }
 
-                    Optional<TrainedCharacterData> trainedSearchCharacterOptional = trainedCharacterDataList.get(currentFontBoundsOptional.get())
+                    var trainedSearchCharacterOptional = trainedCharacterDataList.get(currentFontBoundsOptional.get())
                             .stream()
                             .filter(trainedCharacterData -> trainedCharacterData.getValue() == current)
                             .findFirst();
 
-                    Optional<TrainedCharacterData> spaceTrainedCharacterOptional = trainedCharacterDataList.get(currentFontBoundsOptional.get())
+                    var spaceTrainedCharacterOptional = trainedCharacterDataList.get(currentFontBoundsOptional.get())
                             .stream()
                             .filter(trainedCharacterData -> trainedCharacterData.getValue() == ' ')
                             .findFirst();
@@ -376,24 +397,27 @@ public class OCRHandle {
         debug("trainedCharacterDataList = " + trainedCharacterDataList);
 
         // Inserts all character data into the database after recalculating the
-        trainedCharacterDataList
-                .forEach((fontBounds, databaseTrainedCharacters) -> databaseTrainedCharacters.forEach(databaseTrainedCharacter -> {
-                    try {
-                        if (databaseTrainedCharacter.isEmpty()) return;
-                        databaseTrainedCharacter.finishRecalculations();
-                        char letter = databaseTrainedCharacter.getValue();
+        trainedCharacterDataList.forEach((fontBounds, databaseTrainedCharacters) -> databaseTrainedCharacters.forEach(databaseTrainedCharacter -> {
+            try {
+                if (databaseTrainedCharacter.isEmpty()) {
+                    return;
+                }
+                
+                databaseTrainedCharacter.finishRecalculations();
+                        
+                char letter = databaseTrainedCharacter.getValue();
 
-                        CompletableFuture.runAsync(() -> databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont()))
-                                .thenRunAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
-                                .thenRunAsync(() -> {
-                                    if (letter != ' ') {
-                                        databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
-                                    }
-                                });
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }));
+                CompletableFuture.runAsync(() -> databaseManager.clearLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont()))
+                        .thenRunAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
+                        .thenRunAsync(() -> {
+                            if (letter != ' ') {
+                                databaseManager.addLetterSegments(letter, fontBounds.getMinFont(), fontBounds.getMaxFont(), databaseTrainedCharacter.getSegmentPercentages());
+                            }
+                        });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }));
 
         debug("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
     }
@@ -407,31 +431,34 @@ public class OCRHandle {
      * @return A copy of the input {@link ImageLetter} List, but with spaces appended to the end
      */
     private List<ImageLetter> getSpacesFor(List<ImageLetter> line, int fontSize) {
-        List<ImageLetter> ret = new ArrayList<>();
+        var ret = new ArrayList<ImageLetter>();
+        
         try {
-            FontBounds fontBounds = matchNearestFontSize(fontSize);
-            List<DatabaseCharacter> data = databaseManager.getAllCharacterSegments(fontBounds).get();
+            var fontBounds = matchNearestFontSize(fontSize);
+            var data = databaseManager.getAllCharacterSegments(fontBounds).get();
 
             // Gets the space DatabaseCharacter used for the current font size from the database
-            Optional<DatabaseCharacter> spaceOptional = data.stream().filter(databaseCharacter -> databaseCharacter.getLetter() == ' ').findFirst();
+            var spaceOptional = data.stream().filter(databaseCharacter -> databaseCharacter.getLetter() == ' ').findFirst();
 
-            if (!spaceOptional.isPresent()) {
+            if (spaceOptional.isEmpty()) {
                 error("No space found for current font size: " + fontSize);
                 return line;
             }
 
-            DatabaseCharacter space = spaceOptional.get();
+            var space = spaceOptional.get();
 
             ImageLetter prev = null;
-            for (ImageLetter searchCharacter : line) {
+            
+            for (var searchCharacter : line) {
                 int leftX = prev == null ? 0 : prev.getX() + prev.getWidth() + 1;
                 int rightX = searchCharacter.getX();
-                double gap = rightX - leftX; // The space between the current character and the last character
+                
+                var gap = rightX - leftX; // The space between the current character and the last character
+                var ratio = space.getAvgWidth() / space.getAvgHeight(); // The ratio of the space DatabaseCharacter
+                var usedWidth = ratio * fontSize; // The width of the space for this specific fot size
 
-                double ratio = space.getAvgWidth() / space.getAvgHeight(); // The ratio of the space DatabaseCharacter
-                double usedWidth = ratio * fontSize; // The width of the space for this specific fot size
-
-                String noRoundDownSpace = "!"; // Might be more in the future, that's why it's not testing equality of an inline string
+                var noRoundDownSpace = "!"; // Might be more in the future, that's why it's not testing equality of an inline string
+                
                 int spaces = noRoundDownSpace.contains(searchCharacter.getLetter() + "") ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
 
                 for (int i = 0; i < spaces; i++) {
@@ -458,9 +485,7 @@ public class OCRHandle {
     private int spaceRound(double input) {
         int known = (int) Math.floor(input);
         double extra = input % 1;
-
         known += OCRUtils.checkDifference(extra, 1, 0.2D) ? 1 : 0;
-
         return known;
     }
 
@@ -475,24 +500,33 @@ public class OCRHandle {
      * @param searchCharacters The mutable list of SearchCharacters that will be added to when a group of pixels is found
      * @return If it count a group of pixels
      */
-    public static boolean getLetterFrom(SearchImage searchImage, int x, int y, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
-        SearchCharacter searchCharacter;
-
+    public static boolean getLetterFrom(SearchImage searchImage, int x, int y, List<IntPair> coordinates, List<SearchCharacter> searchCharacters) {
         searchImage.scanFrom(x, y, coordinates);
-        if (coordinates.size() == 0) return false;
+        
+        if (coordinates.isEmpty()) {
+            return false;
+        }
 
-        searchCharacter = new SearchCharacter(coordinates);
+        var searchCharacter = new SearchCharacter(coordinates);
 
         // Gets any grouping of pixels with this character being added to, whereas the ones below will have pixels added
         // to it
-        if (doDotStuff(searchCharacter, coordinates, searchCharacters)) return true;
-        if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) return true;
-        if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) return true;
+        if (doDotStuff(searchCharacter, coordinates, searchCharacters)) {
+            return true;
+        }
+        
+        if (doPercentStuff(searchCharacter, coordinates, searchCharacters)) {
+            return true;
+        }
+        
+        if (doApostropheStuff(searchCharacter, coordinates, searchCharacters)) {
+            return true;
+        }
 
         // Adds groupings of pixels found where they are connected. An example of this is the letter i or j, things like
         // ! or %, etc.
-
-        Optional<SearchCharacter> possibleDot = getBaseForPercent(searchCharacters, /* Is the circle > */ searchCharacter);
+        var possibleDot = getBaseForPercent(searchCharacters, /* Is the circle > */ searchCharacter);
+        
         if (possibleDot.isPresent()) {
             combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.PERCENTAGE_CIRCLE, LetterMeta.PERCENT);
             searchCharacters.remove(searchCharacter);
@@ -501,6 +535,7 @@ public class OCRHandle {
 
         if (searchCharacter.isProbablyDot() && !searchCharacter.hasDot()) {
             possibleDot = getBaseOfDot(searchCharacters, searchCharacter);
+            
             if (possibleDot.isPresent()) {
                 combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT, LetterMeta.DOT_ABOVE);
                 searchCharacters.remove(searchCharacter);
@@ -510,6 +545,7 @@ public class OCRHandle {
 
         // For ! or ?
         possibleDot = getDotUnderLetter(searchCharacters, searchCharacter);
+        
         if (possibleDot.isPresent()) {
             combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.DOT, LetterMeta.DOT_UNDER);
             searchCharacters.remove(searchCharacter);
@@ -518,6 +554,7 @@ public class OCRHandle {
 
         if (searchCharacter.isProbablyColon() && OCRUtils.isAllBlack(searchCharacter) && !searchCharacter.hasDot()) {
             possibleDot = getBottomColon(searchCharacters, searchCharacter);
+            
             if (possibleDot.isPresent()) {
                 combine(possibleDot.get(), searchCharacter, coordinates, CombineMethod.COLON, LetterMeta.EVEN_DOTS);
                 searchCharacters.remove(searchCharacter);
@@ -526,7 +563,8 @@ public class OCRHandle {
         }
 
         if (searchCharacter.isProbablyApostraphe()) {
-            Optional<SearchCharacter> leftApostropheOptional = getLeftApostrophe(searchCharacters, searchCharacter);
+            var leftApostropheOptional = getLeftApostrophe(searchCharacters, searchCharacter);
+            
             leftApostropheOptional.ifPresent(leftApostrophe -> {
                 combine(leftApostrophe, searchCharacter, coordinates, CombineMethod.APOSTROPHE, LetterMeta.QUOTE);
                 leftApostrophe.setHasDot(true);
@@ -534,7 +572,9 @@ public class OCRHandle {
                 searchCharacters.remove(searchCharacter);
             });
 
-            if (leftApostropheOptional.isPresent()) return true;
+            if (leftApostropheOptional.isPresent()) {
+                return true;
+            }
         }
 
         searchCharacter.applySections();
@@ -542,7 +582,6 @@ public class OCRHandle {
 
         searchCharacters.add(searchCharacter);
         coordinates.clear();
-
         return false;
     }
 
@@ -574,37 +613,40 @@ public class OCRHandle {
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     private Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter) {
-        Map<ImageLetter, Double> diffs = new HashMap<>(); // The lower value the better
+        Object2DoubleMap<ImageLetter> diffs = new Object2DoubleOpenHashMap<>(); // The lower value the better
 
         try {
             // All the possible DatabaseCharacters that `searchCharacter` can be from the database
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments(matchNearestFontSize(searchCharacter.getHeight())).get());
 
             data.stream()
-                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
-                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
-                    .forEach(character ->
-                            OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference ->
-                                    Arrays.stream(charDifference).average().ifPresent(value -> {
-                                        // Gets the difference of the database character and searchCharacter (Lower is better)
-                                        diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getSegments()), value);
-                                    })));
-
+                .filter(character -> character.hasDot() == searchCharacter.hasDot())
+                .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
+                .forEach(character ->
+                    OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference ->
+                            Arrays.stream(charDifference).average().ifPresent(value -> {
+                                // Gets the difference of the database character and searchCharacter (Lower is better)
+                                diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getSegments()), value);
+                            })));
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
 
         // TODO: The following code can definitely be improved
-
-        List<Map.Entry<ImageLetter, Double>> entries = new ArrayList<>(OCRUtils.sortByValue(diffs).entrySet());
+        var entries = diffs.object2DoubleEntrySet().stream().sorted(Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue)).collect(Collectors.toList());
 
         // If there's no characters found, don't continue
-        if (entries.size() == 0) return Optional.empty();
-        Map.Entry<ImageLetter, Double> firstEntry = entries.get(0); // The most similar character
+        if (entries.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        var firstEntry = entries.get(0); // The most similar character
+        
         double allowedDouble = firstEntry.getValue() * 0.1D;
+        
         entries.removeIf(value -> OCRUtils.getDiff(value.getValue(), firstEntry.getValue()) > allowedDouble); // Removes any character without the
+        
         // same difference (Most often a similarity of 0)
-
         double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
 
         // Sorts the equally matching characters by their width to height ratios, the first being most similar
@@ -622,11 +664,12 @@ public class OCRHandle {
      * @param values The 2D array of values derived from the image to check from
      * @return A list of the absolute top and bottom line values
      */
-    public static List<Pair<Integer, Integer>> getLineBoundsForTesting(boolean[][] values) {
+    public static List<IntPair> getLineBoundsForTesting(boolean[][] values) {
         // Pair<topY, bottomY>
-        List<Pair<Integer, Integer>> lines = new ArrayList<>();
+        List<IntPair> lines = new ArrayList<>();
 
         int height = 0;
+        
         for (int y = 0; y < values.length; y++) {
             // If there's something on the line, add to their height of it.
             if (OCRUtils.isRowPopulated(values, y)) {
@@ -645,7 +688,9 @@ public class OCRHandle {
                     }
 
                     if (OCRUtils.isRowPopulated(values, y + i)) {
-                        if (finalSpace == -1) finalSpace = heightUntil;
+                        if (finalSpace == -1) {
+                            finalSpace = heightUntil;
+                        }
                     } else {
                         heightUntil++;
                     }
@@ -656,16 +701,16 @@ public class OCRHandle {
                         y += finalSpace;
                         height += finalSpace;
                     } else {
-                        lines.add(new Pair<>(y - height, y));
+                        lines.add(new IntPair(y - height, y));
                         height = 0;
                     }
                 } else {
-                    lines.add(new Pair<>(y - height, y));
+                    lines.add(new IntPair(y - height, y));
                     height = 0;
                 }
             } else {
                 if (height == 0) continue;
-                lines.add(new Pair<>(y - height, y));
+                lines.add(new IntPair(y - height, y));
                 height = 0;
             }
         }
@@ -679,7 +724,9 @@ public class OCRHandle {
      * @param string The error to potentially print out
      */
     private void error(String string) {
-        if (Boolean.getBoolean("newocr.error")) System.err.println(string);
+        if (Boolean.getBoolean("newocr.error")) {
+            System.err.println(string);
+        }
     }
 
     /**

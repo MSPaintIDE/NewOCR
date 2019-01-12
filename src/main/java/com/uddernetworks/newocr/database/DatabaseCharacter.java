@@ -6,6 +6,7 @@ import com.uddernetworks.newocr.LetterMeta;
  * Used for storage of data to go into our from the database.
  */
 public class DatabaseCharacter {
+    
     private char letter;
     private double[] data = new double[17];
     private double avgWidth;
@@ -156,4 +157,5 @@ public class DatabaseCharacter {
     public boolean equals(Object obj) {
         return obj instanceof DatabaseCharacter && ((DatabaseCharacter) obj).letter == this.letter;
     }
+    
 }

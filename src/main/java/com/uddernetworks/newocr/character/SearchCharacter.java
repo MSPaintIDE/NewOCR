@@ -1,13 +1,11 @@
 package com.uddernetworks.newocr.character;
 
 import com.uddernetworks.newocr.LetterMeta;
+import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
-
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * An object meant to store characters directly scanned from an image and that is being searched for/mutated.
@@ -22,22 +20,36 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int height;
     private boolean hasDot;
     private LetterMeta letterMeta = LetterMeta.NONE;
-    private List<Map.Entry<Integer, Integer>> segments = new LinkedList<>();
+    private List<IntPair> segments = new LinkedList<>();
     private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
 
     /**
      * Creates a SearchCharacter from a list of coordinates used by the character.
      * @param coordinates Coordinates used by the character
      */
-    public SearchCharacter(List<Map.Entry<Integer, Integer>> coordinates) {
-        List<Integer> xStream = coordinates.stream().map(Map.Entry::getKey).collect(Collectors.toList());
-        List<Integer> yStream = coordinates.stream().map(Map.Entry::getValue).collect(Collectors.toList());
-
-        int maxX = xStream.stream().max(Integer::compareTo).get();
-        int minX = xStream.stream().min(Integer::compareTo).get();
-
-        int maxY = yStream.stream().max(Integer::compareTo).get();
-        int minY = yStream.stream().min(Integer::compareTo).get();
+    public SearchCharacter(List<IntPair> coordinates) {
+        int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
+        int maxY = Integer.MIN_VALUE, minY = Integer.MAX_VALUE;
+        
+        for (var pair : coordinates) {
+            int key = pair.getKey(), value = pair.getValue();
+            
+            if (key > maxX) {
+                maxX = key;
+            }
+            
+            if (key < minX) {
+                minX = key;
+            }
+            
+            if (value > maxY) {
+                maxY = value;
+            }
+            
+            if (value < minY) {
+                minY = value;
+            }
+        }
 
         this.x = minX;
         this.y = minY;
@@ -46,9 +58,12 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         this.height = maxY - minY;
 
         values = new boolean[this.height + 1][];
-        for (int i = 0; i < values.length; i++) values[i] = new boolean[width + 1];
+        
+        for (int i = 0; i < values.length; i++) {
+            values[i] = new boolean[width + 1];
+        }
 
-        coordinates.forEach(entry -> values[entry.getValue() - this.y][entry.getKey() - this.x] = true);
+        coordinates.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
     }
 
     /**
@@ -96,9 +111,12 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      * Adds coordinates to the character.
      * @param dotCoordinates The coordinates to add
      */
-    public void addDot(List<Map.Entry<Integer, Integer>> dotCoordinates) {
+    public void addDot(List<IntPair> dotCoordinates) {
         boolean[][] values = new boolean[this.height + 1][];
-        for (int i = 0; i < values.length; i++) values[i] = new boolean[width + 1];
+        
+        for (int i = 0; i < values.length; i++) {
+            values[i] = new boolean[width + 1];
+        }
 
         int yOffset = this.height - this.values.length + 1;
 
@@ -117,13 +135,14 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      * @param dotCoordinates The coordinates to add from the circle of the percent
      * @param left If the percentage circle is on the left or right
      */
-    public void addPercentageCircle(List<Map.Entry<Integer, Integer>> dotCoordinates, boolean left) {
+    public void addPercentageCircle(List<IntPair> dotCoordinates, boolean left) {
         boolean[][] values = new boolean[this.height + 1][];
         for (int i = 0; i < values.length; i++) values[i] = new boolean[width + 1];
 
         int yOffset = this.height - this.values.length + 1;
 
         int offset = left ? Math.abs(width + 1 - this.values[0].length) : 0;
+        
         for (int y = 0; y < this.values.length; y++) {
             System.arraycopy(this.values[y], 0, values[y + yOffset], offset, this.values[0].length);
         }
@@ -253,7 +272,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     /**
-     * Creates sections and invokes {@link #addSegment(Map.Entry)} for each one. This is vital for the use of this object.
+     * Creates sections and invokes {@link #addSegment(IntPair)} for each one. This is vital for the use of this object.
      */
     public void applySections() {
         AtomicInteger index = new AtomicInteger();
@@ -266,7 +285,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     /**
-     * Performs calculations for the sections added by {@link #addSegment(Map.Entry)}, getting their <= 1 percentages
+     * Performs calculations for the sections added by {@link #addSegment(IntPair)}, getting their <= 1 percentages
      * accessible from {@link #getSegmentPercentages()}. This must be invoked after {@link #applySections()}.
      */
     public void analyzeSlices() {
@@ -286,16 +305,16 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      * Adds a data segment to be calculated in the future. The segments may be fetched via {@link #getSegments()}.
      * @param entry The data segment in the format of [total black, size of segment]
      */
-    public void addSegment(Map.Entry<Integer, Integer> entry) {
+    public void addSegment(IntPair entry) {
         this.segments.add(entry);
     }
 
     /**
-     * Gets the raw segments added via {@link #addSegment(Map.Entry)} where the Entry format is
+     * Gets the raw segments added via {@link #addSegment(IntPair)} where the Entry format is
      * [total black, size of segment].
      * @return The raw segments
      */
-    public List<Map.Entry<Integer, Integer>> getSegments() {
+    public List<IntPair> getSegments() {
         return segments;
     }
 
@@ -373,4 +392,5 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public void setLetterMeta(LetterMeta letterMeta) {
         this.letterMeta = letterMeta;
     }
+    
 }
