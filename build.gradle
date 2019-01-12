@@ -23,7 +23,7 @@ apply plugin: 'io.codearte.nexus-staging'
 
 group 'com.uddernetworks.newocr'
 archivesBaseName = "NewOCR"
-version '1.1.1'
+version '1.2.0'
 
 sourceCompatibility = 11
 
@@ -46,6 +46,23 @@ dependencies {
 
     // https://mvnrepository.com/artifact/it.unimi.dsi/fastutil
     compile group: 'it.unimi.dsi', name: 'fastutil', version: '8.2.2'
+}
+
+ext.moduleName = 'NewOCR'
+
+javadoc {
+    options.addStringOption('-module-path', classpath.asPath)
+}
+
+compileJava {
+    inputs.property('moduleName', moduleName)
+    doFirst {
+        println "One"
+        options.compilerArgs = [
+                '--module-path', classpath.asPath
+        ]
+        classpath = files()
+    }
 }
 
 nexusStaging {
@@ -95,7 +112,7 @@ allprojects {
                         authentication(userName: ossrhUser, password: ossrhPassword)
                     }
                 }
-                
+
                 pom.project {
                     name 'NewOCR'
                     description 'NewOCR is a library for simple but efficient OCR detection in pure Java.'

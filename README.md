@@ -47,7 +47,7 @@ NewOCR is on Central, so it's insanely easy to get on both Maven and Gradle.
 
 Gradle:
 ```Groovy
-compile 'com.uddernetworks.newocr:NewOCR:1.1.1'
+compile 'com.uddernetworks.newocr:NewOCR:1.2.0'
 ```
 
 Maven:
@@ -55,7 +55,7 @@ Maven:
 <dependency>
     <groupId>com.uddernetworks.newocr</groupId>
     <artifactId>NewOCR</artifactId>
-    <version>1.1.1</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -66,7 +66,7 @@ Currently the font `Verdana` is the only font tested to work with the character 
 
 ### Setting up the database
 To use NewOCR, a MySQL database is required. This is to store all the section data of each character. To run by the example usage in `Main.java`, you will need to put the database's URL, username, and password as the program arguments in their respective orders. An example of this would be:
-```java -jar NewOCR-1.0.2.java "jdbc:mysql://127.0.0.1:3306/OCR" "my_user" "my_pass"```
+```java -jar NewOCR-1.2.0.java "jdbc:mysql://127.0.0.1:3306/OCR" "my_user" "my_pass"```
 You will _not_ be required to run any queries manually once you have created a table for the OCR; the program will do that for you.
 
 Before you do anything with detecting characters you must train the OCR. It does not use any Neural Networks as shown in the explanation above, but it needs to register how the font works. In order to get this working in `Main.java`, make sure in the main method you have `new Main().run(args)` uncommented, and that more down the file that `new File("training.png")` and  `new File("HWTest.png")` points to valid paths, the first one being the training image as described above, and then your input image. When you run the program, type `yes` when it asks if you want to train, and then wait a minute or so. When the program exits, you should be able to run it again, answer `no` to that question, and after a few seconds it should give its output.  
