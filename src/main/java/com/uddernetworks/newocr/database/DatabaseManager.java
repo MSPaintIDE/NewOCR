@@ -3,10 +3,9 @@ package com.uddernetworks.newocr.database;
 import com.uddernetworks.newocr.FontBounds;
 import com.uddernetworks.newocr.LetterMeta;
 import com.uddernetworks.newocr.character.SearchCharacter;
-
-import javax.sql.DataSource;
 import java.util.List;
 import java.util.concurrent.Future;
+import javax.sql.DataSource;
 
 public interface DatabaseManager {
 
@@ -81,4 +80,5 @@ public interface DatabaseManager {
      * @return If the database manager is using the internal HSQLDB database
      */
     boolean usesInternal();
+    
 }

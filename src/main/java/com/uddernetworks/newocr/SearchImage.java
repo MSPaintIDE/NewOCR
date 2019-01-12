@@ -1,9 +1,8 @@
 package com.uddernetworks.newocr;
 
-import java.util.AbstractMap;
+import com.uddernetworks.newocr.utils.IntPair;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Provides a way to easily get touching coordinates of black pixels.
@@ -30,45 +29,62 @@ public class SearchImage {
      * @param originalY The Y location of the current black pixel
      * @param coordinates The mutable list of coordinates that will have each new coordinate added to it
      */
-    public void scanFrom(int originalX, int originalY, List<Map.Entry<Integer, Integer>> coordinates) {
-        /* if (hasValue(x, y)) {
-            coordinates.add(new AbstractMap.SimpleEntry<>(x, y));
+    public void scanFrom(int originalX, int originalY, List<IntPair> coordinates) {
+        if (!hasValue(originalX, originalY)) {
+            return;
+        }
 
-            scanFrom(x, y + 1, coordinates);
-            scanFrom(x, y - 1, coordinates);
-            scanFrom(x + 1, y, coordinates);
-            scanFrom(x - 1, y, coordinates);
-            scanFrom(x + 1, y + 1, coordinates);
-            scanFrom(x + 1, y - 1, coordinates);
-            scanFrom(x - 1, y + 1, coordinates);
-            scanFrom(x - 1, y - 1, coordinates);
-        } */
-
-        if (!hasValue(originalX, originalY)) return;
-
-        List<Map.Entry<Integer, Integer>> nextProcessing = new ArrayList<>();
-        List<Map.Entry<Integer, Integer>> processingBuffer = new ArrayList<>();
-        nextProcessing.add(new AbstractMap.SimpleEntry<>(originalX, originalY));
+        var nextProcessing = new ArrayList<IntPair>();
+        var processingBuffer = new ArrayList<IntPair>();
+        
+        nextProcessing.add(new IntPair(originalX, originalY));
 
         while (true) {
-            for (Map.Entry<Integer, Integer> entry : nextProcessing) {
-                coordinates.add(entry);
-                int x = entry.getKey();
-                int y = entry.getValue();
-                if (hasValue(x, y + 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x, y + 1));
-                if (hasValue(x, y - 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x, y - 1));
-                if (hasValue(x + 1, y)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x + 1, y));
-                if (hasValue(x - 1, y)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x - 1, y));
-                if (hasValue(x + 1, y + 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x + 1, y + 1));
-                if (hasValue(x + 1, y - 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x + 1, y - 1));
-                if (hasValue(x - 1, y + 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x - 1, y + 1));
-                if (hasValue(x - 1, y - 1)) processingBuffer.add(new AbstractMap.SimpleEntry<>(x - 1, y - 1));
+            for (var pair : nextProcessing) {
+                coordinates.add(pair);
+                
+                int x = pair.getKey();
+                int y = pair.getValue();
+                
+                if (hasValue(x, y + 1)) {
+                    processingBuffer.add(new IntPair(x, y + 1));
+                }
+                
+                if (hasValue(x, y - 1)) {
+                    processingBuffer.add(new IntPair(x, y - 1));
+                }
+                
+                if (hasValue(x + 1, y)) {
+                    processingBuffer.add(new IntPair(x + 1, y));
+                }
+                
+                if (hasValue(x - 1, y)) {
+                    processingBuffer.add(new IntPair(x - 1, y));
+                }
+                
+                if (hasValue(x + 1, y + 1)) {
+                    processingBuffer.add(new IntPair(x + 1, y + 1));
+                }
+                
+                if (hasValue(x + 1, y - 1)) {
+                    processingBuffer.add(new IntPair(x + 1, y - 1));
+                }
+                
+                if (hasValue(x - 1, y + 1)) {
+                    processingBuffer.add(new IntPair(x - 1, y + 1));
+                }
+                
+                if (hasValue(x - 1, y - 1)) {
+                    processingBuffer.add(new IntPair(x - 1, y - 1));
+                }
             }
 
-            if (processingBuffer.isEmpty()) return;
+            if (processingBuffer.isEmpty()) {
+                return;
+            }
 
             nextProcessing.clear();
-            List<Map.Entry<Integer, Integer>> temp = nextProcessing;
+            var temp = nextProcessing;
             nextProcessing = processingBuffer;
             processingBuffer = temp;
         }

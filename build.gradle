@@ -12,13 +12,20 @@ plugins {
     id 'java'
 }
 
+apply plugin: 'idea'
+idea {
+    module {
+        inheritOutputDirs = true
+    }
+}
+
 apply plugin: 'io.codearte.nexus-staging'
 
 group 'com.uddernetworks.newocr'
 archivesBaseName = "NewOCR"
 version '1.1.1'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
 
 repositories {
     mavenCentral()
@@ -36,6 +43,9 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.hsqldb/hsqldb
     compile group: 'org.hsqldb', name: 'hsqldb', version: '2.4.1'
+
+    // https://mvnrepository.com/artifact/it.unimi.dsi/fastutil
+    compile group: 'it.unimi.dsi', name: 'fastutil', version: '8.2.2'
 }
 
 nexusStaging {

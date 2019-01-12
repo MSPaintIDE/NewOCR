@@ -3,10 +3,8 @@ package com.uddernetworks.newocr.utils;
 import com.uddernetworks.newocr.CombineMethod;
 import com.uddernetworks.newocr.LetterMeta;
 import com.uddernetworks.newocr.character.SearchCharacter;
-
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public class CharacterGettingUtils {
@@ -18,9 +16,13 @@ public class CharacterGettingUtils {
      * @param searchCharacters The SearchCharacter list to check for the base
      * @return If a successful combination was made
      */
-    public static boolean doDotStuff(SearchCharacter dotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
-        if (!dotCharacter.isProbablyDot()) return false;
+    public static boolean doDotStuff(SearchCharacter dotCharacter, List<IntPair> coordinates, List<SearchCharacter> searchCharacters) {
+        if (!dotCharacter.isProbablyDot()) {
+            return false;
+        }
+        
         Optional<SearchCharacter> baseCharacterOptional = getBaseOfDot(searchCharacters, dotCharacter);
+        
         baseCharacterOptional.ifPresent(baseCharacter -> {
             combine(baseCharacter, dotCharacter, coordinates, CombineMethod.DOT, LetterMeta.DOT_ABOVE);
             baseCharacter.setHasDot(true);
@@ -37,7 +39,7 @@ public class CharacterGettingUtils {
      * @param searchCharacters The SearchCharacter list to check for the base
      * @return If a successful combination was made
      */
-    public static boolean doPercentStuff(SearchCharacter percentDotCharacter, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
+    public static boolean doPercentStuff(SearchCharacter percentDotCharacter, List<IntPair> coordinates, List<SearchCharacter> searchCharacters) {
         if (!percentDotCharacter.isProbablyCircleOfPercent()) return false;
         Optional<SearchCharacter> baseCharacterOptional = getBaseForPercent(searchCharacters, percentDotCharacter);
         baseCharacterOptional.ifPresent(baseCharacter -> {
@@ -56,9 +58,13 @@ public class CharacterGettingUtils {
      * @param searchCharacters The SearchCharacter list to check for the base
      * @return If a successful combination was made
      */
-    public static boolean doApostropheStuff(SearchCharacter rightApostrophe, List<Map.Entry<Integer, Integer>> coordinates, List<SearchCharacter> searchCharacters) {
-        if (!rightApostrophe.isProbablyApostraphe()) return false;
+    public static boolean doApostropheStuff(SearchCharacter rightApostrophe, List<IntPair> coordinates, List<SearchCharacter> searchCharacters) {
+        if (!rightApostrophe.isProbablyApostraphe()) {
+            return false;
+        }
+        
         Optional<SearchCharacter> leftApostropheOptional = getLeftApostrophe(searchCharacters, rightApostrophe);
+        
         leftApostropheOptional.ifPresent(leftApostrophe -> {
             combine(leftApostrophe, rightApostrophe, coordinates, CombineMethod.APOSTROPHE, LetterMeta.QUOTE);
             leftApostrophe.setHasDot(true);
@@ -76,11 +82,12 @@ public class CharacterGettingUtils {
      * @param combineMethod The method to be used when combining the characters. {@link CombineMethod#DOT} and {@link CombineMethod#COLON} do the same thing
      * @param letterMeta The {@link LetterMeta} to add to the base character
      */
-    public static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<Map.Entry<Integer, Integer>> coordinates, CombineMethod combineMethod, LetterMeta letterMeta) {
+    public static void combine(SearchCharacter baseCharacter, SearchCharacter adding, List<IntPair> coordinates, CombineMethod combineMethod, LetterMeta letterMeta) {
         int minX = Math.min(baseCharacter.getX(), adding.getX());
         int minY = Math.min(baseCharacter.getY(), adding.getY());
         int maxX = Math.max(baseCharacter.getX() + baseCharacter.getWidth(), adding.getX() + adding.getWidth());
         int maxY = Math.max(baseCharacter.getY() + baseCharacter.getHeight(), adding.getY() + adding.getHeight());
+        
         baseCharacter.setWidth(maxX - minX);
         baseCharacter.setHeight(maxY - minY);
         baseCharacter.setX(minX);

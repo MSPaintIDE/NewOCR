@@ -1,9 +1,8 @@
 package com.uddernetworks.newocr.character;
 
 import com.uddernetworks.newocr.database.DatabaseCharacter;
-
+import com.uddernetworks.newocr.utils.IntPair;
 import java.util.List;
-import java.util.Map;
 
 /**
  * An object to contain data from characters directly scanned from an image.
@@ -17,7 +16,7 @@ public class ImageLetter {
     private int height;
     private double ratio;
     private boolean[][] values;
-    private List<Map.Entry<Integer, Integer>> segments;
+    private List<IntPair> segments;
     private Object data;
 
     /**
@@ -43,7 +42,7 @@ public class ImageLetter {
      * @param ratio The width/height ratio of this character
      * @param segments The data segments of this character (In form of [Black, Total])
      */
-    public ImageLetter(DatabaseCharacter databaseCharacter, int x, int y, int width, int height, double ratio, List<Map.Entry<Integer, Integer>> segments) {
+    public ImageLetter(DatabaseCharacter databaseCharacter, int x, int y, int width, int height, double ratio, List<IntPair> segments) {
         this.databaseCharacter = databaseCharacter;
         this.x = x;
         this.y = y;
@@ -146,7 +145,7 @@ public class ImageLetter {
      * Gets the data segments of this character in form of [Black, Total]
      * @return The data segments of this character
      */
-    public List<Map.Entry<Integer, Integer>> getSegments() {
+    public List<IntPair> getSegments() {
         return segments;
     }
 
@@ -200,4 +199,5 @@ public class ImageLetter {
     public void setValues(boolean[][] values) {
         this.values = values;
     }
+    
 }
