@@ -3,6 +3,7 @@ package com.uddernetworks.newocr;
 import com.uddernetworks.newocr.character.ImageLetter;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
@@ -14,9 +15,9 @@ import java.util.concurrent.ExecutionException;
 public class ScannedImage {
 
     private transient File originalFile;
-    
+
     private transient BufferedImage originalImage;
-    
+
     private final Int2ObjectMap<List<ImageLetter>> grid = new Int2ObjectLinkedOpenHashMap<>();
 
     public ScannedImage(File originalFile, BufferedImage originalImage) {
@@ -31,7 +32,7 @@ public class ScannedImage {
     public String getPrettyString() {
         StringBuilder stringBuilder = new StringBuilder();
 
-        grid.values().forEach(line -> {
+        grid.forEach((y, line) -> {
             line.stream()
                     .map(ImageLetter::getLetter)
                     .forEach(stringBuilder::append);
@@ -52,7 +53,7 @@ public class ScannedImage {
             for (var imageLetters : grid.values()) {
                 for (var imageLetter : imageLetters) {
                     int size = ocrHandle.getFontSize(imageLetter).get();
-                    
+
                     if (size != -1) {
                         return size;
                     }
@@ -131,5 +132,5 @@ public class ScannedImage {
     public File getOriginalFile() {
         return originalFile;
     }
-    
+
 }

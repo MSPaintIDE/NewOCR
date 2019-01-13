@@ -2,6 +2,7 @@ package com.uddernetworks.newocr.character;
 
 import com.uddernetworks.newocr.database.DatabaseCharacter;
 import com.uddernetworks.newocr.utils.IntPair;
+
 import java.util.List;
 
 /**
@@ -199,5 +200,9 @@ public class ImageLetter {
     public void setValues(boolean[][] values) {
         this.values = values;
     }
-    
+
+    @Override
+    public String toString() {
+        return String.valueOf(getLetter());
+    }
 }
