@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -64,6 +65,37 @@ public class ScannedImage {
         }
 
         return 0;
+    }
+
+    /**
+     * Gets the letter at the given index of the actual {@link ScannedImage#getPrettyString()} position, meaning
+     * newlines are not returned.
+     *
+     * @param index The character index
+     * @return The ImageLetter at the given position
+     */
+    public ImageLetter letterAt(int index) {
+        List<ImageLetter> last = getGridLineAtIndex(0).get();
+
+        var i = 0;
+        while (last.size() + 1 <= index) {
+            index -= last.size() + 1;
+            Optional<List<ImageLetter>> nextLine = getGridLineAtIndex(++i);
+            if (nextLine.isEmpty()) break;
+            last = nextLine.get();
+        }
+
+        return last.get(index);
+    }
+
+    /**
+     * Gets the line at the stored index. This is NOT by the y value.
+     *
+     * @param index The index of the row
+     * @return The row
+     */
+    public Optional<List<ImageLetter>> getGridLineAtIndex(int index) throws IndexOutOfBoundsException {
+        return grid.keySet().stream().skip(index).limit(1).findFirst().map(t -> grid.get(t.intValue()));
     }
 
     /**

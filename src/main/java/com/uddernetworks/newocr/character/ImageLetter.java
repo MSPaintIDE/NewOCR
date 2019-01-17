@@ -4,6 +4,7 @@ import com.uddernetworks.newocr.database.DatabaseCharacter;
 import com.uddernetworks.newocr.utils.IntPair;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * An object to contain data from characters directly scanned from an image.
@@ -163,8 +164,8 @@ public class ImageLetter {
      * used in the future.
      * @return Data set to the character
      */
-    public <T> T getData(Class<T> clazz) {
-        return clazz.isInstance(data) ? clazz.cast(data) : null;
+    public <T> Optional<T> getData(Class<T> clazz) {
+        return clazz.isInstance(data) ? Optional.of(clazz.cast(data)) : Optional.empty();
     }
 
     /**
@@ -172,8 +173,8 @@ public class ImageLetter {
      * character to be used in the future.
      * @return Data set to the character
      */
-    public Object getData() {
-        return this.data;
+    public Optional<Object> getData() {
+        return Optional.of(this.data);
     }
 
     /**

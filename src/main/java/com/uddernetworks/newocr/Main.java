@@ -4,6 +4,7 @@ import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class Main {
         System.out.println("Do you want to train? (y)es/no");
 
         var inputLine = scanner.nextLine();
-        
+
         if ("yes".equalsIgnoreCase(inputLine) || "y".equalsIgnoreCase(inputLine)) {
             System.out.println("Generating features...");
             var start = System.currentTimeMillis();
@@ -44,7 +45,7 @@ public class Main {
         }
 
         var scannedImage = ocrHandle.scanImage(new File("HWTest.png"));
-        
+
         System.out.println("Got:\n" + scannedImage.getPrettyString());
 
         databaseManager.shutdown();
