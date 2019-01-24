@@ -38,9 +38,6 @@ dependencies {
     compile group: 'com.zaxxer', name: 'HikariCP', version: '2.7.8'
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
 
-    // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
-    compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
-
     // https://mvnrepository.com/artifact/org.hsqldb/hsqldb
     compile group: 'org.hsqldb', name: 'hsqldb', version: '2.4.1'
 
