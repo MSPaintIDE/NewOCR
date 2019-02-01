@@ -87,3 +87,4 @@ The following papers were used as inspiration, ideas, knowledge gathering, whate
 - http://www.frc.ri.cmu.edu/~akeipour/downloads/Conferences/ICIT13.pdf
 - https://support.dce.felk.cvut.cz/mediawiki/images/2/24/Bp_2017_troller_milan.pdf
 - http://www.cs.toronto.edu/~scottl/research/msc_thesis.pdf
+- https://www.researchgate.net/publication/258651794_Novel_Approach_for_Baseline_Detection_and_Text_Line_Segmentation
