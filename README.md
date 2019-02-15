@@ -88,3 +88,4 @@ The following papers were used as inspiration, ideas, knowledge gathering, whate
 - https://support.dce.felk.cvut.cz/mediawiki/images/2/24/Bp_2017_troller_milan.pdf
 - http://www.cs.toronto.edu/~scottl/research/msc_thesis.pdf
 - https://www.researchgate.net/publication/258651794_Novel_Approach_for_Baseline_Detection_and_Text_Line_Segmentation
+- https://www.researchgate.net/publication/2954700_Neural_and_fuzzy_methods_in_handwriting_recognition

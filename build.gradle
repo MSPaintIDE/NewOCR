@@ -54,7 +54,6 @@ javadoc {
 compileJava {
     inputs.property('moduleName', moduleName)
     doFirst {
-        println "One"
         options.compilerArgs = [
                 '--module-path', classpath.asPath
         ]
