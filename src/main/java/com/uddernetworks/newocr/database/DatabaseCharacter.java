@@ -6,13 +6,11 @@ import com.uddernetworks.newocr.LetterMeta;
  * Used for storage of data to go into our from the database.
  */
 public class DatabaseCharacter {
-    
+
     private char letter;
     private double[] data = new double[17];
     private double avgWidth;
     private double avgHeight;
-    private int minFontSize;
-    private int maxFontSize;
     private double minCenter; // Pixels from the top
     private double maxCenter; // Pixels from the top
     private boolean hasDot;
@@ -55,16 +53,12 @@ public class DatabaseCharacter {
      * Sets multiple used data points
      * @param avgWidth The average width across all used characters in the font sizes
      * @param avgHeight The average height across all used characters in the font sizes
-     * @param minFontSize The minimum font size used in this character
-     * @param maxFontSize The maximum font size used in this character
      * @param minCenter The minimum relative center value in the training ste for this character and font size
      * @param maxCenter The maximum relative center value in the training ste for this character and font size
      */
-    public void setData(double avgWidth, double avgHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter) {
+    public void setData(double avgWidth, double avgHeight, double minCenter, double maxCenter) {
         this.avgWidth = avgWidth;
         this.avgHeight = avgHeight;
-        this.minFontSize = minFontSize;
-        this.maxFontSize = maxFontSize;
         this.minCenter = minCenter;
         this.maxCenter = maxCenter;
     }
@@ -83,22 +77,6 @@ public class DatabaseCharacter {
      */
     public double getAvgHeight() {
         return avgHeight;
-    }
-
-    /**
-     * Gets the minimum font size used in the training ste for the character
-     * @return The minimum font size used in the training ste for the character
-     */
-    public int getMinFontSize() {
-        return minFontSize;
-    }
-
-    /**
-     * Gets the maximum font size used in the training ste for the character
-     * @return The maximum font size used in the training ste for the character
-     */
-    public int getMaxFontSize() {
-        return maxFontSize;
     }
 
     /**
@@ -157,5 +135,5 @@ public class DatabaseCharacter {
     public boolean equals(Object obj) {
         return obj instanceof DatabaseCharacter && ((DatabaseCharacter) obj).letter == this.letter;
     }
-    
+
 }

@@ -1,11 +1,10 @@
 package com.uddernetworks.newocr.database;
 
-import com.uddernetworks.newocr.FontBounds;
 import com.uddernetworks.newocr.LetterMeta;
-import com.uddernetworks.newocr.character.SearchCharacter;
-import com.uddernetworks.newocr.utils.ConversionUtils;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+
+import javax.sql.DataSource;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -14,14 +13,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javax.sql.DataSource;
 
 public class OCRDatabaseManager implements DatabaseManager {
 
@@ -31,14 +28,11 @@ public class OCRDatabaseManager implements DatabaseManager {
     private String createLetterEntry;
     private String clearLetterSegments;
     private String addLetterSegment;
-    private String selectSegments;
     private String selectAllSegments;
     private String getLetterEntry;
     private String getSpaceEntry;
-    private String addLetterSize;
-    private String getLetterSize;
 
-    private final ConcurrentMap<FontBounds, List<DatabaseCharacter>> databaseCharacterCache = new ConcurrentHashMap<>();
+    private final AtomicReference<List<DatabaseCharacter>> databaseCharacterCache = new AtomicReference<>();
 
     /**
      * Connects to the database with the given credentials, and executes the queries found in letters.sql and sectionData.sql
@@ -65,7 +59,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
     public OCRDatabaseManager(boolean useInternal, File filePath, String databaseURL, String username, String password) throws IOException {
         this.useInternal = useInternal;
-        
+
         var config = new HikariConfig();
 
         try {
@@ -90,12 +84,12 @@ public class OCRDatabaseManager implements DatabaseManager {
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "1000");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "8192");
-        
+
         dataSource = new HikariDataSource(config);
 
         List.of("letters.sql", "sectionData.sql", "sizing.sql").parallelStream().forEach(table -> {
             var stream = OCRDatabaseManager.class.getResourceAsStream("/" + table);
-            
+
             try (var reader = new BufferedReader(new InputStreamReader(stream));
                  var connection = dataSource.getConnection();
                  var statement = connection.prepareStatement(reader.lines().collect(Collectors.joining("\n")))) {
@@ -125,12 +119,9 @@ public class OCRDatabaseManager implements DatabaseManager {
         this.createLetterEntry = getQuery("createLetterEntry");
         this.clearLetterSegments = getQuery("clearLetterSegments");
         this.addLetterSegment = getQuery("addLetterSegment");
-        this.selectSegments = getQuery("selectSegments");
         this.selectAllSegments = getQuery("selectAllSegments");
         this.getLetterEntry = getQuery("getLetterEntry");
         this.getSpaceEntry = getQuery("getSpaceEntry");
-        this.addLetterSize = getQuery("addLetterSize");
-        this.getLetterSize = getQuery("getLetterSize");
     }
 
     /**
@@ -142,7 +133,7 @@ public class OCRDatabaseManager implements DatabaseManager {
      */
     private String getQuery(String name) throws IOException {
         var resource = Objects.requireNonNull(getClass().getClassLoader().getResource(name + ".sql"));
-        
+
         try (var reader = new BufferedReader(new InputStreamReader(resource.openStream()))) {
             return reader.lines().collect(Collectors.joining("\n"));
         }
@@ -154,18 +145,16 @@ public class OCRDatabaseManager implements DatabaseManager {
     }
 
     @Override
-    public void createLetterEntry(char letter, double averageWidth, double averageHeight, int minFontSize, int maxFontSize, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
+    public void createLetterEntry(char letter, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
         try (var connection = dataSource.getConnection(); var createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
             createLetterEntry.setInt(1, letter);
             createLetterEntry.setDouble(2, averageWidth);
             createLetterEntry.setDouble(3, averageHeight);
-            createLetterEntry.setInt(4, minFontSize);
-            createLetterEntry.setInt(5, maxFontSize);
-            createLetterEntry.setDouble(6, minCenter);
-            createLetterEntry.setDouble(7, maxCenter);
-            createLetterEntry.setBoolean(8, hasDot);
-            createLetterEntry.setInt(9, letterMeta.getID());
-            createLetterEntry.setBoolean(10, isLetter);
+            createLetterEntry.setDouble(4, minCenter);
+            createLetterEntry.setDouble(5, maxCenter);
+            createLetterEntry.setBoolean(6, hasDot);
+            createLetterEntry.setInt(7, letterMeta.getID());
+            createLetterEntry.setBoolean(8, isLetter);
             createLetterEntry.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -173,14 +162,12 @@ public class OCRDatabaseManager implements DatabaseManager {
     }
 
     @Override
-    public void clearLetterSegments(char letter, int minFontSize, int maxFontSize) {
+    public void clearLetterSegments(char letter) {
         List.of("letters", "sectionData").forEach(table -> {
             var query = String.format(this.clearLetterSegments, table);
-            
+
             try (var connection = dataSource.getConnection(); var clearLetterSegments = connection.prepareStatement(query)) {
                 clearLetterSegments.setInt(1, letter);
-                clearLetterSegments.setInt(2, minFontSize);
-                clearLetterSegments.setInt(3, maxFontSize);
                 clearLetterSegments.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -189,14 +176,12 @@ public class OCRDatabaseManager implements DatabaseManager {
     }
 
     @Override
-    public void addLetterSegments(char letter, int minFontSize, int maxFontSize, double[] segments) {
+    public void addLetterSegments(char letter, double[] segments) {
         try (var connection = dataSource.getConnection(); var addLetterSegment = connection.prepareStatement(this.addLetterSegment)) {
             for (int i = 0; i < segments.length; i++) {
                 addLetterSegment.setInt(1, letter);
-                addLetterSegment.setInt(2, minFontSize);
-                addLetterSegment.setInt(3, maxFontSize);
-                addLetterSegment.setInt(4, i);
-                addLetterSegment.setDouble(5, segments[i]);
+                addLetterSegment.setInt(2, i);
+                addLetterSegment.setDouble(3, segments[i]);
                 addLetterSegment.addBatch();
             }
 
@@ -207,26 +192,17 @@ public class OCRDatabaseManager implements DatabaseManager {
     }
 
     @Override
-    public Future<List<DatabaseCharacter>> getAllCharacterSegments(FontBounds fontBounds) {
+    public Future<List<DatabaseCharacter>> getAllCharacterSegments() {
         return executor.submit(() -> {
-            var cachedValue = databaseCharacterCache.compute(fontBounds, (k, v) -> {
-               if (v == null || v.isEmpty()) {
-                   return null;
-               }
-               
-               return v;
-            });
-            
-            if (cachedValue != null) {
+            var cachedValue = databaseCharacterCache.get();
+
+            if (cachedValue != null && !cachedValue.isEmpty()) {
                 return cachedValue;
             }
 
             var databaseCharacters = new ArrayList<DatabaseCharacter>();
 
             try (var connection = dataSource.getConnection(); var selectSegments = connection.prepareStatement(this.selectAllSegments)) {
-                selectSegments.setInt(1, fontBounds.getMinFont());
-                selectSegments.setInt(2, fontBounds.getMaxFont());
-
                 var resultSet = selectSegments.executeQuery();
 
                 while (resultSet.next()) {
@@ -237,9 +213,7 @@ public class OCRDatabaseManager implements DatabaseManager {
                     var databaseCharacter = getDatabaseCharacter(databaseCharacters, letter, newDatabaseCharacter -> {
                         try (var getLetterEntry = connection.prepareCall(this.getLetterEntry)) {
                             getLetterEntry.setInt(1, letter);
-                            getLetterEntry.setInt(2, fontBounds.getMinFont());
-                            getLetterEntry.setInt(3, fontBounds.getMaxFont());
-                            
+
                             var resultSet1 = getLetterEntry.executeQuery();
 
                             if (!resultSet1.next()) {
@@ -248,14 +222,12 @@ public class OCRDatabaseManager implements DatabaseManager {
 
                             var avgWidth = resultSet1.getDouble("avgWidth");
                             var avgHeight = resultSet1.getDouble("avgHeight");
-                            var minFontSize = resultSet1.getInt("minFontSize");
-                            var maxFontSize = resultSet1.getInt("maxFontSize");
                             var minCenter = resultSet1.getDouble("minCenter");
                             var maxCenter = resultSet1.getDouble("maxCenter");
                             var hasDot = resultSet1.getBoolean("hasDot");
                             var letterMetaID = resultSet1.getInt("letterMeta");
 
-                            newDatabaseCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize, minCenter, maxCenter);
+                            newDatabaseCharacter.setData(avgWidth, avgHeight, minCenter, maxCenter);
                             newDatabaseCharacter.setHasDot(hasDot);
                             LetterMeta.fromID(letterMetaID).ifPresent(newDatabaseCharacter::setLetterMeta);
                         } catch (SQLException e) {
@@ -264,7 +236,7 @@ public class OCRDatabaseManager implements DatabaseManager {
                     });
 
                     databaseCharacter.addDataPoint(sectionIndex, data);
-                    
+
                     if (!databaseCharacters.contains(databaseCharacter)) {
                         databaseCharacters.add(databaseCharacter);
                     }
@@ -276,11 +248,9 @@ public class OCRDatabaseManager implements DatabaseManager {
                     if (spaceResult.next()) {
                         var avgWidth = spaceResult.getDouble("avgWidth");
                         var avgHeight = spaceResult.getDouble("avgHeight");
-                        var minFontSize = spaceResult.getInt("minFontSize");
-                        var maxFontSize = spaceResult.getInt("maxFontSize");
 
                         var spaceCharacter = new DatabaseCharacter(' ');
-                        spaceCharacter.setData(avgWidth, avgHeight, minFontSize, maxFontSize, 0, 0);
+                        spaceCharacter.setData(avgWidth, avgHeight, 0, 0);
                         databaseCharacters.add(spaceCharacter);
                     }
                 }
@@ -288,50 +258,9 @@ public class OCRDatabaseManager implements DatabaseManager {
                 e.printStackTrace();
             }
 
-            this.databaseCharacterCache.put(fontBounds, databaseCharacters);
+            this.databaseCharacterCache.set(databaseCharacters);
 
             return databaseCharacters;
-        });
-    }
-
-    @Override
-    public void addLetterSize(int fontSize, List<SearchCharacter> searchCharacterList) {
-        executor.execute(() -> {
-            try (var connection = dataSource.getConnection(); var insertSize = connection.prepareStatement(this.addLetterSize)) {
-                for (SearchCharacter searchCharacter : searchCharacterList) {
-                    insertSize.setInt(1, searchCharacter.getKnownChar());
-                    insertSize.setInt(2, fontSize);
-                    insertSize.setInt(3, searchCharacter.getHeight());
-                    insertSize.addBatch();
-                    insertSize.clearParameters();
-                }
-
-                insertSize.executeBatch();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    @Override
-    public Future<Integer> getLetterSize(char character, int height) {
-        return executor.submit(() -> {
-            int result = -1;
-
-            try (var connection = dataSource.getConnection(); var getSize = connection.prepareStatement(this.getLetterSize)) {
-                getSize.setInt(1, character);
-                getSize.setInt(2, height);
-
-                var resultSet = getSize.executeQuery();
-
-                if (resultSet.next()) {
-                    result = ConversionUtils.pixelToPoint(resultSet.getInt(1));
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            return result;
         });
     }
 
@@ -364,5 +293,5 @@ public class OCRDatabaseManager implements DatabaseManager {
             return databaseCharacter;
         });
     }
-    
+
 }

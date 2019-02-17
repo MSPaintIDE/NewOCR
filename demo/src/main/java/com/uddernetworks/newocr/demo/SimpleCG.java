@@ -43,7 +43,7 @@ public class SimpleCG {
 //            return;
 //        }
 
-        var scannedImage = ocrHandle.scanImage(new File("demo\\Hand_clean.png"));
+        var scannedImage = ocrHandle.scanImage(new File("cms.png"));
 
         System.out.println("Got:\n" + scannedImage.getPrettyString());
 

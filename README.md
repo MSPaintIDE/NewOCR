@@ -6,6 +6,8 @@
 # NewOCR
 NewOCR is an OCR library made to suit [MS Paint IDE](https://github.com/RubbaBoy/MSPaintIDE)'s needs, though can be used in any project, as nothing is made specific to the IDE. The OCR can be trained with many fonts, though is geared towards fonts like **Verdana** and similar fonts. Other fonts _may_ require some tweaking of the character detector, but the main detection will work with no matter how different the characters are from Verdana (Hell you could modify it to work with emojis).
 
+With upcoming versions in the `dev` branch, the OCR is meant to detect and read both natural (With more filtering being worked on) and computer-generated (Not low resolution) images containing text.
+
 ## Branch info
 
 The branch you are currently on is `dev`. This branch is exclusively for new features and testing with the OCR, and will probably not be stable depending when the last release was. All completed features/additions will be pushed to `master`. If you contribute, please make any PRs to `dev`.
@@ -93,3 +95,4 @@ The following papers were used as inspiration, ideas, knowledge gathering, whate
 - http://www.cs.toronto.edu/~scottl/research/msc_thesis.pdf
 - https://www.researchgate.net/publication/258651794_Novel_Approach_for_Baseline_Detection_and_Text_Line_Segmentation
 - https://www.researchgate.net/publication/2954700_Neural_and_fuzzy_methods_in_handwriting_recognition
+- https://cyber.felk.cvut.cz/theses/papers/444.pdf

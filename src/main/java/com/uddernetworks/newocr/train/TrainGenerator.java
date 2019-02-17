@@ -19,7 +19,7 @@ public class TrainGenerator {
         RenderingHints rht = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics.setRenderingHints(rht);
 
-        Font font = new Font("Verdana", Font.PLAIN, 92);
+        Font font = new Font("Comic Sans MS", Font.PLAIN, 92);
         graphics.setFont(font);
 
         int newHeight = 11;
@@ -58,7 +58,7 @@ public class TrainGenerator {
     }
 
     private static void drawLine(Graphics2D drawTo, String line, int yOffset, int size) {
-        Font font = new Font("Verdana", Font.PLAIN, size);
+        Font font = new Font("Comic Sans MS", Font.PLAIN, size);
         drawTo.setFont(font);
         drawTo.setPaint(Color.BLACK);
 
