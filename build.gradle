@@ -43,6 +43,8 @@ dependencies {
 
     // https://mvnrepository.com/artifact/it.unimi.dsi/fastutil
     compile group: 'it.unimi.dsi', name: 'fastutil', version: '8.2.2'
+
+    compile 'net.sourceforge.lept4j:lept4j:1.11.0'
 }
 
 ext.moduleName = 'NewOCR'

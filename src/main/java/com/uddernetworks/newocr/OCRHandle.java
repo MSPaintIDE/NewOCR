@@ -6,6 +6,7 @@ import com.uddernetworks.newocr.database.DatabaseCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.train.TrainGenerator;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
+import com.uddernetworks.newocr.utils.Histogram;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
@@ -50,7 +51,7 @@ public class OCRHandle {
      * @param file The input image to be scanned
      * @return A {@link ScannedImage} containing all scanned character data
      */
-    public ScannedImage scanImage(File file) {
+    public ScannedImage scanImage(File file) throws IOException {
         var start = System.currentTimeMillis();
 
         // Preparing image
@@ -64,20 +65,28 @@ public class OCRHandle {
             input = temp;
         }
 
-        OCRUtils.filter(input);
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\ind\\before.png"));
+        input = OCRUtils.filter(input).orElseThrow();
+
+        ImageIO.write(input, "png", new File("E:\\NewOCR\\ind\\after.png"));
+
         OCRUtils.toGrid(input, values);
 
         var searchImage = new SearchImage(values);
 
-        var coordinates = new ArrayList<IntPair>();
+//        Files.write(Paths.get("E:\\NewOCR\\ind\\ou.txt"), searchImage.toString().getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+
+//        var coordinates = new ArrayList<IntPair>();
 
         // Goes through coordinates of image and adds any connecting pixels to `coordinates`
 
-        for (int y = input.getHeight(); 0 <= --y;) {
-            for (int x = 0; x < input.getWidth(); x++) {
-                getLetterFrom(searchImage, x, y, coordinates, searchCharacters);
-            }
-        }
+//        for (int y = input.getHeight(); 0 <= --y;) {
+//            for (int x = 0; x < input.getWidth(); x++) {
+//                getLetterFrom(searchImage, x, y, coordinates, searchCharacters);
+//            }
+//        }
+
+        getLetters(searchImage, searchCharacters);
 
         Map<FontBounds, List<SearchCharacter>> searchLines = new HashMap<>();
 
@@ -469,6 +478,97 @@ public class OCRHandle {
         double extra = input % 1;
         known += OCRUtils.checkDifference(extra, 1, 0.2D) ? 1 : 0;
         return known;
+    }
+
+    private void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
+        System.out.println("Starting");
+
+        var lineHeight = getEstimatedLineHeight(searchImage);
+
+        var num = 0;
+
+        var histogram = new Histogram(searchImage);
+        for (var coords : histogram.getWholeLines()) {
+            var fromY = coords.getKey();
+            var toY = coords.getValue();
+            if (diff(fromY, toY) <= 3) continue;
+
+            var sub = searchImage.getSubimage(0, fromY, searchImage.getWidth(), toY - fromY);
+
+            var subHistogram = new Histogram(sub);
+
+            for (var columnCoords : subHistogram.getWholeColumns()) {
+                var fromX = columnCoords.getKey();
+                var toX = columnCoords.getValue();
+                if (diff(fromX, toX) <= 3) continue;
+
+                var charSub = searchImage.getSubimage(fromX, fromY, toX - fromX, toY - fromY);
+                var charHistogram = new Histogram(charSub);
+
+                var padding = charHistogram.getVerticalPadding();
+                var newHeight = charSub.getHeight() - padding.getKey() - padding.getValue();
+                if (newHeight <= 3) continue;
+                charSub = charSub.getSubimage(0, padding.getKey(), charSub.getWidth(), newHeight);
+
+                try {
+                    ImageIO.write(charSub.toImage(), "png", new File("E:\\NewOCR\\ind\\cha_" + (num++) + ".png"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                var coordinates = new ArrayList<IntPair>();
+
+                var values = charSub.getValues();
+                for (int y = 0; y < values.length; y++) {
+                    for (int x = 0; x < values[0].length; x++) {
+                        var val = values[y][x];
+                        if (val) coordinates.add(new IntPair(fromX + x, fromY + y));
+                    }
+                }
+
+                searchCharacters.add(new SearchCharacter(coordinates));
+            }
+        }
+
+//        ImageIO.write(drawing, "png", output);
+    }
+
+    private int diff(int one, int two) {
+        return Math.abs(one - two);
+    }
+
+    private int getEstimatedLineHeight(SearchImage image) {
+        var list = new ArrayList<Integer>();
+        var width = image.getWidth();
+        var emptyCounter = 0;
+        var topBuffer = true;
+        for (int y = 0; y < image.getHeight(); y++) {
+            int finalY = y;
+            var empty = IntStream.range(0, width).allMatch(x -> image.getValue(x, finalY));
+            if (empty) {
+                if (topBuffer) {
+                    topBuffer = false;
+                    continue;
+                }
+
+                if (emptyCounter > 0) {
+                    list.add(emptyCounter);
+                    emptyCounter = 0;
+                }
+            } else if (!topBuffer) {
+                emptyCounter++;
+            }
+        }
+
+        if (emptyCounter > 0) list.add(emptyCounter);
+
+        return (int) Math.round(list.stream().mapToInt(t -> t).average().orElse(10));
+    }
+
+    private int countFrequency(SearchImage input, int y) {
+        return (int) IntStream.range(0, input.getWidth())
+                .filter(x -> input.getValue(x, y))
+                .count();
     }
 
     /**

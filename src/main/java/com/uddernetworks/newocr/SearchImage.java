@@ -1,7 +1,11 @@
 package com.uddernetworks.newocr;
 
 import com.uddernetworks.newocr.utils.IntPair;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -36,44 +40,44 @@ public class SearchImage {
 
         var nextProcessing = new ArrayList<IntPair>();
         var processingBuffer = new ArrayList<IntPair>();
-        
+
         nextProcessing.add(new IntPair(originalX, originalY));
 
         while (true) {
             for (var pair : nextProcessing) {
                 coordinates.add(pair);
-                
+
                 int x = pair.getKey();
                 int y = pair.getValue();
-                
+
                 if (hasValue(x, y + 1)) {
                     processingBuffer.add(new IntPair(x, y + 1));
                 }
-                
+
                 if (hasValue(x, y - 1)) {
                     processingBuffer.add(new IntPair(x, y - 1));
                 }
-                
+
                 if (hasValue(x + 1, y)) {
                     processingBuffer.add(new IntPair(x + 1, y));
                 }
-                
+
                 if (hasValue(x - 1, y)) {
                     processingBuffer.add(new IntPair(x - 1, y));
                 }
-                
+
                 if (hasValue(x + 1, y + 1)) {
                     processingBuffer.add(new IntPair(x + 1, y + 1));
                 }
-                
+
                 if (hasValue(x + 1, y - 1)) {
                     processingBuffer.add(new IntPair(x + 1, y - 1));
                 }
-                
+
                 if (hasValue(x - 1, y + 1)) {
                     processingBuffer.add(new IntPair(x - 1, y + 1));
                 }
-                
+
                 if (hasValue(x - 1, y - 1)) {
                     processingBuffer.add(new IntPair(x - 1, y - 1));
                 }
@@ -120,5 +124,69 @@ public class SearchImage {
      */
     public boolean[][] getValues() {
         return values;
+    }
+
+    /**
+     * Gets the width computed from the internal value 2D array.
+     *
+     * @return The width of the image
+     */
+    public int getWidth() {
+        return this.values[0].length;
+    }
+
+    /**
+     * Gets the height computed from the internal value 2D array.
+     *
+     * @return The height of the image
+     */
+    public int getHeight() {
+        return this.values.length;
+    }
+
+    /**
+     * Gets a {@link SearchImage} from the bounds of the current image.
+     *
+     * @param x The X position to start at
+     * @param y The Y position to start at
+     * @param width The width of the sub image
+     * @param height The height of the sub image
+     * @return The inner image from the coordinates given
+     */
+    public SearchImage getSubimage(int x, int y, int width, int height) {
+        var sub = new boolean[height][];
+
+        for (int i = 0; i < height; i++) {
+            sub[i] = Arrays.copyOfRange(this.values[i + y], x, x + width);
+        }
+
+        return new SearchImage(sub);
+    }
+
+    @Override
+    public String toString() {
+        var ret = new StringBuilder();
+        for (var row : this.values) {
+            for (var val : row) {
+                ret.append(val ? '\uff03' : '\uff0e');
+            }
+            ret.append('\n');
+        }
+
+        return ret.toString();
+    }
+
+    public BufferedImage toImage() {
+        var image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+        var black = Color.BLACK.getRGB();
+        var white = Color.WHITE.getRGB();
+
+        for (int y = 0; y < this.values.length; y++) {
+            for (int x = 0; x < this.values[0].length; x++) {
+                image.setRGB(x, y, this.values[y][x] ? black : white);
+            }
+        }
+
+        return image;
     }
 }

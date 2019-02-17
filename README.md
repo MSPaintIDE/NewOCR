@@ -6,6 +6,10 @@
 # NewOCR
 NewOCR is an OCR library made to suit [MS Paint IDE](https://github.com/RubbaBoy/MSPaintIDE)'s needs, though can be used in any project, as nothing is made specific to the IDE. The OCR can be trained with many fonts, though is geared towards fonts like **Verdana** and similar fonts. Other fonts _may_ require some tweaking of the character detector, but the main detection will work with no matter how different the characters are from Verdana (Hell you could modify it to work with emojis).
 
+## Branch info
+
+The branch you are currently on is `dev`. This branch is exclusively for new features and testing with the OCR, and will probably not be stable depending when the last release was. All completed features/additions will be pushed to `master`. If you contribute, please make any PRs to `dev`.
+
 ## How it works
 ### Summary
 NewOCR uses a super sketchy method of detecting characters, which in short breaks up each character into different subsections, then gets the percentage of filled in pixels each section contains, and puts them into an array. It then gets the closest matching array, which is decided as the closest pixel.

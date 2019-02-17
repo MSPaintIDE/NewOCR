@@ -3,8 +3,13 @@ package com.uddernetworks.newocr.utils;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.awt.Color;
-import java.awt.Graphics;
+import net.sourceforge.lept4j.Leptonica;
+import net.sourceforge.lept4j.Pix;
+import net.sourceforge.lept4j.util.LeptUtils;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -14,8 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 
 /**
  * Some various utility methods used by the OCR that may assist others using the library.
@@ -23,6 +26,11 @@ import javax.swing.ImageIcon;
 public class OCRUtils {
 
     public static final IntPair ZERO_PLACEHOLDER = new IntPair(0, 0);
+    private static final Leptonica instance = Leptonica.INSTANCE;
+
+    static {
+        instance.setLeptDebugOK(1);
+    }
 
     /**
      * An ImageIO.read() replacement, which in tests can be up to 15x faster. This has shown to significantly improve
@@ -43,6 +51,12 @@ public class OCRUtils {
         }
 
         return bufferedImage;
+    }
+
+    public static void dispose(Pix... pixs) {
+        for (Pix pix : pixs) {
+            LeptUtils.disposePix(pix);
+        }
     }
 
     /*
@@ -274,15 +288,30 @@ public class OCRUtils {
     /**
      * Binarizes the input image, making all pixels wither black or white with an alpha of 255
      *
-     * @param bufferedImage The input image to be mutated
+     * @param bufferedImage The input image to be filtered
+     * @return The filtered image
      */
-    public static void filter(BufferedImage bufferedImage) {
-        for (int y = 0; y < bufferedImage.getHeight(); y++) {
-            for (int x = 0; x < bufferedImage.getWidth(); x++) {
-                Color writeColor = isBlack(bufferedImage, x, y) ? new Color(0, 0, 0, 255) : new Color(255, 255, 255, 255);
-                bufferedImage.setRGB(x, y, writeColor.getRGB());
-            }
+    public static Optional<BufferedImage> filter(BufferedImage bufferedImage) {
+        try {
+            Pix pixs, pixn, pixg, pixb;
+
+            pixs = LeptUtils.convertImageToPix(bufferedImage);
+
+            /* Normalize for varying background and binarize */
+            pixn = instance.pixBackgroundNormSimple(pixs, null, null);
+            pixg = instance.pixConvertRGBToGray(pixn, 0.5f, 0.3f, 0.2f);
+            pixb = instance.pixThresholdToBinary(pixg, 130);
+
+            var ret = Optional.of(LeptUtils.convertPixToImage(pixb));
+
+            dispose(pixs, pixn, pixg, pixb);
+
+            return ret;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        return Optional.empty();
     }
 
     /**
@@ -411,19 +440,19 @@ public class OCRUtils {
                     if (line[x]) {
                         leftTrue++;
                     }
-                    
+
                     leftSize++;
                 } else if (x < middleHeight + leftHeight) {
                     if (line[x]){
                         middleTrue++;
                     }
-                    
+
                     middleSize++;
                 } else {
                     if (line[x]) {
                         rightTrue++;
                     }
-                    
+
                     rightSize++;
                 }
             }
@@ -453,29 +482,29 @@ public class OCRUtils {
 
             for (int x = 0; x < values[0].length; x++) {
                 double y = slope * x;
-                
+
                 if (increasing) {
                     y = values.length - y;
                 }
-                
+
                 yPositions.add((int) y);
             }
 
             for (int x = 0; x < values[0].length; x++) {
                 int yPos = yPositions.get(x);
-                
+
                 for (int y = 0; y < values.length; y++) {
                     if (y < yPos) {
                         if (values[y][x]) {
                             bottomTrue++;
                         }
-                        
+
                         bottomSize++;
                     } else {
                         if (values[y][x]) {
                             topTrue++;
                         }
-                        
+
                         topSize++;
                     }
                 }
@@ -483,10 +512,10 @@ public class OCRUtils {
         }
 
         List<IntPair> ret = new LinkedList<>();
-        
+
         ret.add(new IntPair(topTrue, topSize));
         ret.add(new IntPair(bottomTrue, bottomSize));
-        
+
         return ret;
     }
 
