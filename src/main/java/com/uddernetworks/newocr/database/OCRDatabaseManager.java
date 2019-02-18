@@ -87,7 +87,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
         dataSource = new HikariDataSource(config);
 
-        List.of("letters.sql", "sectionData.sql", "sizing.sql").parallelStream().forEach(table -> {
+        List.of("letters.sql", "sectionData.sql").parallelStream().forEach(table -> {
             var stream = OCRDatabaseManager.class.getResourceAsStream("/" + table);
 
             try (var reader = new BufferedReader(new InputStreamReader(stream));

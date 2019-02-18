@@ -3,6 +3,7 @@ package com.uddernetworks.newocr.character;
 import com.uddernetworks.newocr.LetterMeta;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,6 +15,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     private char knownChar = '?';
     private boolean[][] values;
+    private List<IntPair> coordinates;
     private int x;
     private int y;
     private int width;
@@ -28,24 +30,25 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      * @param coordinates Coordinates used by the character
      */
     public SearchCharacter(List<IntPair> coordinates) {
+        this.coordinates = coordinates;
         int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE, minY = Integer.MAX_VALUE;
-        
+
         for (var pair : coordinates) {
             int key = pair.getKey(), value = pair.getValue();
-            
+
             if (key > maxX) {
                 maxX = key;
             }
-            
+
             if (key < minX) {
                 minX = key;
             }
-            
+
             if (value > maxY) {
                 maxY = value;
             }
-            
+
             if (value < minY) {
                 minY = value;
             }
@@ -58,7 +61,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         this.height = maxY - minY;
 
         values = new boolean[this.height + 1][];
-        
+
         for (int i = 0; i < values.length; i++) {
             values[i] = new boolean[width + 1];
         }
@@ -113,7 +116,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      */
     public void addDot(List<IntPair> dotCoordinates) {
         boolean[][] values = new boolean[this.height + 1][];
-        
+
         for (int i = 0; i < values.length; i++) {
             values[i] = new boolean[width + 1];
         }
@@ -142,7 +145,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         int yOffset = this.height - this.values.length + 1;
 
         int offset = left ? Math.abs(width + 1 - this.values[0].length) : 0;
-        
+
         for (int y = 0; y < this.values.length; y++) {
             System.arraycopy(this.values[y], 0, values[y + yOffset], offset, this.values[0].length);
         }
@@ -159,6 +162,14 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      */
     public boolean[][] getValues() {
         return values;
+    }
+
+    /**
+     * Gets the coordinates of the character.
+     * @return The coordinates
+     */
+    public List<IntPair> getCoordinates() {
+        return coordinates;
     }
 
     /**
@@ -392,5 +403,5 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public void setLetterMeta(LetterMeta letterMeta) {
         this.letterMeta = letterMeta;
     }
-    
+
 }

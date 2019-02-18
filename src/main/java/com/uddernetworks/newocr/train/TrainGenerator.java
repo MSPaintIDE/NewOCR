@@ -46,7 +46,7 @@ public class TrainGenerator {
         int offset = UPPER_FONT_BOUND;
         for (int i = 0; i < UPPER_FONT_BOUND - LOWER_FONT_BOUND; i++) {
             drawLine(graphics, trainString, offset, size);
-            offset += size + 10;
+            offset += size + 15;
             size--;
         }
 

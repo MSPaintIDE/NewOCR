@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class OCRHandle {
 
@@ -229,34 +230,23 @@ public class OCRHandle {
             input = temp;
         }
 
-        OCRUtils.filter(input);
-        OCRUtils.toGrid(input, values);
+        input = OCRUtils.filter(input).orElseThrow();
 
-        var valuesClone = clone2DArray(values);
+        OCRUtils.toGrid(input, values);
 
         var searchImage = new SearchImage(values);
 
         getLetters(searchImage, searchCharacters);
 
         IntStream.range('!', '~' + 1).forEach(letter -> trainedCharacterDataList.add(new TrainedCharacterData((char) letter)));
+        TrainedCharacterData spaceTrainedCharacter = new TrainedCharacterData(' ');
+        trainedCharacterDataList.add(spaceTrainedCharacter);
 
         Collections.sort(searchCharacters);
 
-        var spaceTrainedCharacterOptional = trainedCharacterDataList
-                .stream()
-                .filter(trainedCharacterData -> trainedCharacterData.getValue() == ' ')
-                .findFirst();
-
-        if (spaceTrainedCharacterOptional.isEmpty()){
-            new Exception("Couldn't find space character!").printStackTrace();
-            return;
-        }
-
-        var spaceTrainedCharacter = spaceTrainedCharacterOptional.get();
-
         // Pair<topY, bottomY> (Absolute coordinates)
         // Gets the top and bottom line bounds of every line
-        var lineBounds = getLineBoundsForTesting(valuesClone);
+        var lineBounds = getLineBoundsForTesting(values);
 
         var searchCharactersCopy = new ArrayList<>(searchCharacters);
 
@@ -268,54 +258,74 @@ public class OCRHandle {
             var line = OCRUtils.findCharactersAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
 
             if (!line.isEmpty()) {
-                AtomicInteger letterIndex = new AtomicInteger();
-                AtomicInteger beforeSpaceX = new AtomicInteger();
+                var letterIndex = 0;
+                var beforeSpaceX = new AtomicInteger();
+                SearchCharacter firstQuote = null;
 
-                line.forEach(searchCharacter -> {
+                for (SearchCharacter searchCharacter : line) {
                     // Gets the next character it knows it will be
-                    char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex.getAndIncrement());
+                    char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
+
+                    System.out.println("letterIndex = " + letterIndex);
 
                     var trainedSearchCharacterOptional = trainedCharacterDataList
-                            .stream()
+                            .parallelStream()
                             .filter(trainedCharacterData -> trainedCharacterData.getValue() == current)
                             .findFirst();
 
-                    // If the current character is the FIRST `W`, sets beforeSpaceX to the current far right coordinate
-                    // of the space (X + width), and go up another character (Skipping the space in trainString)
-                    if (letterIndex.get() == trainString.length() - 2) {
+                    if (letterIndex == 2) { // If the index is on the quote
+                        if (firstQuote == null) {
+                            firstQuote = searchCharacter;
+                            System.out.println("Setting first quote");
+                            letterIndex--;
+                            continue;
+                        } else {
+                            var distance = searchCharacter.getX() - firstQuote.getX() - firstQuote.getWidth();
+                            // TODO: Add the average distance to width ratio to the database
+                            // Combine the first and last characters
+                            searchCharacter = combineCharacters(firstQuote, searchCharacter);
+                            searchCharacter.setKnownChar(current);
+                        }
+
+                        // If the current character is the FIRST `W`, sets beforeSpaceX to the current far right coordinate
+                        // of the space (X + width), and go up another character (Skipping the space in trainString)
+                    } else if (letterIndex == trainString.length() - 2) {
                         beforeSpaceX.set(searchCharacter.getX() + searchCharacter.getWidth());
-                        letterIndex.incrementAndGet();
-                        return;
+                        letterIndex++;
+                        continue;
 
                         // If it's the last character, add the space based on beforeSpaceX and the current X, (Getting the
                         // width of the space) and reset the line
-                    } else if (letterIndex.get() == trainString.length()) {
+                    } else if (letterIndex == trainString.length()) {
                         spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX.get(), lineHeight);
-                        letterIndex.set(0);
-                        return;
+                        letterIndex = 0;
+                        continue;
                     } else {
                         searchCharacter.setKnownChar(current);
                     }
 
+                    SearchCharacter finalSearchCharacter = searchCharacter;
                     trainedSearchCharacterOptional.ifPresent(trainedSearchCharacter -> {
                         // Adds the current segment values of the current searchCharacter to the trainedSearchCharacter
-                        trainedSearchCharacter.recalculateTo(searchCharacter);
+                        trainedSearchCharacter.recalculateTo(finalSearchCharacter);
 
                         double halfOfLineHeight = ((double) lineBound.getValue() - (double) lineBound.getKey()) / 2;
-                        double middleToTopChar = (double) searchCharacter.getY() - (double) lineBound.getKey();
+                        double middleToTopChar = (double) finalSearchCharacter.getY() - (double) lineBound.getKey();
                         double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
 
                         // Sets the current center to be calculated, along with any meta it may have
                         trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
-                        trainedSearchCharacter.setHasDot(searchCharacter.hasDot());
-                        trainedSearchCharacter.setLetterMeta(searchCharacter.getLetterMeta());
+                        trainedSearchCharacter.setHasDot(finalSearchCharacter.hasDot());
+                        trainedSearchCharacter.setLetterMeta(finalSearchCharacter.getLetterMeta());
                     });
 
+                    OCRUtils.makeImage(searchCharacter.getValues(), "E:\\NewOCR\\ind\\cha_" + searchCharacter.getX() + ".png");
+
                     // Resets the current letter
-                    if (letterIndex.get() >= trainString.length()) {
-                        letterIndex.set(0);
+                    if (letterIndex >= trainString.length()) {
+                        letterIndex = 0;
                     }
-                });
+                }
 
                 // Removes any used letters from the line in searchCharacters, so none will be duplicated and to
                 // increase performance.
@@ -352,6 +362,24 @@ public class OCRHandle {
         });
 
         debug("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
+    }
+
+    private SearchCharacter combineCharacters(SearchCharacter character1, SearchCharacter character2) {
+//        var newWidth = character2.getX() - character1.getX();
+//        var newHeight = character2.getY() - character1.getY();
+//
+//        var firstData = character1.getData();
+//        var secondData = character2.getData();
+//
+//        var data = new boolean[newHeight][];
+//        for (int y = 0; y < data.length; y++) {
+//            var row = new boolean[newWidth];
+//            System.arraycopy(firstData[y], 0, row, 0, firstData[y].length);
+//            System.arraycopy(secondData[y], 0, row, firstData[y].length, secondData[y].length);
+//            data[y] = row;
+//        }
+
+        return new SearchCharacter(Stream.of(character1.getCoordinates(), character2.getCoordinates()).flatMap(List::stream).collect(Collectors.toList()));
     }
 
     /**
@@ -446,11 +474,11 @@ public class OCRHandle {
                 if (newHeight <= 3) continue;
                 charSub = charSub.getSubimage(0, padding.getKey(), charSub.getWidth(), newHeight);
 
-                try {
-                    ImageIO.write(charSub.toImage(), "png", new File("ind\\cha_" + (num++) + ".png"));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    ImageIO.write(charSub.toImage(), "png", new File("ind\\cha_" + (num++) + ".png"));
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
 
                 var coordinates = new ArrayList<IntPair>();
 

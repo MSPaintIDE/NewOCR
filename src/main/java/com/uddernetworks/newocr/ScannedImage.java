@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 /**
  * An object to store line data for {@link ImageLetter}s on a scanned image.
@@ -41,30 +40,6 @@ public class ScannedImage {
         });
 
         return stringBuilder.toString();
-    }
-
-    /**
-     * Gets the first font size found in points.
-     *
-     * @param ocrHandle The OCRHandle used
-     * @return The font size in points
-     */
-    public int getFirstFontSize(OCRHandle ocrHandle) {
-        try {
-            for (var imageLetters : grid.values()) {
-                for (var imageLetter : imageLetters) {
-                    int size = ocrHandle.getFontSize(imageLetter).get();
-
-                    if (size != -1) {
-                        return size;
-                    }
-                }
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-
-        return 0;
     }
 
     /**
