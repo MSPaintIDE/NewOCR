@@ -477,11 +477,12 @@ public class OCRHandle {
                     }
                 }
 
-                searchCharacters.add(new SearchCharacter(coordinates));
+                var searchCharacter = new SearchCharacter(coordinates);
+                searchCharacter.applySections();
+                searchCharacter.analyzeSlices();
+                searchCharacters.add(searchCharacter);
             }
         }
-
-//        ImageIO.write(drawing, "png", output);
     }
 
     private int diff(int one, int two) {
@@ -536,8 +537,9 @@ public class OCRHandle {
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments().get());
 
             data.stream()
-                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
-                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
+                    // TODO: Implement these?
+//                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
+//                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
                     .forEach(character ->
                             OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference ->
                                     Arrays.stream(charDifference).average().ifPresent(value -> {

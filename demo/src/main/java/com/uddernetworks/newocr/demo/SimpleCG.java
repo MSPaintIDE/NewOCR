@@ -40,7 +40,7 @@ public class SimpleCG {
 //            // before killing the threads.
 //            TimeUnit.SECONDS.sleep(1L);
 //            databaseManager.shutdown();
-//            return;
+//            if (true) return;
 //        }
 
         var scannedImage = ocrHandle.scanImage(new File("CMSTest.png"));
