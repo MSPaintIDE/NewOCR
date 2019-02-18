@@ -1,5 +1,7 @@
 package com.uddernetworks.newocr.train;
 
+import com.uddernetworks.newocr.utils.ConversionUtils;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -10,7 +12,7 @@ public class TrainGenerator {
 
     private static String trainString = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
     public static final int UPPER_FONT_BOUND = 90;
-    public static final int LOWER_FONT_BOUND = 20;
+    public static final int LOWER_FONT_BOUND = 30;
 
     public static void main(String[] args) {
         BufferedImage image = new BufferedImage(1500, 500, BufferedImage.TYPE_INT_ARGB);
@@ -46,7 +48,7 @@ public class TrainGenerator {
         int offset = UPPER_FONT_BOUND;
         for (int i = 0; i < UPPER_FONT_BOUND - LOWER_FONT_BOUND; i++) {
             drawLine(graphics, trainString, offset, size);
-            offset += size + 15;
+            offset += ConversionUtils.pointToPixel(size) + 15;
             size--;
         }
 

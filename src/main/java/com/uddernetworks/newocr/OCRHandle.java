@@ -105,6 +105,7 @@ public class OCRHandle {
                     return -1;
                 })
                 .forEach(imageLetter -> {
+                    OCRUtils.makeImage(imageLetter.getValues(), "E:\\NewOCR\\ind\\letter_" + imageLetter.getX() + ".png");
                     double maxCenter = imageLetter.getDatabaseCharacter().getMaxCenter();
                     double minCenter = imageLetter.getDatabaseCharacter().getMinCenter();
                     boolean subtract = maxCenter < 0 && imageLetter.getDatabaseCharacter().getMinCenter() < 0;
@@ -216,6 +217,12 @@ public class OCRHandle {
      * @param file The input image to be trained from
      */
     public void trainImage(File file) {
+
+        // First clear the database
+        var clearStart = System.currentTimeMillis();
+        databaseManager.clearData();
+        System.out.println("Cleared in " + (System.currentTimeMillis() - clearStart) + "ms");
+
         List<TrainedCharacterData> trainedCharacterDataList = new ArrayList<>();
 
         // Preparing image
@@ -248,6 +255,9 @@ public class OCRHandle {
         // Gets the top and bottom line bounds of every line
         var lineBounds = getLineBoundsForTesting(values);
 
+        // Stores the height/distance ratio for apostrophe parts
+        var apostropheRatios = new ArrayList<Double>();
+
         var searchCharactersCopy = new ArrayList<>(searchCharacters);
 
         // Goes through each line found
@@ -266,8 +276,6 @@ public class OCRHandle {
                     // Gets the next character it knows it will be
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
 
-                    System.out.println("letterIndex = " + letterIndex);
-
                     var trainedSearchCharacterOptional = trainedCharacterDataList
                             .parallelStream()
                             .filter(trainedCharacterData -> trainedCharacterData.getValue() == current)
@@ -276,12 +284,12 @@ public class OCRHandle {
                     if (letterIndex == 2) { // If the index is on the quote
                         if (firstQuote == null) {
                             firstQuote = searchCharacter;
-                            System.out.println("Setting first quote");
                             letterIndex--;
                             continue;
                         } else {
                             var distance = searchCharacter.getX() - firstQuote.getX() - firstQuote.getWidth();
-                            // TODO: Add the average distance to width ratio to the database
+                            var ratio = (double) firstQuote.getHeight() / (double) distance;
+                            apostropheRatios.add(ratio);
                             // Combine the first and last characters
                             searchCharacter = combineCharacters(firstQuote, searchCharacter);
                             searchCharacter.setKnownChar(current);
@@ -319,8 +327,6 @@ public class OCRHandle {
                         trainedSearchCharacter.setLetterMeta(finalSearchCharacter.getLetterMeta());
                     });
 
-                    OCRUtils.makeImage(searchCharacter.getValues(), "E:\\NewOCR\\ind\\cha_" + searchCharacter.getX() + ".png");
-
                     // Resets the current letter
                     if (letterIndex >= trainString.length()) {
                         letterIndex = 0;
@@ -341,6 +347,9 @@ public class OCRHandle {
         long start = System.currentTimeMillis();
 
         debug("trainedCharacterDataList = " + trainedCharacterDataList);
+
+        // Add the apostropheRatios data into the database
+        CompletableFuture.runAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios.stream().mapToDouble(Double::doubleValue).toArray()));
 
         // Inserts all character data into the database after recalculating the
         trainedCharacterDataList.forEach(databaseTrainedCharacter -> {
@@ -365,20 +374,6 @@ public class OCRHandle {
     }
 
     private SearchCharacter combineCharacters(SearchCharacter character1, SearchCharacter character2) {
-//        var newWidth = character2.getX() - character1.getX();
-//        var newHeight = character2.getY() - character1.getY();
-//
-//        var firstData = character1.getData();
-//        var secondData = character2.getData();
-//
-//        var data = new boolean[newHeight][];
-//        for (int y = 0; y < data.length; y++) {
-//            var row = new boolean[newWidth];
-//            System.arraycopy(firstData[y], 0, row, 0, firstData[y].length);
-//            System.arraycopy(secondData[y], 0, row, firstData[y].length, secondData[y].length);
-//            data[y] = row;
-//        }
-
         return new SearchCharacter(Stream.of(character1.getCoordinates(), character2.getCoordinates()).flatMap(List::stream).collect(Collectors.toList()));
     }
 
@@ -449,8 +444,6 @@ public class OCRHandle {
     }
 
     private void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
-        var num = 0;
-
         var histogram = new Histogram(searchImage);
         for (var coords : histogram.getWholeLines()) {
             var fromY = coords.getKey();
@@ -464,21 +457,15 @@ public class OCRHandle {
             for (var columnCoords : subHistogram.getWholeColumns()) {
                 var fromX = columnCoords.getKey();
                 var toX = columnCoords.getValue();
-                if (diff(fromX, toX) <= 3) continue;
+                if (diff(fromX, toX) <= 2) continue; // Don't recognize blobs with a width of <= 2
 
                 var charSub = searchImage.getSubimage(fromX, fromY, toX - fromX, toY - fromY);
                 var charHistogram = new Histogram(charSub);
 
                 var padding = charHistogram.getVerticalPadding();
                 var newHeight = charSub.getHeight() - padding.getKey() - padding.getValue();
-                if (newHeight <= 3) continue;
+                if (newHeight <= 2) continue; // Don't recognize blobs with a height of <= 2
                 charSub = charSub.getSubimage(0, padding.getKey(), charSub.getWidth(), newHeight);
-
-//                try {
-//                    ImageIO.write(charSub.toImage(), "png", new File("ind\\cha_" + (num++) + ".png"));
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
 
                 var coordinates = new ArrayList<IntPair>();
 
@@ -549,14 +536,14 @@ public class OCRHandle {
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments().get());
 
             data.stream()
-                .filter(character -> character.hasDot() == searchCharacter.hasDot())
-                .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
-                .forEach(character ->
-                    OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference ->
-                            Arrays.stream(charDifference).average().ifPresent(value -> {
-                                // Gets the difference of the database character and searchCharacter (Lower is better)
-                                diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getSegments()), value);
-                            })));
+                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
+                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
+                    .forEach(character ->
+                            OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference ->
+                                    Arrays.stream(charDifference).average().ifPresent(value -> {
+                                        // Gets the difference of the database character and searchCharacter (Lower is better)
+                                        diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getSegments()), value);
+                                    })));
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }

@@ -27,6 +27,7 @@ public class ScannedImage {
 
     /**
      * Gets the string of a scanned image
+     *
      * @return The string of a scanned image
      */
     public String getPrettyString() {

@@ -36,6 +36,7 @@ public class ImageLetter {
 
     /**
      * Creates an ImageLetter from collected data.
+     *
      * @param databaseCharacter The {@link DatabaseCharacter} that is decided to be related to this character
      * @param x The X coordinate of this character
      * @param y The Y coordinate of this character
@@ -56,6 +57,7 @@ public class ImageLetter {
 
     /**
      * Gets the {@link DatabaseCharacter} found.
+     *
      * @return The {@link DatabaseCharacter} found
      */
     public DatabaseCharacter getDatabaseCharacter() {
@@ -64,6 +66,7 @@ public class ImageLetter {
 
     /**
      * Gets the X coordinate of this character.
+     *
      * @return The X coordinate of this character
      */
     public int getX() {
@@ -72,6 +75,7 @@ public class ImageLetter {
 
     /**
      * Sets the X coordinate of this character.
+     *
      * @param x The X coordinate of this character
      */
     public void setX(int x) {
@@ -81,6 +85,7 @@ public class ImageLetter {
 
     /**
      * Gets the Y coordinate of this character.
+     *
      * @return The Y coordinate of this character
      */
     public int getY() {
@@ -89,6 +94,7 @@ public class ImageLetter {
 
     /**
      * Sets the Y coordinate of this character.
+     *
      * @param y The Y coordinate of this character
      */
     public void setY(int y) {
@@ -97,6 +103,7 @@ public class ImageLetter {
 
     /**
      * Gets the width of this character.
+     *
      * @return The width of this character
      */
     public int getWidth() {
@@ -105,6 +112,7 @@ public class ImageLetter {
 
     /**
      * Sets the width of this character
+     *
      * @param width The width of this character
      */
     public void setWidth(int width) {
@@ -113,6 +121,7 @@ public class ImageLetter {
 
     /**
      * Gets the height of this character.
+     *
      * @return The height of this character
      */
     public int getHeight() {
@@ -121,6 +130,7 @@ public class ImageLetter {
 
     /**
      * Sets the height of this character.
+     *
      * @param height The height of this character
      */
     public void setHeight(int height) {
@@ -129,6 +139,7 @@ public class ImageLetter {
 
     /**
      * Gets the width/height ratio of this character.
+     *
      * @return The width/height ratio of this character
      */
     public double getRatio() {
@@ -137,6 +148,7 @@ public class ImageLetter {
 
     /**
      * Sets the width/height ratio of this character.
+     *
      * @param ratio The width/height ratio of this character
      */
     public void setRatio(double ratio) {
@@ -145,6 +157,7 @@ public class ImageLetter {
 
     /**
      * Gets the data segments of this character in form of [Black, Total]
+     *
      * @return The data segments of this character
      */
     public List<IntPair> getSegments() {
@@ -153,6 +166,7 @@ public class ImageLetter {
 
     /**
      * Gets the character value found for this character.
+     *
      * @return The character value found for this character
      */
     public char getLetter() {
@@ -162,6 +176,7 @@ public class ImageLetter {
     /**
      * Gets any data set to the {@link ImageLetter} object, useful for storing any needed data about the character to be
      * used in the future.
+     *
      * @return Data set to the character
      */
     public <T> Optional<T> getData(Class<T> clazz) {
@@ -171,6 +186,7 @@ public class ImageLetter {
     /**
      * Gets the raw data Object set to the {@link ImageLetter} object, useful for storing any needed data about the
      * character to be used in the future.
+     *
      * @return Data set to the character
      */
     public Optional<Object> getData() {
@@ -180,6 +196,7 @@ public class ImageLetter {
     /**
      * Sets any data to the {@link ImageLetter} object, useful for storing any needed data about the character to be
      * used in the future.
+     *
      * @param data The data to be set
      */
     public void setData(Object data) {
@@ -188,6 +205,7 @@ public class ImageLetter {
 
     /**
      * Gets the black (true) and white (false) pixels of the scanned character.
+     *
      * @return The grid of black or white values
      */
     public boolean[][] getValues() {
@@ -196,6 +214,7 @@ public class ImageLetter {
 
     /**
      * Sets the black (true) and white (false) pixels of the scanned character.
+     *
      * @param values The grid of black or white values. Will return `null` for spaces
      */
     public void setValues(boolean[][] values) {

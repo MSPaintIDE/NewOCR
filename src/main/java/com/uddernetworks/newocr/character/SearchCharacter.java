@@ -27,6 +27,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Creates a SearchCharacter from a list of coordinates used by the character.
+     *
      * @param coordinates Coordinates used by the character
      */
     public SearchCharacter(List<IntPair> coordinates) {
@@ -71,6 +72,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets if the character is probably a dot.
+     *
      * @return If the character is probably a dot
      */
     public boolean isProbablyDot() {
@@ -80,6 +82,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets if the character is probably a circle of a percent.
+     *
      * @return If the character is probably a circle of a percent
      */
     public boolean isProbablyCircleOfPercent() {
@@ -89,6 +92,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets if the character is probably an apostrophe.
+     *
      * @return If the character is probably an apostrophe
      */
     public boolean isProbablyApostraphe() {
@@ -98,6 +102,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets if the character is probably a colon.
+     *
      * @return If the character is probably a colon
      */
     public boolean isProbablyColon() {
@@ -112,6 +117,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Adds coordinates to the character.
+     *
      * @param dotCoordinates The coordinates to add
      */
     public void addDot(List<IntPair> dotCoordinates) {
@@ -135,6 +141,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Adds a set of coordinates to the character to the current character (Assuming the current character is a percent).
+     *
      * @param dotCoordinates The coordinates to add from the circle of the percent
      * @param left If the percentage circle is on the left or right
      */
@@ -158,6 +165,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets the raw grid of boolean values from the image of this character.
+     *
      * @return The raw grid of boolean values from the image of this character
      */
     public boolean[][] getValues() {
@@ -166,6 +174,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets the coordinates of the character.
+     *
      * @return The coordinates
      */
     public List<IntPair> getCoordinates() {
@@ -174,6 +183,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets the X position of the character.
+     *
      * @return The X position of ths character
      */
     public int getX() {
@@ -182,6 +192,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets the Y position of the character.
+     *
      * @return The Y position of ths character
      */
     public int getY() {
@@ -190,6 +201,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets the width of the character.
+     *
      * @return The width of ths character
      */
     public int getWidth() {
@@ -198,6 +210,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets the height of the character.
+     *
      * @return The height of ths character
      */
     public int getHeight() {
@@ -206,6 +219,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Sets the X position of the character.
+     *
      * @param x the X position to set
      */
     public void setX(int x) {
@@ -214,6 +228,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Sets the Y position of the character.
+     *
      * @param y the Y position to set
      */
     public void setY(int y) {
@@ -222,6 +237,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Sets the width of the character.
+     *
      * @param width The width of the character
      */
     public void setWidth(int width) {
@@ -230,6 +246,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Sets the height of the character.
+     *
      * @param height The height of the character
      */
     public void setHeight(int height) {
@@ -238,6 +255,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets if the given coordinate is within the bounds of this character.
+     *
      * @param x The X coordinate to check
      * @param y The Y coordinate to check
      * @return If the coordinate is within this character
@@ -251,6 +269,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets if another {@link SearchCharacter} is overlapping the current {@link SearchCharacter} at all.
+     *
      * @param searchCharacter The {@link SearchCharacter} to check for overlapping
      * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
      */
@@ -264,6 +283,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets if the given Y position is within the Y bounds of the current character.
+     *
      * @param y The Y position to check
      * @return If the given Y position is within the Y bounds of the current character
      */
@@ -274,6 +294,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets if the given Y position is within the X bounds of the current character.
+     *
      * @param x The Y position to check
      * @return If the given Y position is within the X bounds of the current character
      */
@@ -314,6 +335,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Adds a data segment to be calculated in the future. The segments may be fetched via {@link #getSegments()}.
+     *
      * @param entry The data segment in the format of [total black, size of segment]
      */
     public void addSegment(IntPair entry) {
@@ -323,6 +345,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     /**
      * Gets the raw segments added via {@link #addSegment(IntPair)} where the Entry format is
      * [total black, size of segment].
+     *
      * @return The raw segments
      */
     public List<IntPair> getSegments() {
@@ -332,6 +355,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     /**
      * Gets the raw segment percentages all <= 1. This will return an empty array until {@link #applySections()} and
      * {@link #analyzeSlices()} have been invoked.
+     *
      * @return The raw array of segment percentages with a length of 17
      */
     public double[] getSegmentPercentages() {
@@ -340,6 +364,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets the known character of this object. If it has not been fount yet, it will return `?`.
+     *
      * @return The known character
      */
     public char getKnownChar() {
@@ -348,6 +373,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Sets the known character.
+     *
      * @param knownChar The know character
      */
     public void setKnownChar(char knownChar) {
@@ -356,6 +382,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets If this character has a dot.
+     *
      * @return If this character has a dot
      */
     public boolean hasDot() {
@@ -364,6 +391,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Sets if this character has a dot in it.
+     *
      * @param hasDot If this character has a dot
      */
     public void setHasDot(boolean hasDot) {
@@ -382,6 +410,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets the raw 2D array of values of the character.
+     *
      * @return The raw 2D array of values of the character
      */
     public boolean[][] getData() {
@@ -390,6 +419,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Gets the {@link LetterMeta} of the current character.
+     *
      * @return The {@link LetterMeta} of the current character
      */
     public LetterMeta getLetterMeta() {
@@ -398,6 +428,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     /**
      * Sets the {@link LetterMeta} for the current character.
+     *
      * @param letterMeta The {@link LetterMeta} for the current character
      */
     public void setLetterMeta(LetterMeta letterMeta) {

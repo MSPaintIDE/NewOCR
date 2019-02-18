@@ -7,7 +7,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 public class SimpleCG {
 
@@ -33,22 +32,22 @@ public class SimpleCG {
 //        var inputLine = scanner.nextLine();
 //
 //        if ("yes".equalsIgnoreCase(inputLine) || "y".equalsIgnoreCase(inputLine)) {
-            System.out.println("Generating features...");
-            var start = System.currentTimeMillis();
-            ocrHandle.trainImage(new File("training.png"));
-            System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
-            // HSQLDB freaks out and kills the database file after writing if it doesn't have some kind of delay
-            // before killing the threads.
-            TimeUnit.SECONDS.sleep(1L);
-            databaseManager.shutdown();
+//            System.out.println("Generating features...");
+//            var start = System.currentTimeMillis();
+//            ocrHandle.trainImage(new File("training.png"));
+//            System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
+//            // HSQLDB freaks out and kills the database file after writing if it doesn't have some kind of delay
+//            // before killing the threads.
+//            TimeUnit.SECONDS.sleep(1L);
+//            databaseManager.shutdown();
 //            return;
 //        }
 
-//        var scannedImage = ocrHandle.scanImage(new File("cms.png"));
-//
-//        System.out.println("Got:\n" + scannedImage.getPrettyString());
-//
-//        databaseManager.shutdown();
+        var scannedImage = ocrHandle.scanImage(new File("CMSTest.png"));
+
+        System.out.println("Got:\n" + scannedImage.getPrettyString());
+
+        databaseManager.shutdown();
     }
 
 }

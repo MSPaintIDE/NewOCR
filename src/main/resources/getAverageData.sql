@@ -1,0 +1,1 @@
+SELECT AVG(value) FROM data WHERE name = ?;

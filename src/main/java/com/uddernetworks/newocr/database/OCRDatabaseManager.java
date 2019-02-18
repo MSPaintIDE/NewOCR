@@ -19,6 +19,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class OCRDatabaseManager implements DatabaseManager {
 
@@ -31,6 +32,8 @@ public class OCRDatabaseManager implements DatabaseManager {
     private String selectAllSegments;
     private String getLetterEntry;
     private String getSpaceEntry;
+    private String addAverageData;
+    private String getAverageData;
 
     private final AtomicReference<List<DatabaseCharacter>> databaseCharacterCache = new AtomicReference<>();
 
@@ -87,7 +90,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
         dataSource = new HikariDataSource(config);
 
-        List.of("letters.sql", "sectionData.sql").parallelStream().forEach(table -> {
+        List.of("letters.sql", "sectionData.sql", "data.sql").parallelStream().forEach(table -> {
             var stream = OCRDatabaseManager.class.getResourceAsStream("/" + table);
 
             try (var reader = new BufferedReader(new InputStreamReader(stream));
@@ -122,6 +125,8 @@ public class OCRDatabaseManager implements DatabaseManager {
         this.selectAllSegments = getQuery("selectAllSegments");
         this.getLetterEntry = getQuery("getLetterEntry");
         this.getSpaceEntry = getQuery("getSpaceEntry");
+        this.addAverageData = getQuery("addAverageData");
+        this.getAverageData = getQuery("getAverageData");
     }
 
     /**
@@ -163,7 +168,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
     @Override
     public void clearLetterSegments(char letter) {
-        List.of("letters", "sectionData").forEach(table -> {
+        Stream.of("letters", "sectionData").parallel().forEach(table -> {
             var query = String.format(this.clearLetterSegments, table);
 
             try (var connection = dataSource.getConnection(); var clearLetterSegments = connection.prepareStatement(query)) {
@@ -261,6 +266,47 @@ public class OCRDatabaseManager implements DatabaseManager {
             this.databaseCharacterCache.set(databaseCharacters);
 
             return databaseCharacters;
+        });
+    }
+
+    @Override
+    public void addAveragedData(String name, double[] values) {
+        try (var connection = dataSource.getConnection();
+             var addData = connection.prepareStatement(this.addAverageData)) {
+            for (double value : values) {
+                addData.setString(1, name);
+                addData.setDouble(2, value);
+                addData.addBatch();
+            }
+
+            addData.executeBatch();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public Future<Double> getAveragedData(String name) {
+        return executor.submit(() -> {
+            try (var connection = dataSource.getConnection(); var getData = connection.prepareStatement(this.getAverageData)) {
+                getData.setString(1, name);
+                var resultSet = getData.executeQuery();
+                if (!resultSet.next()) return 0D;
+
+                return resultSet.getDouble(1);
+            }
+        });
+    }
+
+    @Override
+    public void clearData() {
+        Stream.of("letters", "sectionData", "data").parallel().forEach(table -> {
+            try (var connection = dataSource.getConnection(); // Keeping the same connection throughout all tables might be faster
+                 var truncate = connection.prepareStatement("TRUNCATE TABLE " + table)) {
+                truncate.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         });
     }
 

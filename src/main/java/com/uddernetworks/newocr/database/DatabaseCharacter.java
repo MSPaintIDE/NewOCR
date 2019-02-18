@@ -18,6 +18,7 @@ public class DatabaseCharacter {
 
     /**
      * Creates a DatabaseCharacter from the given character
+     *
      * @param letter The letter of the object
      */
     public DatabaseCharacter(char letter) {
@@ -25,7 +26,8 @@ public class DatabaseCharacter {
     }
 
     /**
-     * Gets the letter for the current DatabaseCharcater
+     * Gets the letter for the current DatabaseCharacter
+     *
      * @return The current letter
      */
     public char getLetter() {
@@ -34,6 +36,7 @@ public class DatabaseCharacter {
 
     /**
      * Gets the 16 sectioned percentages for the stored character
+     *
      * @return An array of percentages <= 1 with a length of 17
      */
     public double[] getData() {
@@ -42,6 +45,7 @@ public class DatabaseCharacter {
 
     /**
      * Sets a percentage value to the data
+     *
      * @param index The index of the data to set
      * @param data The percentage of filled in pixels found
      */
@@ -51,6 +55,7 @@ public class DatabaseCharacter {
 
     /**
      * Sets multiple used data points
+     *
      * @param avgWidth The average width across all used characters in the font sizes
      * @param avgHeight The average height across all used characters in the font sizes
      * @param minCenter The minimum relative center value in the training ste for this character and font size
@@ -65,6 +70,7 @@ public class DatabaseCharacter {
 
     /**
      * Gets the average width of the character
+     *
      * @return The average width of the character
      */
     public double getAvgWidth() {
@@ -73,6 +79,7 @@ public class DatabaseCharacter {
 
     /**
      * Gets the average height of the character
+     *
      * @return The average height of the character
      */
     public double getAvgHeight() {
@@ -81,6 +88,7 @@ public class DatabaseCharacter {
 
     /**
      * Gets the minimum relative center value from the top of the character found in the training set for this font size
+     *
      * @return The minimum relative center value from the top of the character found in the training set for this font size
      */
     public double getMinCenter() {
@@ -89,6 +97,7 @@ public class DatabaseCharacter {
 
     /**
      * Gets the maximum relative center value from the top of the character found in the training set for this font size
+     *
      * @return The maximum relative center value from the top of the character found in the training set for this font size
      */
     public double getMaxCenter() {
@@ -97,6 +106,7 @@ public class DatabaseCharacter {
 
     /**
      * Sets if the current character has a dot at all in it
+     *
      * @param hasDot If the current character has a dot at all in it
      */
     public void setHasDot(boolean hasDot) {
@@ -105,6 +115,7 @@ public class DatabaseCharacter {
 
     /**
      * Gets if the current character has a dot at all in it
+     *
      * @return If the current character has a dot at all in it
      */
     public boolean hasDot() {
@@ -113,6 +124,7 @@ public class DatabaseCharacter {
 
     /**
      * Gets the {@link LetterMeta} of the current character
+     *
      * @return The {@link LetterMeta} of the current character
      */
     public LetterMeta getLetterMeta() {
