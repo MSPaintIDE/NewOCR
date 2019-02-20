@@ -181,25 +181,32 @@ public class OCRHandle {
         var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
 
         // Combine " characters that are next to each other which would equate to a full " instead of the ' parts
-        sortedLines.forEach((y, line) -> {
-            final ImageLetter[] last = {null};
-            line.removeIf(imageLetter -> {
-                if (last[0] == null) {
-                    last[0] = imageLetter;
-                    return false;
-                }
-
-                // TODO: This logic with the apostropheRatio seems a bit sketchy... it may need to be looked at/tested
-                var avgLength = (double) last[0].getHeight() / apostropheRatio;
-                if (imageLetter.getX() - last[0].getX() <= avgLength) {
-                    // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
-                    last[0].merge(imageLetter);
-                    return true;
-                }
-
-                return false;
-            });
-        });
+//        sortedLines.forEach((y, line) -> {
+//            final ImageLetter[] last = {null};
+//            line.removeIf(imageLetter -> {
+//                if (imageLetter.getLetter() != '"') {
+//                    last[0] = null;
+//                    return false;
+//                }
+//
+//                if (last[0] == null) {
+//                    last[0] = imageLetter;
+//                    return false;
+//                }
+//
+//                // TODO: This logic with the apostropheRatio seems a bit sketchy... it may need to be looked at/tested
+//                var avgLength = (double) last[0].getHeight() / apostropheRatio;
+//                if (imageLetter.getX() - last[0].getX() <= avgLength) {
+//                    // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
+//                    last[0].merge(imageLetter);
+//                    last[0] = null;
+//                    return true;
+//                }
+//
+//                last[0] = imageLetter;
+//                return false;
+//            });
+//        });
 
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.
@@ -436,7 +443,7 @@ public class OCRHandle {
                 var ratio = space.getAvgWidth() / space.getAvgHeight(); // The ratio of the space DatabaseCharacter
                 var usedWidth = ratio * fontSize; // The width of the space for this specific fot size
 
-                var noRoundDownSpace = "!"; // Might be more in the future, that's why it's not testing equality of an inline string
+                var noRoundDownSpace = "!`"; // Might be more in the future, that's why it's not testing equality of an inline string
 
                 int spaces = noRoundDownSpace.contains(searchCharacter.getLetter() + "") ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
 
@@ -585,7 +592,10 @@ public class OCRHandle {
 
         var firstEntry = entries.get(0); // The most similar character
 
-        double allowedDouble = firstEntry.getDoubleValue() * 0.1D;
+        // Sorts any values within 0.1 by their dimensions. This number may need to change depending on the font and
+        // context, though it seems to work perfectly currently. The following code ALSO ensures the difference is
+        // no more than 3x, as it already most likely has a good idea of the character.
+        double allowedDouble = 0.1D;
 
         entries.removeIf(value -> OCRUtils.getDiff(value.getDoubleValue(), firstEntry.getDoubleValue()) > allowedDouble); // Removes any character without the
 

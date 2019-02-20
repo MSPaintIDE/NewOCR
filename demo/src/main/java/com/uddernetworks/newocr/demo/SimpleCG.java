@@ -47,11 +47,12 @@ public class SimpleCG {
         }
 
 //         Warm up and load classes for everything, which can add over 1400ms to the first scan
+        // TODO: Fully implement warming up
 //        ocrHandle.scanImage(new File("src\\main\\resources\\warmup.png"));
 
-        System.out.println("Real scanning:");
+//        System.out.println("\nReal scanning:");
 
-        var scannedImage = ocrHandle.scanImage(new File("tresttt.png"));
+        var scannedImage = ocrHandle.scanImage(new File("binzzzz.png"));
 
         System.out.println("Got:\n" + scannedImage.getPrettyString());
 
