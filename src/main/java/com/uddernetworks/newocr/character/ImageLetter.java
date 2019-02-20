@@ -5,6 +5,8 @@ import com.uddernetworks.newocr.utils.IntPair;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An object to contain data from characters directly scanned from an image.
@@ -53,6 +55,52 @@ public class ImageLetter {
         this.height = height;
         this.ratio = ratio;
         this.segments = segments;
+    }
+
+    /**
+     * Merges the given {@link ImageLetter} with the current one, possibly changing width, height, X and Y values, along with
+     * combining the current and given {@link ImageLetter}'s segments and values (Accessible via {@link ImageLetter#getSegments()} and {@link ImageLetter#getValues()} respectively)
+     *
+     * @param imageLetter The {@link ImageLetter} to merge into the current one
+     */
+    public void merge(ImageLetter imageLetter) {
+        this.segments = Stream.of(this.segments, imageLetter.segments).flatMap(List::stream).collect(Collectors.toList());
+        int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
+        int maxY = Integer.MIN_VALUE, minY = Integer.MAX_VALUE;
+
+        for (var pair : this.segments) {
+            int key = pair.getKey(), value = pair.getValue();
+
+            if (key > maxX) {
+                maxX = key;
+            }
+
+            if (key < minX) {
+                minX = key;
+            }
+
+            if (value > maxY) {
+                maxY = value;
+            }
+
+            if (value < minY) {
+                minY = value;
+            }
+        }
+
+        this.x = minX;
+        this.y = minY;
+
+        this.width = maxX - minX;
+        this.height = maxY - minY;
+
+        values = new boolean[this.height + 1][];
+
+        for (int i = 0; i < values.length; i++) {
+            values[i] = new boolean[width + 1];
+        }
+
+        this.segments.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
     }
 
     /**
@@ -223,6 +271,6 @@ public class ImageLetter {
 
     @Override
     public String toString() {
-        return String.valueOf(getLetter());
+        return getLetter() + (databaseCharacter.getModifier() > 0 ? " [" + databaseCharacter.getModifier() + "]" : "");
     }
 }

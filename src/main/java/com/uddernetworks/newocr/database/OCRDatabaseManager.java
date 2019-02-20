@@ -151,15 +151,24 @@ public class OCRDatabaseManager implements DatabaseManager {
 
     @Override
     public void createLetterEntry(char letter, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
+        createLetterEntry(letter, 0, averageWidth, averageHeight, minCenter, maxCenter, hasDot, letterMeta, isLetter);
+    }
+
+    @Override
+    public void createLetterEntry(char letter, int modifier, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
         try (var connection = dataSource.getConnection(); var createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
+            if (modifier != 0 || letter == '"') {
+                System.out.println("Modifier: " + modifier + " for character " + ((int) letter) + " (" + letter + ")");
+            }
             createLetterEntry.setInt(1, letter);
-            createLetterEntry.setDouble(2, averageWidth);
-            createLetterEntry.setDouble(3, averageHeight);
-            createLetterEntry.setDouble(4, minCenter);
-            createLetterEntry.setDouble(5, maxCenter);
-            createLetterEntry.setBoolean(6, hasDot);
-            createLetterEntry.setInt(7, letterMeta.getID());
-            createLetterEntry.setBoolean(8, isLetter);
+            createLetterEntry.setInt(2, modifier);
+            createLetterEntry.setDouble(3, averageWidth);
+            createLetterEntry.setDouble(4, averageHeight);
+            createLetterEntry.setDouble(5, minCenter);
+            createLetterEntry.setDouble(6, maxCenter);
+            createLetterEntry.setBoolean(7, hasDot);
+            createLetterEntry.setInt(8, letterMeta.getID());
+            createLetterEntry.setBoolean(9, isLetter);
             createLetterEntry.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -182,11 +191,17 @@ public class OCRDatabaseManager implements DatabaseManager {
 
     @Override
     public void addLetterSegments(char letter, double[] segments) {
+        addLetterSegments(letter, 0, segments);
+    }
+
+    @Override
+    public void addLetterSegments(char letter, int modifier, double[] segments) {
         try (var connection = dataSource.getConnection(); var addLetterSegment = connection.prepareStatement(this.addLetterSegment)) {
             for (int i = 0; i < segments.length; i++) {
                 addLetterSegment.setInt(1, letter);
-                addLetterSegment.setInt(2, i);
-                addLetterSegment.setDouble(3, segments[i]);
+                addLetterSegment.setInt(2, modifier);
+                addLetterSegment.setInt(3, i);
+                addLetterSegment.setDouble(4, segments[i]);
                 addLetterSegment.addBatch();
             }
 
@@ -212,12 +227,14 @@ public class OCRDatabaseManager implements DatabaseManager {
 
                 while (resultSet.next()) {
                     var letter = resultSet.getString("letter").charAt(0);
+                    var modifier = resultSet.getInt("modifier");
                     var sectionIndex = resultSet.getInt("sectionIndex");
                     var data = resultSet.getDouble("data");
 
-                    var databaseCharacter = getDatabaseCharacter(databaseCharacters, letter, newDatabaseCharacter -> {
+                    var databaseCharacter = getDatabaseCharacter(databaseCharacters, letter, modifier, newDatabaseCharacter -> {
                         try (var getLetterEntry = connection.prepareCall(this.getLetterEntry)) {
                             getLetterEntry.setInt(1, letter);
+                            getLetterEntry.setInt(2, modifier);
 
                             var resultSet1 = getLetterEntry.executeQuery();
 
@@ -328,13 +345,14 @@ public class OCRDatabaseManager implements DatabaseManager {
      *
      * @param databaseCharacters The list of {@link DatabaseCharacter}s to search from
      * @param letter             The character the value must match
+     * @param modifier           The modifier of the character
      * @param onCreate           An action to do when a {@link DatabaseCharacter} is created, usually adding more info from it
      *                           from a database.
      * @return The created {@link DatabaseCharacter}
      */
-    private DatabaseCharacter getDatabaseCharacter(List<DatabaseCharacter> databaseCharacters, char letter, Consumer<DatabaseCharacter> onCreate) {
-        return databaseCharacters.stream().filter(cha -> cha.getLetter() == letter).findFirst().orElseGet(() -> {
-            var databaseCharacter = new DatabaseCharacter(letter);
+    private DatabaseCharacter getDatabaseCharacter(List<DatabaseCharacter> databaseCharacters, char letter, int modifier, Consumer<DatabaseCharacter> onCreate) {
+        return databaseCharacters.stream().filter(cha -> cha.getLetter() == letter && cha.getModifier() == modifier).findFirst().orElseGet(() -> {
+            var databaseCharacter = new DatabaseCharacter(letter, modifier);
             onCreate.accept(databaseCharacter);
             return databaseCharacter;
         });

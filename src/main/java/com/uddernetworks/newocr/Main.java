@@ -11,17 +11,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Main {
 
-    public static void main(String[] args) throws IOException, InterruptedException { // alphabet48
+    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException { // alphabet48
         new Main().run(args);
         //new Main().getSections(args);
     }
 
-    private void run(String[] args) throws IOException, InterruptedException {
+    private void run(String[] args) throws IOException, InterruptedException, ExecutionException {
         var databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db"));
         var scanner = new Scanner(System.in);
         var ocrHandle = new OCRHandle(databaseManager);

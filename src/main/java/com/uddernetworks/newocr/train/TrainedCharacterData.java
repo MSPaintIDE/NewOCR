@@ -4,6 +4,7 @@ import com.uddernetworks.newocr.LetterMeta;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
@@ -14,6 +15,7 @@ import java.util.OptionalDouble;
 public class TrainedCharacterData {
 
     private char value;
+    private int modifier = 0;
     private boolean hasDot;
     private double widthAverage;
     private double heightAverage;
@@ -28,12 +30,23 @@ public class TrainedCharacterData {
     private DoubleList recalculatingHeights = new DoubleArrayList();
 
     /**
-     * Creates a {@link TrainedCharacterData} from a character value.
+     * Creates a {@link TrainedCharacterData} from a character value with a modifier of 0.
      *
      * @param value The known character value
      */
     public TrainedCharacterData(char value) {
         this.value = value;
+    }
+
+    /**
+     * Creates a {@link TrainedCharacterData} from a character value with a given modifier value.
+     *
+     * @param value The known character value
+     * @param modifier The modifier for the character
+     */
+    public TrainedCharacterData(char value, int modifier) {
+        this.value = value;
+        this.modifier = modifier;
     }
 
     /**
@@ -43,6 +56,24 @@ public class TrainedCharacterData {
      */
     public char getValue() {
         return value;
+    }
+
+    /**
+     * Gets the modifier for the character.
+     *
+     * @return The character's modifier
+     */
+    public int getModifier() {
+        return modifier;
+    }
+
+    /**
+     * Sets the modifier for the character.
+     *
+     * @param modifier The modifier to set
+     */
+    public void setModifier(int modifier) {
+        this.modifier = modifier;
     }
 
     /**
@@ -132,7 +163,7 @@ public class TrainedCharacterData {
         }
 
         this.segmentPercentages = new double[8 + 9];
-        
+
         for (int i = 0; i < 8 + 9; i++) {
             int finalI = i;
             this.segmentPercentages[i] = recalculatingList.stream().mapToDouble(t -> t[finalI]).average().orElse(0D);
@@ -154,7 +185,7 @@ public class TrainedCharacterData {
             if (center > maxCenter) {
                 maxCenter = center;
             }
-            
+
             if (center < minCenter) {
                 minCenter = center;
             }
@@ -229,5 +260,5 @@ public class TrainedCharacterData {
     public String toString() {
         return String.valueOf(value);
     }
-    
+
 }

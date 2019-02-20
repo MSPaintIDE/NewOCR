@@ -16,7 +16,7 @@ public interface DatabaseManager {
     DataSource getDataSource();
 
     /**
-     * Inserts into the `letters` table.
+     * Inserts into the `letters` table with a modifier of 0.
      *
      * @param letter The character to insert
      * @param averageWidth The average width of the character
@@ -26,9 +26,23 @@ public interface DatabaseManager {
      * @param hasDot If the character has a dot in it
      * @param letterMeta The {@link LetterMeta} of the character
      * @param isLetter If the charcater is a letter (true) or if it is a space (false)
-     * @return A Future
      */
     void createLetterEntry(char letter, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter);
+
+    /**
+     * Inserts into the `letters` table.
+     *
+     * @param letter The character to insert
+     * @param modifier The modifier of the data, for multi-part characters such as "
+     * @param averageWidth The average width of the character
+     * @param averageHeight The average height of the character
+     * @param minCenter The minimum relative center from the top found in the training ste for the font size
+     * @param maxCenter The maximum relative center from the top found in the training ste for the font size
+     * @param hasDot If the character has a dot in it
+     * @param letterMeta The {@link LetterMeta} of the character
+     * @param isLetter If the charcater is a letter (true) or if it is a space (false)
+     */
+    void createLetterEntry(char letter, int modifier, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter);
 
     /**
      * Clears all data revolving around a character from both the `letters` and `sectionData` table.
@@ -38,12 +52,21 @@ public interface DatabaseManager {
     void clearLetterSegments(char letter);
 
     /**
-     * Adds segments (Percentage data points) to the database for a certain character.
+     * Adds segments (Percentage data points) to the database for a certain character, with a modifier of 0.
      *
      * @param letter The character to add segments to
      * @param segments An array with a length of 17 all <= 1 as percentage data points
      */
     void addLetterSegments(char letter, double[] segments);
+
+    /**
+     * Adds segments (Percentage data points) to the database for a certain character.
+     *
+     * @param letter The character to add segments to
+     * @param modifier The modifier of the letter
+     * @param segments An array with a length of 17 all <= 1 as percentage data points
+     */
+    void addLetterSegments(char letter, int modifier, double[] segments);
 
     /**
      * Gets all the {@link DatabaseCharacter}s in the database

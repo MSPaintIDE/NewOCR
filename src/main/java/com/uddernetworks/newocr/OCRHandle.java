@@ -16,7 +16,6 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -42,7 +41,7 @@ public class OCRHandle {
      * @param file The input image to be scanned
      * @return A {@link ScannedImage} containing all scanned character data
      */
-    public ScannedImage scanImage(File file) throws IOException {
+    public ScannedImage scanImage(File file) throws ExecutionException, InterruptedException {
         var start = System.currentTimeMillis();
 
         // Preparing image
@@ -56,10 +55,7 @@ public class OCRHandle {
             input = temp;
         }
 
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\ind\\before.png"));
         input = OCRUtils.filter(input).orElseThrow();
-
-        ImageIO.write(input, "png", new File("E:\\NewOCR\\ind\\after.png"));
 
         OCRUtils.toGrid(input, values);
 
@@ -105,7 +101,6 @@ public class OCRHandle {
                     return -1;
                 })
                 .forEach(imageLetter -> {
-                    OCRUtils.makeImage(imageLetter.getValues(), "E:\\NewOCR\\ind\\letter_" + imageLetter.getX() + ".png");
                     double maxCenter = imageLetter.getDatabaseCharacter().getMaxCenter();
                     double minCenter = imageLetter.getDatabaseCharacter().getMinCenter();
                     boolean subtract = maxCenter < 0 && imageLetter.getDatabaseCharacter().getMinCenter() < 0;
@@ -124,7 +119,7 @@ public class OCRHandle {
                     int potentialY = (int) Math.round(imageLetter.getY() + centerDiff);
 
                     // Gets the nearest line and its Y value, if any
-                    var tempp = lines.keySet()
+                    var possibleCenter = lines.keySet()
                             .stream()
                             .filter(centers -> {
                                 int x1 = centers.getKey();
@@ -140,7 +135,7 @@ public class OCRHandle {
                                 return OCRUtils.getDiff(centerBeginningY, potentialY);
                             }));
 
-                    var center = tempp.orElseGet(() -> {
+                    var center = possibleCenter.orElseGet(() -> {
                         var pair = new IntPair(exactTolerantMin, exactTolerantMax); // Included tolerance
                         lines.put(pair, new LinkedList<>());
                         return pair;
@@ -183,6 +178,29 @@ public class OCRHandle {
                     sortedLines.put(y, databaseCharacters);
                 });
 
+        var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
+
+        // Combine " characters that are next to each other which would equate to a full " instead of the ' parts
+        sortedLines.forEach((y, line) -> {
+            final ImageLetter[] last = {null};
+            line.removeIf(imageLetter -> {
+                if (last[0] == null) {
+                    last[0] = imageLetter;
+                    return false;
+                }
+
+                // TODO: This logic with the apostropheRatio seems a bit sketchy... it may need to be looked at/tested
+                var avgLength = (double) last[0].getHeight() / apostropheRatio;
+                if (imageLetter.getX() - last[0].getX() <= avgLength) {
+                    // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
+                    last[0].merge(imageLetter);
+                    return true;
+                }
+
+                return false;
+            });
+        });
+
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.
         sortedLines.values().forEach(line -> line.addAll(getSpacesFor(line, line.stream().mapToInt(ImageLetter::getHeight).max().getAsInt())));
@@ -216,7 +234,7 @@ public class OCRHandle {
      *
      * @param file The input image to be trained from
      */
-    public void trainImage(File file) {
+    public void trainImage(File file) throws ExecutionException, InterruptedException {
 
         // First clear the database
         var clearStart = System.currentTimeMillis();
@@ -245,7 +263,6 @@ public class OCRHandle {
 
         getLetters(searchImage, searchCharacters);
 
-        IntStream.range('!', '~' + 1).forEach(letter -> trainedCharacterDataList.add(new TrainedCharacterData((char) letter)));
         TrainedCharacterData spaceTrainedCharacter = new TrainedCharacterData(' ');
         trainedCharacterDataList.add(spaceTrainedCharacter);
 
@@ -275,24 +292,22 @@ public class OCRHandle {
                 for (SearchCharacter searchCharacter : line) {
                     // Gets the next character it knows it will be
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
+                    var modifier = 0;
+                    var revertIndex = false;
 
-                    var trainedSearchCharacterOptional = trainedCharacterDataList
-                            .parallelStream()
-                            .filter(trainedCharacterData -> trainedCharacterData.getValue() == current)
-                            .findFirst();
-
-                    if (letterIndex == 2) { // If the index is on the quote
+                    // If the index is on the quote
+                    if (letterIndex == 2) {
                         if (firstQuote == null) {
                             firstQuote = searchCharacter;
-                            letterIndex--;
-                            continue;
+
+                            // Make sure to subtract 1 from the letterIndex at the end, so it can process the " again
+                            revertIndex = true;
                         } else {
                             var distance = searchCharacter.getX() - firstQuote.getX() - firstQuote.getWidth();
                             var ratio = (double) firstQuote.getHeight() / (double) distance;
                             apostropheRatios.add(ratio);
-                            // Combine the first and last characters
-                            searchCharacter = combineCharacters(firstQuote, searchCharacter);
-                            searchCharacter.setKnownChar(current);
+
+                            modifier = 1;
                         }
 
                         // If the current character is the FIRST `W`, sets beforeSpaceX to the current far right coordinate
@@ -312,20 +327,31 @@ public class OCRHandle {
                         searchCharacter.setKnownChar(current);
                     }
 
-                    SearchCharacter finalSearchCharacter = searchCharacter;
-                    trainedSearchCharacterOptional.ifPresent(trainedSearchCharacter -> {
-                        // Adds the current segment values of the current searchCharacter to the trainedSearchCharacter
-                        trainedSearchCharacter.recalculateTo(finalSearchCharacter);
+                    int finalModifier = modifier;
+                    var trainedSearchCharacter = trainedCharacterDataList
+                            .parallelStream()
+                            .filter(trainedCharacterData -> trainedCharacterData.getValue() == current
+                                    && trainedCharacterData.getModifier() == finalModifier)
+                            .findFirst()
+                            .orElseGet(() -> {
+                                var trained = new TrainedCharacterData(current, finalModifier);
+                                trainedCharacterDataList.add(trained);
+                                return trained;
+                            });
 
-                        double halfOfLineHeight = ((double) lineBound.getValue() - (double) lineBound.getKey()) / 2;
-                        double middleToTopChar = (double) finalSearchCharacter.getY() - (double) lineBound.getKey();
-                        double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
+                    // Adds the current segment values of the current searchCharacter to the trainedSearchCharacter
+                    trainedSearchCharacter.recalculateTo(searchCharacter);
 
-                        // Sets the current center to be calculated, along with any meta it may have
-                        trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
-                        trainedSearchCharacter.setHasDot(finalSearchCharacter.hasDot());
-                        trainedSearchCharacter.setLetterMeta(finalSearchCharacter.getLetterMeta());
-                    });
+                    double halfOfLineHeight = ((double) lineBound.getValue() - (double) lineBound.getKey()) / 2;
+                    double middleToTopChar = (double) searchCharacter.getY() - (double) lineBound.getKey();
+                    double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
+
+                    // Sets the current center to be calculated, along with any meta it may have
+                    trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
+                    trainedSearchCharacter.setHasDot(searchCharacter.hasDot());
+                    trainedSearchCharacter.setLetterMeta(searchCharacter.getLetterMeta());
+
+                    if (revertIndex) letterIndex--;
 
                     // Resets the current letter
                     if (letterIndex >= trainString.length()) {
@@ -358,11 +384,10 @@ public class OCRHandle {
 
                 char letter = databaseTrainedCharacter.getValue();
 
-                CompletableFuture.runAsync(() -> databaseManager.clearLetterSegments(letter))
-                        .thenRunAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
+                CompletableFuture.runAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getModifier(), databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
                         .thenRunAsync(() -> {
                             if (letter != ' ') {
-                                databaseManager.addLetterSegments(letter, databaseTrainedCharacter.getSegmentPercentages());
+                                databaseManager.addLetterSegments(letter, databaseTrainedCharacter.getModifier(), databaseTrainedCharacter.getSegmentPercentages());
                             }
                         });
             } catch (Exception e) {
@@ -443,7 +468,7 @@ public class OCRHandle {
         return known;
     }
 
-    private void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
+    private void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) throws ExecutionException, InterruptedException {
         var histogram = new Histogram(searchImage);
         for (var coords : histogram.getWholeLines()) {
             var fromY = coords.getKey();
@@ -560,9 +585,9 @@ public class OCRHandle {
 
         var firstEntry = entries.get(0); // The most similar character
 
-        double allowedDouble = firstEntry.getValue() * 0.1D;
+        double allowedDouble = firstEntry.getDoubleValue() * 0.1D;
 
-        entries.removeIf(value -> OCRUtils.getDiff(value.getValue(), firstEntry.getValue()) > allowedDouble); // Removes any character without the
+        entries.removeIf(value -> OCRUtils.getDiff(value.getDoubleValue(), firstEntry.getDoubleValue()) > allowedDouble); // Removes any character without the
 
         // same difference (Most often a similarity of 0)
         double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
