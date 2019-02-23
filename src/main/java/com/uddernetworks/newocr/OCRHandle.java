@@ -612,9 +612,16 @@ public class OCRHandle {
 
 //        System.out.println("entries = " + entries);
 
-        // Skip everything if it has a very high confidence of the character
-        if (firstEntry.getDoubleValue() * 2 > secondEntry.getDoubleValue() || diff(ratio, searchRatio) > 0.1) {
-            System.out.println("Going on with first being " + firstEntry.getKey() + " ratio: " + diff(ratio, searchRatio));
+        var ratioDifference = diff(ratio, searchRatio);
+
+        // Skip everything if it has a very high confidence of the character (Much higher than the closest one OR is <= 0.01 in confidence),
+        // and make sure that the difference in width/height is very low, or else it will continue and sort by width/height difference.
+        var bigDifference = firstEntry.getDoubleValue() * 2 > secondEntry.getDoubleValue(); // If true, SORT
+        var verysmallDifference = ratioDifference <= 0.01 || firstEntry.getDoubleValue() <= 0.01; // If true, skip sorting
+        var ratioDiff = ratioDifference > 0.1; // If true, SORT
+
+        if (!verysmallDifference && (bigDifference || ratioDiff)) {
+            System.out.println("Going on with first being " + firstEntry.getKey() + " ratio: " + ratioDifference + " (" + verysmallDifference + ")");
 
 //        var firstEntry = entries.get(0); // The most similar character
 
