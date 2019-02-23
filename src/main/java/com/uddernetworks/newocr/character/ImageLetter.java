@@ -20,7 +20,7 @@ public class ImageLetter {
     private int height;
     private double ratio;
     private boolean[][] values;
-    private List<IntPair> segments;
+    private List<IntPair> coordinates;
     private Object data;
 
     /**
@@ -45,30 +45,32 @@ public class ImageLetter {
      * @param width The width of this character
      * @param height The height of this character
      * @param ratio The width/height ratio of this character
-     * @param segments The data segments of this character (In form of [Black, Total])
+     * @param coordinates The data coordinates of this character (In form of [Black, Total])
      */
-    public ImageLetter(DatabaseCharacter databaseCharacter, int x, int y, int width, int height, double ratio, List<IntPair> segments) {
+    public ImageLetter(DatabaseCharacter databaseCharacter, int x, int y, int width, int height, double ratio, List<IntPair> coordinates) {
         this.databaseCharacter = databaseCharacter;
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.ratio = ratio;
-        this.segments = segments;
+        this.coordinates = coordinates;
     }
 
     /**
      * Merges the given {@link ImageLetter} with the current one, possibly changing width, height, X and Y values, along with
-     * combining the current and given {@link ImageLetter}'s segments and values (Accessible via {@link ImageLetter#getSegments()} and {@link ImageLetter#getValues()} respectively)
+     * combining the current and given {@link ImageLetter}'s coordinates and values (Accessible via {@link ImageLetter#getCoordinates()} and {@link ImageLetter#getValues()} respectively)
      *
      * @param imageLetter The {@link ImageLetter} to merge into the current one
      */
     public void merge(ImageLetter imageLetter) {
-        this.segments = Stream.of(this.segments, imageLetter.segments).flatMap(List::stream).collect(Collectors.toList());
+//        System.out.println("this.coordinates = " + this.coordinates);
+//        System.out.println("imageLetter.coordinates = " + imageLetter.coordinates);
+        this.coordinates = Stream.of(this.coordinates, imageLetter.coordinates).flatMap(List::stream).collect(Collectors.toList());
         int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE, minY = Integer.MAX_VALUE;
 
-        for (var pair : this.segments) {
+        for (var pair : this.coordinates) {
             int key = pair.getKey(), value = pair.getValue();
 
             if (key > maxX) {
@@ -100,7 +102,7 @@ public class ImageLetter {
             values[i] = new boolean[width + 1];
         }
 
-        this.segments.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
+        this.coordinates.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
     }
 
     /**
@@ -204,12 +206,12 @@ public class ImageLetter {
     }
 
     /**
-     * Gets the data segments of this character in form of [Black, Total]
+     * Gets the data coordinates of this character in form of [Black, Total]
      *
-     * @return The data segments of this character
+     * @return The data coordinates of this character
      */
-    public List<IntPair> getSegments() {
-        return segments;
+    public List<IntPair> getCoordinates() {
+        return coordinates;
     }
 
     /**

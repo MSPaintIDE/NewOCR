@@ -184,21 +184,26 @@ public class OCRHandle {
         sortedLines.forEach((y, line) -> {
             final ImageLetter[] last = {null};
             line.removeIf(imageLetter -> {
-                if (imageLetter.getLetter() != '"') {
+                if (imageLetter.getLetter() != '"' && imageLetter.getLetter() != '\'') {
                     last[0] = null;
                     return false;
                 }
 
+                System.out.println(imageLetter);
+
                 if (last[0] == null) {
+                    System.out.println("Setting with coords " + imageLetter.getX() + ", " + imageLetter.getY());
                     last[0] = imageLetter;
                     return false;
                 }
 
                 // TODO: This logic with the apostropheRatio seems a bit sketchy... it may need to be looked at/tested
-                var avgLength = (double) last[0].getHeight() / apostropheRatio;
+                var avgLength = (double) last[0].getHeight() * apostropheRatio;
                 if (imageLetter.getX() - last[0].getX() <= avgLength) {
+                    System.out.println("Merging " + last[0] + " on the left with " + imageLetter + " on the right");
                     // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
                     last[0].merge(imageLetter);
+                    System.out.println("Coords: " + last[0].getX() + ", " + last[0].getY());
                     last[0] = null;
                     return true;
                 }
@@ -580,7 +585,7 @@ public class OCRHandle {
                             OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
                                         var value = Arrays.stream(charDifference).sum();
                                         // Gets the difference of the database character and searchCharacter (Lower is better)
-                                        diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getSegments()), value);
+                                        diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates()), value);
                                     }));
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
@@ -590,7 +595,7 @@ public class OCRHandle {
         var entries = diffs.object2DoubleEntrySet()
                 .stream()
                 .sorted(Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue))
-//                .limit(10)
+                .limit(10)
                 .collect(Collectors.toList());
 
         // If there's no characters found, don't continue
@@ -598,28 +603,58 @@ public class OCRHandle {
             return Optional.empty();
         }
 
-        var firstEntry = entries.get(0); // The most similar character
 
-        // Sorts any values within 0.1 by their dimensions. This number may need to change depending on the font and
-        // context, though it seems to work perfectly currently. The following code ALSO ensures the difference is
-        // no more than 3x, as it already most likely has a good idea of the character.
-        double allowedDouble = diff(firstEntry.getDoubleValue(), Math.pow(firstEntry.getDoubleValue(), 2D));
+        var firstEntry = entries.get(0);
+        var secondEntry = entries.get(1);
+
+        double ratio = firstEntry.getKey().getDatabaseCharacter().getAvgWidth() / firstEntry.getKey().getDatabaseCharacter().getAvgHeight();
+        double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
+
+//        System.out.println("entries = " + entries);
+
+        // Skip everything if it has a very high confidence of the character
+        if (firstEntry.getDoubleValue() * 2 > secondEntry.getDoubleValue() || diff(ratio, searchRatio) > 0.1) {
+            System.out.println("Going on with first being " + firstEntry.getKey() + " ratio: " + diff(ratio, searchRatio));
+
+//        var firstEntry = entries.get(0); // The most similar character
+
+            // Sorts any values within 0.1 by their dimensions. This number may need to change depending on the font and
+            // context, though it seems to work perfectly currently. The following code ALSO ensures the difference is
+            // no more than 3x, as it already most likely has a good idea of the character.
+//        double allowedDouble = diff(firstEntry.getDoubleValue(), Math.pow(firstEntry.getDoubleValue(), 2D));
 //        System.out.println("allowedDouble = " + allowedDouble);
 //        System.out.println("firstEntry = " + firstEntry);
 //        double allowedDouble = Math.pow(firstEntry.getDoubleValue(), 1.1D);
 
-//        entries.removeIf(value -> OCRUtils.getDiff(value.getDoubleValue(), firstEntry.getDoubleValue()) > allowedDouble); // Removes any character without the
-        entries.removeIf(entry -> {
-            var databaseCharacter = entry.getKey().getDatabaseCharacter();
-            return compareSizes(false, searchCharacter.getWidth(), searchCharacter.getHeight(), databaseCharacter.getAvgWidth(), databaseCharacter.getAvgHeight()) > 0.5;
-        });
+//        System.out.println("entries = " + entries);
 
-        System.out.println(entries);
+//        entries.removeIf(value -> OCRUtils.getDiff(value.getDoubleValue(), firstEntry.getDoubleValue()) > allowedDouble); // Removes any character without the
+//        entries.sort(entry -> {
+//            var databaseCharacter = entry.getKey().getDatabaseCharacter();
+//             Lower is more similar
+//            return compareSizes(i[0] == 1, searchCharacter.getWidth(), searchCharacter.getHeight(), databaseCharacter.getAvgWidth(), databaseCharacter.getAvgHeight(), databaseCharacter.toString());
+//        });
+//        i[0]++;
+
+            entries.sort(Comparator.comparingDouble(entry -> {
+                var databaseCharacter = entry.getKey().getDatabaseCharacter();
+                // Lower is more similar
+                var sizeDiff = compareSizes(searchCharacter.getWidth(), searchCharacter.getHeight(), databaseCharacter.getAvgWidth(), databaseCharacter.getAvgHeight(), databaseCharacter.toString());
+                entry.setValue(sizeDiff);
+                return sizeDiff;
+            }));
+
+            System.out.println(" \t \t entries = " + entries);
+
+
+//        Collections.reverse(entries);
+
+
+//        System.out.println("entries = " + entries);
 
 //         same difference (Most often a similarity of 0)
 //        double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
 
-        int[] i = new int[] {0};
 //        System.out.println("\n\n=====================\n\n");
 
 //        System.out.println("entries = " + entries);
@@ -634,6 +669,9 @@ public class OCRHandle {
 //        Collections.reverse(entries);
 
 //        System.out.println("entries = " + entries);
+        } else {
+            System.out.println("Pretty sure " + firstEntry.getKey() + " is right w/h ratio: " + diff(ratio, searchRatio));
+        }
 
         ImageLetter first = entries.get(0).getKey();
         first.setValues(searchCharacter.getValues());
@@ -646,43 +684,53 @@ public class OCRHandle {
      * @param height1 Character from image
      * @param width2 Character from database
      * @param height2 Character from database
-     * @return The similarity of rectangles, lower being less similar
+     * @return The similarity of rectangles, lower being more similar
      */
-    public double compareSizes(boolean print, double width1, double height1, double width2, double height2) {
+    public double compareSizes(double width1, double height1, double width2, double height2, String printout) {
+//        System.out.println("print = " + print);
         var res = 0D;
         if ((width1 > height1 && width2 < height2)
         || (width1 < height1 && width2 > height2)) {
             // If they aren't rotated the right way (E.g. tall rectangle isn't similar to a wide one)
-            res += 1D;
+            res += 300D;
         }
 
-        var bigWidth = Math.max(width1, width2);
-        var smallWidth = bigWidth == width1 ? width2 : width1;
+//        var bigWidth = Math.max(width1, width2);
+//        var smallWidth = bigWidth == width1 ? width2 : width1;
+//
+//        var bigHeight = Math.max(height1, height2);
+//        var smallHeight = bigHeight == height1 ? height2 : height1;
 
-        var bigHeight = Math.max(height1, height2);
-        var smallHeight = bigHeight == height1 ? height2 : height1;
+//        var widthDifference = (bigWidth - smallWidth) / smallWidth; // Percent difference, 100 being more similar
+//        var heightDifference = (bigHeight - smallHeight) / smallHeight; // Percent difference, 100 being more similar
 
-        var widthDifference = (bigWidth - smallWidth) / smallWidth;
-        var heightDifference = (bigHeight - smallHeight) / smallHeight;
+//        var widthDifference = diff(width1, height2) / height2; // Percent difference, 100 being more similar
+//        var heightDifference = diff(height1, height2) / height2; // Percent difference, 100 being more similar
+//
+//        var whDifference = diff(widthDifference , heightDifference) / heightDifference * 100;
+
+        double ratio1 = width1 / height1;
+        double ratio2 = width2 / height2;
+        double ratioDiff = diff(ratio1, ratio2);
 
 //        if (print) {
 //            System.out.println("widthDifference = " + widthDifference);
 //            System.out.println("heightDifference = " + heightDifference);
 //        }
 
-        res += 1 - widthDifference;
-        res += 1 - heightDifference;
+//        res += widthDifference;
+//        res += heightDifference;
+        res += ratioDiff;
 
-        if (print) {
+//        if (print) {
 //            System.out.println("\n\n\nwidth1 = [" + width1 + "], height1 = [" + height1 + "], width2 = [" + width2 + "], height2 = [" + height2 + "]");
-//            System.out.println("widthDifference = " + widthDifference);
-//            System.out.println("heightDifference = " + heightDifference);
-            System.out.println("res = " + res);
-        }
+//            System.out.println(printout + " ratioDiff = " + ratioDiff);
+//            System.out.println(printout + " res = " + res);
+//        }
 
         // Method 1
 //        return widthDifference + heightDifference;
-        return 1 - res;
+        return res;
     }
 
     /**
