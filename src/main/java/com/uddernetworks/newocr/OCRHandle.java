@@ -180,33 +180,33 @@ public class OCRHandle {
 
         var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
 
-        // Combine " characters that are next to each other which would equate to a full " instead of the ' parts
-//        sortedLines.forEach((y, line) -> {
-//            final ImageLetter[] last = {null};
-//            line.removeIf(imageLetter -> {
-//                if (imageLetter.getLetter() != '"') {
-//                    last[0] = null;
-//                    return false;
-//                }
-//
-//                if (last[0] == null) {
-//                    last[0] = imageLetter;
-//                    return false;
-//                }
-//
-//                // TODO: This logic with the apostropheRatio seems a bit sketchy... it may need to be looked at/tested
-//                var avgLength = (double) last[0].getHeight() / apostropheRatio;
-//                if (imageLetter.getX() - last[0].getX() <= avgLength) {
-//                    // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
-//                    last[0].merge(imageLetter);
-//                    last[0] = null;
-//                    return true;
-//                }
-//
-//                last[0] = imageLetter;
-//                return false;
-//            });
-//        });
+//         Combine " characters that are next to each other which would equate to a full " instead of the ' parts
+        sortedLines.forEach((y, line) -> {
+            final ImageLetter[] last = {null};
+            line.removeIf(imageLetter -> {
+                if (imageLetter.getLetter() != '"') {
+                    last[0] = null;
+                    return false;
+                }
+
+                if (last[0] == null) {
+                    last[0] = imageLetter;
+                    return false;
+                }
+
+                // TODO: This logic with the apostropheRatio seems a bit sketchy... it may need to be looked at/tested
+                var avgLength = (double) last[0].getHeight() / apostropheRatio;
+                if (imageLetter.getX() - last[0].getX() <= avgLength) {
+                    // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
+                    last[0].merge(imageLetter);
+                    last[0] = null;
+                    return true;
+                }
+
+                last[0] = imageLetter;
+                return false;
+            });
+        });
 
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.
@@ -517,6 +517,10 @@ public class OCRHandle {
         }
     }
 
+    private double diff(double one, double two) {
+        return Math.abs(one - two);
+    }
+
     private int diff(int one, int two) {
         return Math.abs(one - two);
     }
@@ -573,17 +577,21 @@ public class OCRHandle {
 //                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
 //                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
                     .forEach(character ->
-                            OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference ->
-                                    Arrays.stream(charDifference).average().ifPresent(value -> {
+                            OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
+                                        var value = Arrays.stream(charDifference).sum();
                                         // Gets the difference of the database character and searchCharacter (Lower is better)
                                         diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getSegments()), value);
-                                    })));
+                                    }));
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
 
         // TODO: The following code can definitely be improved
-        var entries = diffs.object2DoubleEntrySet().stream().sorted(Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue)).collect(Collectors.toList());
+        var entries = diffs.object2DoubleEntrySet()
+                .stream()
+                .sorted(Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue))
+//                .limit(10)
+                .collect(Collectors.toList());
 
         // If there's no characters found, don't continue
         if (entries.isEmpty()) {
@@ -595,19 +603,86 @@ public class OCRHandle {
         // Sorts any values within 0.1 by their dimensions. This number may need to change depending on the font and
         // context, though it seems to work perfectly currently. The following code ALSO ensures the difference is
         // no more than 3x, as it already most likely has a good idea of the character.
-        double allowedDouble = 0.1D;
+        double allowedDouble = diff(firstEntry.getDoubleValue(), Math.pow(firstEntry.getDoubleValue(), 2D));
+//        System.out.println("allowedDouble = " + allowedDouble);
+//        System.out.println("firstEntry = " + firstEntry);
+//        double allowedDouble = Math.pow(firstEntry.getDoubleValue(), 1.1D);
 
-        entries.removeIf(value -> OCRUtils.getDiff(value.getDoubleValue(), firstEntry.getDoubleValue()) > allowedDouble); // Removes any character without the
+//        entries.removeIf(value -> OCRUtils.getDiff(value.getDoubleValue(), firstEntry.getDoubleValue()) > allowedDouble); // Removes any character without the
+        entries.removeIf(entry -> {
+            var databaseCharacter = entry.getKey().getDatabaseCharacter();
+            return compareSizes(false, searchCharacter.getWidth(), searchCharacter.getHeight(), databaseCharacter.getAvgWidth(), databaseCharacter.getAvgHeight()) > 0.5;
+        });
 
-        // same difference (Most often a similarity of 0)
-        double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
+        System.out.println(entries);
 
-        // Sorts the equally matching characters by their width to height ratios, the first being most similar
-        entries.sort(Comparator.comparingDouble(entry -> OCRUtils.getDiff(searchRatio, entry.getKey().getDatabaseCharacter().getAvgWidth() / entry.getKey().getDatabaseCharacter().getAvgHeight())));
+//         same difference (Most often a similarity of 0)
+//        double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
+
+        int[] i = new int[] {0};
+//        System.out.println("\n\n=====================\n\n");
+
+//        System.out.println("entries = " + entries);
+////         Sorts the equally matching characters by their width to height ratios, the first being most similar
+//        entries.sort(Comparator.comparingDouble(entry -> {
+////            var diff = OCRUtils.getDiff(searchRatio, entry.getKey().getDatabaseCharacter().getAvgWidth() / entry.getKey().getDatabaseCharacter().getAvgHeight());
+//            var databaseCharacter = entry.getKey().getDatabaseCharacter();
+//            i[0]++;
+//            return compareSizes(i[0] == 2 || i[0] == 3, searchCharacter.getWidth(), searchCharacter.getHeight(), databaseCharacter.getAvgWidth(), databaseCharacter.getAvgHeight());
+//        }));
+
+//        Collections.reverse(entries);
+
+//        System.out.println("entries = " + entries);
 
         ImageLetter first = entries.get(0).getKey();
         first.setValues(searchCharacter.getValues());
         return Optional.of(first);
+    }
+
+    /**
+     *
+     * @param width1 Character from image
+     * @param height1 Character from image
+     * @param width2 Character from database
+     * @param height2 Character from database
+     * @return The similarity of rectangles, lower being less similar
+     */
+    public double compareSizes(boolean print, double width1, double height1, double width2, double height2) {
+        var res = 0D;
+        if ((width1 > height1 && width2 < height2)
+        || (width1 < height1 && width2 > height2)) {
+            // If they aren't rotated the right way (E.g. tall rectangle isn't similar to a wide one)
+            res += 1D;
+        }
+
+        var bigWidth = Math.max(width1, width2);
+        var smallWidth = bigWidth == width1 ? width2 : width1;
+
+        var bigHeight = Math.max(height1, height2);
+        var smallHeight = bigHeight == height1 ? height2 : height1;
+
+        var widthDifference = (bigWidth - smallWidth) / smallWidth;
+        var heightDifference = (bigHeight - smallHeight) / smallHeight;
+
+//        if (print) {
+//            System.out.println("widthDifference = " + widthDifference);
+//            System.out.println("heightDifference = " + heightDifference);
+//        }
+
+        res += 1 - widthDifference;
+        res += 1 - heightDifference;
+
+        if (print) {
+//            System.out.println("\n\n\nwidth1 = [" + width1 + "], height1 = [" + height1 + "], width2 = [" + width2 + "], height2 = [" + height2 + "]");
+//            System.out.println("widthDifference = " + widthDifference);
+//            System.out.println("heightDifference = " + heightDifference);
+            System.out.println("res = " + res);
+        }
+
+        // Method 1
+//        return widthDifference + heightDifference;
+        return 1 - res;
     }
 
     /**
