@@ -223,6 +223,10 @@ public class ImageLetter {
         return this.databaseCharacter.getLetter();
     }
 
+    public void setDatabaseCharacter(DatabaseCharacter databaseCharacter) {
+        this.databaseCharacter = databaseCharacter;
+    }
+
     /**
      * Gets any data set to the {@link ImageLetter} object, useful for storing any needed data about the character to be
      * used in the future.

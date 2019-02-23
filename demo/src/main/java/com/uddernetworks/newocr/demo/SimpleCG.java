@@ -51,7 +51,7 @@ public class SimpleCG {
 
 //        System.out.println("\nReal scanning:");
 
-        var scannedImage = ocrHandle.scanImage(new File("training.png"));
+        var scannedImage = ocrHandle.scanImage(new File("hard.png"));
 
         System.out.println("Got:\n" + scannedImage.getPrettyString());
 

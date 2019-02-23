@@ -179,12 +179,16 @@ public class OCRHandle {
                 });
 
         var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
+        var apostropheDatabaseCharacter = databaseManager.getAllCharacterSegments().get().stream().filter(databaseCharacter -> databaseCharacter.getLetter() == '\'').findFirst().orElseThrow();
 
 //         Combine " characters that are next to each other which would equate to a full " instead of the ' parts
         sortedLines.forEach((y, line) -> {
             final ImageLetter[] last = {null};
             line.removeIf(imageLetter -> {
                 if (imageLetter.getLetter() != '"' && imageLetter.getLetter() != '\'') {
+                    if (last[0] != null) {
+                        last[0].setDatabaseCharacter(apostropheDatabaseCharacter);
+                    }
                     last[0] = null;
                     return false;
                 }
@@ -696,11 +700,6 @@ public class OCRHandle {
     public double compareSizes(double width1, double height1, double width2, double height2, String printout) {
 //        System.out.println("print = " + print);
         var res = 0D;
-        if ((width1 > height1 && width2 < height2)
-        || (width1 < height1 && width2 > height2)) {
-            // If they aren't rotated the right way (E.g. tall rectangle isn't similar to a wide one)
-            res += 300D;
-        }
 
 //        var bigWidth = Math.max(width1, width2);
 //        var smallWidth = bigWidth == width1 ? width2 : width1;
@@ -719,6 +718,15 @@ public class OCRHandle {
         double ratio1 = width1 / height1;
         double ratio2 = width2 / height2;
         double ratioDiff = diff(ratio1, ratio2);
+
+        if ((width1 > height1 && width2 < height2)
+                || (width1 < height1 && width2 > height2)) {
+            // If they aren't rotated the right way (E.g. tall rectangle isn't similar to a wide one)
+
+            if (ratioDiff > 0.5) {
+                res += 300D;
+            }
+        }
 
 //        if (print) {
 //            System.out.println("widthDifference = " + widthDifference);
