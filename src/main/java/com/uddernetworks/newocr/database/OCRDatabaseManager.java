@@ -157,9 +157,6 @@ public class OCRDatabaseManager implements DatabaseManager {
     @Override
     public void createLetterEntry(char letter, int modifier, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
         try (var connection = dataSource.getConnection(); var createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
-            if (modifier != 0 || letter == '"') {
-                System.out.println("Modifier: " + modifier + " for character " + ((int) letter) + " (" + letter + ")");
-            }
             createLetterEntry.setInt(1, letter);
             createLetterEntry.setInt(2, modifier);
             createLetterEntry.setDouble(3, averageWidth);

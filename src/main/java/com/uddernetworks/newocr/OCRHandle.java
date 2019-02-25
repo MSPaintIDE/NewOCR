@@ -400,8 +400,7 @@ public class OCRHandle {
 
                 char letter = databaseTrainedCharacter.getValue();
 
-                CompletableFuture.runAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getModifier(), databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
-                        .thenRunAsync(() -> {
+                CompletableFuture.runAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getModifier(), databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))                        .thenRunAsync(() -> {
                             if (letter != ' ') {
                                 databaseManager.addLetterSegments(letter, databaseTrainedCharacter.getModifier(), databaseTrainedCharacter.getSegmentPercentages());
                             }
@@ -506,21 +505,37 @@ public class OCRHandle {
                 var padding = charHistogram.getVerticalPadding();
                 var newHeight = charSub.getHeight() - padding.getKey() - padding.getValue();
                 if (newHeight <= 2) continue; // Don't recognize blobs with a height of <= 2
+//                System.out.println("Padding: " + padding);
+//                System.out.println("Height = " + charSub.getHeight());
+//                System.out.println("newHeight = " + newHeight);
                 charSub = charSub.getSubimage(0, padding.getKey(), charSub.getWidth(), newHeight);
+
+//                try {
+//                    ImageIO.write(charSub.toImage(), "png", new File("E:\\NewOCR\\ind\\" + fromX + ".png"));
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
 
                 var coordinates = new ArrayList<IntPair>();
 
+                var hasDot = false;
+
                 var values = charSub.getValues();
                 for (int y = 0; y < values.length; y++) {
+                    var hasAnything = false;
                     for (int x = 0; x < values[0].length; x++) {
                         var val = values[y][x];
+                        if (val) hasAnything = true;
                         if (val) coordinates.add(new IntPair(fromX + x, fromY + y));
                     }
+
+                    if (!hasAnything) hasDot = true;
                 }
 
                 var searchCharacter = new SearchCharacter(coordinates);
                 searchCharacter.applySections();
                 searchCharacter.analyzeSlices();
+                searchCharacter.setHasDot(hasDot);
                 searchCharacters.add(searchCharacter);
             }
         }
@@ -582,8 +597,8 @@ public class OCRHandle {
             List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments().get());
 
             data.stream()
-                    // TODO: Implement these?
-//                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
+                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
+                    // TODO: Implement this?
 //                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
                     .forEach(character ->
                             OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
@@ -607,8 +622,24 @@ public class OCRHandle {
             return Optional.empty();
         }
 
-
         var firstEntry = entries.get(0);
+
+
+        System.out.println("UNREM entries = " + entries);
+
+        // Limit to the first 10 AND the ones that have a x2 or less similarity
+        entries.removeIf(entry -> entry.getDoubleValue() > firstEntry.getDoubleValue() * 3);
+
+        if (entries.isEmpty()) {
+            return Optional.empty();
+        } else if (entries.size() == 1) {
+            ImageLetter first = entries.get(0).getKey();
+            first.setValues(searchCharacter.getValues());
+            return Optional.of(first);
+        }
+
+        System.out.println("REM entries = " + entries);
+
         var secondEntry = entries.get(1);
 
         double ratio = firstEntry.getKey().getDatabaseCharacter().getAvgWidth() / firstEntry.getKey().getDatabaseCharacter().getAvgHeight();
@@ -626,6 +657,9 @@ public class OCRHandle {
 
         if (!verysmallDifference && (bigDifference || ratioDiff)) {
             System.out.println("Going on with first being " + firstEntry.getKey() + " ratio: " + ratioDifference + " (" + verysmallDifference + ")");
+            if (firstEntry.getKey().getLetter() == '.') {
+                System.out.println("entries = " + entries);
+            }
 
 //        var firstEntry = entries.get(0); // The most similar character
 

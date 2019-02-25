@@ -121,14 +121,16 @@ public class Histogram {
 
         var height = this.image.getHeight();
         var width = this.image.getWidth();
-        for (int y = 0; y < height / 2; y++) {
+        var leftOffAt = 0;
+        for (int y = 0; y < height; y++) {
             int finalY = y;
             var empty = IntStream.range(0, width).noneMatch(x -> this.image.getValue(x, finalY));
+            leftOffAt = y;
             if (empty) topPadding++;
             else break;
         }
 
-        for (int y = height - 1; y > height / 2; y--) {
+        for (int y = height - 1; y > leftOffAt; y--) {
             int finalY = y;
             var empty = IntStream.range(0, width).noneMatch(x -> this.image.getValue(x, finalY));
             if (empty) bottomPadding++;

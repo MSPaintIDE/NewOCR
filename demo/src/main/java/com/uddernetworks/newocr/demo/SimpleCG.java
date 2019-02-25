@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleCG {
 
@@ -31,19 +32,19 @@ public class SimpleCG {
 
         System.out.println("Do you want to train? (y)es/no");
 
-//        var inputLine = scanner.nextLine();
-//
-//        if ("yes".equalsIgnoreCase(inputLine) || "y".equalsIgnoreCase(inputLine)) {
-//            System.out.println("Generating features...");
-//            var start = System.currentTimeMillis();
-//            ocrHandle.trainImage(new File("training.png"));
-//            System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
-//            // HSQLDB freaks out and kills the database file after writing if it doesn't have some kind of delay
-//            // before killing the threads.
-//            TimeUnit.SECONDS.sleep(1L);
-//            databaseManager.shutdown();
-//            return;
-//        }
+        var inputLine = scanner.nextLine();
+
+        if ("yes".equalsIgnoreCase(inputLine) || "y".equalsIgnoreCase(inputLine)) {
+            System.out.println("Generating features...");
+            var start = System.currentTimeMillis();
+            ocrHandle.trainImage(new File("training.png"));
+            System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
+            // HSQLDB freaks out and kills the database file after writing if it doesn't have some kind of delay
+            // before killing the threads.
+            TimeUnit.SECONDS.sleep(1L);
+            databaseManager.shutdown();
+            return;
+        }
 
 //         Warm up and load classes for everything, which can add over 1400ms to the first scan
         // TODO: Fully implement warming up
@@ -51,7 +52,7 @@ public class SimpleCG {
 
 //        System.out.println("\nReal scanning:");
 
-        var scannedImage = ocrHandle.scanImage(new File("hard.png"));
+        var scannedImage = ocrHandle.scanImage(new File("training.png"));
 
         System.out.println("Got:\n" + scannedImage.getPrettyString());
 
