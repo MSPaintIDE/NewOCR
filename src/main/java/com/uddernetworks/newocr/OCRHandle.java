@@ -624,11 +624,18 @@ public class OCRHandle {
 
         var firstEntry = entries.get(0);
 
+        double ratio = firstEntry.getKey().getDatabaseCharacter().getAvgWidth() / firstEntry.getKey().getDatabaseCharacter().getAvgHeight();
+        double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
+
+//        System.out.println("entries = " + entries);
+
+        var ratioDifference = diff(ratio, searchRatio);
+
 
         System.out.println("UNREM entries = " + entries);
 
         // Limit to the first 10 AND the ones that have a x2 or less similarity
-        entries.removeIf(entry -> entry.getDoubleValue() > firstEntry.getDoubleValue() * 3);
+        entries.removeIf(entry -> entry.getDoubleValue() > firstEntry.getDoubleValue() * 3 && ratioDifference > 0.1);
 
         if (entries.isEmpty()) {
             return Optional.empty();
@@ -642,12 +649,12 @@ public class OCRHandle {
 
         var secondEntry = entries.get(1);
 
-        double ratio = firstEntry.getKey().getDatabaseCharacter().getAvgWidth() / firstEntry.getKey().getDatabaseCharacter().getAvgHeight();
-        double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
-
-//        System.out.println("entries = " + entries);
-
-        var ratioDifference = diff(ratio, searchRatio);
+//        double ratio = firstEntry.getKey().getDatabaseCharacter().getAvgWidth() / firstEntry.getKey().getDatabaseCharacter().getAvgHeight();
+//        double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
+//
+////        System.out.println("entries = " + entries);
+//
+//        var ratioDifference = diff(ratio, searchRatio);
 
         // Skip everything if it has a very high confidence of the character (Much higher than the closest one OR is <= 0.01 in confidence),
         // and make sure that the difference in width/height is very low, or else it will continue and sort by width/height difference.
