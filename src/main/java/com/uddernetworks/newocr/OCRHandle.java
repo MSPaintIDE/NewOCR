@@ -535,6 +535,7 @@ public class OCRHandle {
                 var searchCharacter = new SearchCharacter(coordinates);
                 searchCharacter.applySections();
                 searchCharacter.analyzeSlices();
+                System.out.println("Percentages:\n\t" + Arrays.toString(searchCharacter.getSegmentPercentages()));
                 searchCharacter.setHasDot(hasDot);
                 searchCharacters.add(searchCharacter);
             }
@@ -602,7 +603,7 @@ public class OCRHandle {
 //                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
                     .forEach(character ->
                             OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
-                                        var value = Arrays.stream(charDifference).sum();
+                                        var value = Arrays.stream(charDifference).average().orElse(0);
                                         // Gets the difference of the database character and searchCharacter (Lower is better)
                                         diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates()), value);
                                     }));
@@ -632,18 +633,18 @@ public class OCRHandle {
         var ratioDifference = diff(ratio, searchRatio);
 
 
-        System.out.println("UNREM entries = " + entries);
-
-        // Limit to the first 10 AND the ones that have a x2 or less similarity
-        entries.removeIf(entry -> entry.getDoubleValue() > firstEntry.getDoubleValue() * 3 && ratioDifference > 0.1);
-
-        if (entries.isEmpty()) {
-            return Optional.empty();
-        } else if (entries.size() == 1) {
-            ImageLetter first = entries.get(0).getKey();
-            first.setValues(searchCharacter.getValues());
-            return Optional.of(first);
-        }
+//        System.out.println("UNREM entries = " + entries);
+//
+//        // Limit to the first 10 AND the ones that have a x2 or less similarity
+//        entries.removeIf(entry -> entry.getDoubleValue() > firstEntry.getDoubleValue() * 3 && ratioDifference > 0.1);
+//
+//        if (entries.isEmpty()) {
+//            return Optional.empty();
+//        } else if (entries.size() == 1) {
+//            ImageLetter first = entries.get(0).getKey();
+//            first.setValues(searchCharacter.getValues());
+//            return Optional.of(first);
+//        }
 
         System.out.println("REM entries = " + entries);
 

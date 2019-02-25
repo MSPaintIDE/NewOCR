@@ -443,7 +443,7 @@ public class OCRUtils {
 
                     leftSize++;
                 } else if (x < middleHeight + leftHeight) {
-                    if (line[x]){
+                    if (line[x]) {
                         middleTrue++;
                     }
 
@@ -462,7 +462,7 @@ public class OCRUtils {
     }
 
     /**
-     * Splits a grid of values in half diagonally. The diagonal line will be going from the top left to bototm right if
+     * Splits a grid of values in half diagonally. The diagonal line will be going from the top left to bottom right if
      * `increasing` is `true`, and top left to bottom right if it is `false`.
      *
      * @param values     The grid to split into halves diagonally
@@ -491,7 +491,7 @@ public class OCRUtils {
             }
 
             for (int x = 0; x < values[0].length; x++) {
-                int yPos = yPositions.get(x);
+                int yPos = yPositions.getInt(x);
 
                 for (int y = 0; y < values.length; y++) {
                     if (y < yPos) {
