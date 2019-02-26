@@ -1,0 +1,1 @@
+INSERT INTO customSpaces VALUES(?, ?) ON DUPLICATE KEY UPDATE value = value;

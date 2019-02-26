@@ -10,9 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -34,8 +32,11 @@ public class OCRDatabaseManager implements DatabaseManager {
     private String getSpaceEntry;
     private String addAverageData;
     private String getAverageData;
+    private String addCustomSpace;
+    private String getCustomSpace;
 
     private final AtomicReference<List<DatabaseCharacter>> databaseCharacterCache = new AtomicReference<>();
+    private final AtomicReference<Map<Character, Double>> customSpaceCache = new AtomicReference<>(new HashMap<>());
 
     /**
      * Connects to the database with the given credentials, and executes the queries found in letters.sql and sectionData.sql
@@ -90,7 +91,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
         dataSource = new HikariDataSource(config);
 
-        List.of("letters.sql", "sectionData.sql", "data.sql").parallelStream().forEach(table -> {
+        List.of("letters.sql", "sectionData.sql", "data.sql", "customSpaces.sql").parallelStream().forEach(table -> {
             var stream = OCRDatabaseManager.class.getResourceAsStream("/" + table);
 
             try (var reader = new BufferedReader(new InputStreamReader(stream));
@@ -127,6 +128,8 @@ public class OCRDatabaseManager implements DatabaseManager {
         this.getSpaceEntry = getQuery("getSpaceEntry");
         this.addAverageData = getQuery("addAverageData");
         this.getAverageData = getQuery("getAverageData");
+        this.addCustomSpace = getQuery("addCustomSpace");
+        this.getCustomSpace = getQuery("getCustomSpace");
     }
 
     /**
@@ -313,8 +316,36 @@ public class OCRDatabaseManager implements DatabaseManager {
     }
 
     @Override
+    public void addCustomSpace(char letter, double ratio) {
+        try (var connection = dataSource.getConnection();
+             var addData = connection.prepareStatement(this.addCustomSpace)) {
+            addData.setInt(1, letter);
+            addData.setDouble(2, ratio);
+            addData.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public Future<Double> getCustomSpace(char letter) {
+        return executor.submit(() -> customSpaceCache.get().computeIfAbsent(letter, ignored -> {
+            try (var connection = dataSource.getConnection(); var getData = connection.prepareStatement(this.getCustomSpace)) {
+                getData.setInt(1, letter);
+                var resultSet = getData.executeQuery();
+                if (!resultSet.next()) return 0D;
+
+                return resultSet.getDouble(1);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return 0D;
+            }
+        }));
+    }
+
+    @Override
     public void clearData() {
-        Stream.of("letters", "sectionData", "data").parallel().forEach(table -> {
+        Stream.of("letters", "sectionData", "data", "customSpaces").parallel().forEach(table -> {
             try (var connection = dataSource.getConnection(); // Keeping the same connection throughout all tables might be faster
                  var truncate = connection.prepareStatement("TRUNCATE TABLE " + table)) {
                 truncate.executeUpdate();

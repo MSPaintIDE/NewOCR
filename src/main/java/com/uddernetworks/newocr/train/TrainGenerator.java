@@ -21,7 +21,7 @@ public class TrainGenerator {
         RenderingHints rht = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics.setRenderingHints(rht);
 
-        Font font = new Font("Comic Sans MS", Font.PLAIN, 92);
+        Font font = new Font("Monospaced.plain", Font.PLAIN, 92);
         graphics.setFont(font);
 
         int newHeight = 11;
@@ -53,14 +53,14 @@ public class TrainGenerator {
         }
 
         try {
-            ImageIO.write(image, "png", new File("training.png"));
+            ImageIO.write(image, "png", new File("training_mono.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private static void drawLine(Graphics2D drawTo, String line, int yOffset, int size) {
-        Font font = new Font("Comic Sans MS", Font.PLAIN, size);
+        Font font = new Font("Monospaced.plain", Font.PLAIN, size);
         drawTo.setFont(font);
         drawTo.setPaint(Color.BLACK);
 

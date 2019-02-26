@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SearchCharacter implements Comparable<SearchCharacter> {
 
     private char knownChar = '?';
+    private int modifier = 0;
     private boolean[][] values;
     private List<IntPair> coordinates;
     private int x;
@@ -381,6 +382,24 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     /**
+     * Sets the modifier for the current character.
+     *
+     * @param modifier The modifier of the character
+     */
+    public void setModifier(int modifier) {
+        this.modifier = modifier;
+    }
+
+    /**
+     * Gets the modifier for the current character.
+     *
+     * @return The modifier for the current character
+     */
+    public int getModifier() {
+        return modifier;
+    }
+
+    /**
      * Gets If this character has a dot.
      *
      * @return If this character has a dot
@@ -434,5 +453,4 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     public void setLetterMeta(LetterMeta letterMeta) {
         this.letterMeta = letterMeta;
     }
-
 }

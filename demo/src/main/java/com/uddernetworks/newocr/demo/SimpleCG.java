@@ -2,6 +2,7 @@ package com.uddernetworks.newocr.demo;
 
 import com.uddernetworks.newocr.OCRHandle;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
+import com.uddernetworks.newocr.train.TrainOptions;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -36,8 +37,12 @@ public class SimpleCG {
 
         if ("yes".equalsIgnoreCase(inputLine) || "y".equalsIgnoreCase(inputLine)) {
             System.out.println("Generating features...");
+
             var start = System.currentTimeMillis();
-            ocrHandle.trainImage(new File("training.png"));
+            ocrHandle.trainImage(new File("training.png"), new TrainOptions() {{
+                setSpecialSpaces('`');
+            }});
+
             System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
             // HSQLDB freaks out and kills the database file after writing if it doesn't have some kind of delay
             // before killing the threads.

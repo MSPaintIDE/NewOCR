@@ -93,6 +93,24 @@ public interface DatabaseManager {
     Future<Double> getAveragedData(String name);
 
     /**
+     * Adds a custom between-character space amount for after a character, as some fonts have different padding after
+     * certain character. This calculated with of padding after a character is subtracted from the amount needed for a
+     * space.
+     *
+     * @param letter The letter before the space width
+     * @param ratio The width/height ratio of the space
+     */
+    void addCustomSpace(char letter, double ratio);
+
+    /**
+     * Gets the custom between-character space associated with the character, to appear after the character.
+     *
+     * @param letter The letter this space associates with
+     * @return The custom between-character space width/height ratio, or 0 if no custom space is found
+     */
+    Future<Double> getCustomSpace(char letter);
+
+    /**
      * Clears all data in the database, primarily used for before training.
      */
     void clearData();

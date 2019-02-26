@@ -16,10 +16,20 @@ The branch you are currently on is `dev`. This branch is exclusively for new fea
 ### Summary
 NewOCR uses a super sketchy method of detecting characters, which in short breaks up each character into different subsections, then gets the percentage of filled in pixels each section contains, and puts them into an array. It then gets the closest matching array, which is decided as the closest pixel.
 
+### Preprocessing
+
+The first step in reading the image is what happens in nearly all OCRs, and it is to remove any noise and other distortions to the input image. This also includes binarization, which is making the input image purely black and white. All these things make character recognition and identification.
+
+What NewOCR uses for preprocessing is primarily [leptonica](http://www.leptonica.com/), with the amount of preprocessing dependent on if the setting for natural images is on or off, due to the extra processing required for natural images. Something like a screenshot of just text doesn't require nearly as much processing as a photo of your handwriting.
+
+### Character Recognition
+
+After the image went through any necessary preprocessing phases and is black and white, it needs to detect the bounds of the lines and characters. It does this by finding horizontal separations to find the general character lines, then finding vertical spaces to find each individual character. Once character-dependent vertical padding is removed, the character bounds are found. More details on this method can be found on page 55 of [this paper](https://www.researchgate.net/publication/260405352_OPTICAL_CHARACTER_RECOGNITION_OCR_SYSTEM_FOR_MULTIFONT_ENGLISH_TEXTS_USING_DCT_WAVELET_TRANSFORM).
+
 ### Sectioning
 Each letter is broken up into 16 sections. These aren't pixel-based, but percentage based. This allows them to be created on all sized letters with the same proportions.
 
-First, the letter is horizontally broken up into top and bottom sections. Then, each of those two sections are broken up vertically into another two sections. The remaining sections are broken up into diagonal sections, with their diagonals angling towards the center of the character. A visual of what the sections look like and their index of the value array (Will be used later) can be found here:  
+First, the letter is horizontally broken up into top and bottom sections. Then, each of those two sections are broken up vertically into another two sections. The remaining sections are broken up into diagonal sections, with their diagonals angling towards the center of the character. A visual of what the sections look like and their index of the value array (Will be used later) can be found here: 
 ![Section examples 1](/images/E1.png)
 
 After that process has occurred, the second sectioning process starts. This one is more simple, in that it first horizontally separates it into thirds, then those sections into vertical thirds. The sections and their indices look like the following:  
