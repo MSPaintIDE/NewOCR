@@ -201,10 +201,7 @@ public class OCRHandle {
                     return false;
                 }
 
-                System.out.println(imageLetter);
-
                 if (last[0] == null) {
-                    System.out.println("Setting with coords " + imageLetter.getX() + ", " + imageLetter.getY());
                     last[0] = imageLetter;
                     return false;
                 }
@@ -212,10 +209,8 @@ public class OCRHandle {
                 // TODO: This logic with the apostropheRatio seems a bit sketchy... it may need to be looked at/tested
                 var avgLength = (double) last[0].getHeight() * apostropheRatio;
                 if (imageLetter.getX() - last[0].getX() <= avgLength) {
-                    System.out.println("Merging " + last[0] + " on the left with " + imageLetter + " on the right");
                     // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
                     last[0].merge(imageLetter);
-                    System.out.println("Coords: " + last[0].getX() + ", " + last[0].getY());
                     last[0] = null;
                     return true;
                 }
@@ -275,7 +270,6 @@ public class OCRHandle {
         // First clear the database
         var clearStart = System.currentTimeMillis();
         databaseManager.clearData();
-        System.out.println("Cleared in " + (System.currentTimeMillis() - clearStart) + "ms");
 
         List<TrainedCharacterData> trainedCharacterDataList = new ArrayList<>();
 
@@ -376,7 +370,6 @@ public class OCRHandle {
                     }
 
                     if (options.getSpecialSpaces().contains(current)) {
-                        System.out.println("Custom space for " + current);
                         nextMeasuringSpace = searchCharacter;
                     }
 
@@ -518,10 +511,8 @@ public class OCRHandle {
                 var ratio = spaceRatio; // The ratio of the space DatabaseCharacter
                 var usedWidth = ratio * fontSize; // The width of the space for this specific fot size
                 usedWidth += spaceRatioOverride * fontSize;
-                System.out.println(gap + " / " + usedWidth);
 
                 int spaces = '!' == searchCharacter.getLetter() ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
-                System.out.println("spaces = " + spaces);
 
                 for (int i = 0; i < spaces; i++) {
                     ret.add(new ImageLetter(space, (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, ratio));
@@ -546,7 +537,6 @@ public class OCRHandle {
      */
     private int spaceRound(double input) {
         int known = (int) Math.floor(input);
-        System.out.println("known = " + known);
         double extra = input % 1;
         known += OCRUtils.checkDifference(extra, 1, 0.2D) ? 1 : 0;
         return known;
@@ -604,7 +594,6 @@ public class OCRHandle {
                 var searchCharacter = new SearchCharacter(coordinates);
                 searchCharacter.applySections();
                 searchCharacter.analyzeSlices();
-                System.out.println("Percentages:\n\t" + Arrays.toString(searchCharacter.getSegmentPercentages()));
                 searchCharacter.setHasDot(hasDot);
                 searchCharacters.add(searchCharacter);
             }
@@ -698,8 +687,6 @@ public class OCRHandle {
 
         var ratioDifference = diff(ratio, searchRatio);
 
-        System.out.println("REM entries = " + entries);
-
         var secondEntry = entries.get(1);
 
         // Skip everything if it has a very high confidence of the character (Much higher than the closest one OR is <= 0.01 in confidence),
@@ -709,20 +696,11 @@ public class OCRHandle {
         var ratioDiff = ratioDifference > 0.1; // If true, SORT
 
         if (!verysmallDifference && (bigDifference || ratioDiff)) {
-            System.out.println("Going on with first being " + firstEntry.getKey() + " ratio: " + ratioDifference + " (" + verysmallDifference + ")");
-            if (firstEntry.getKey().getLetter() == '.') {
-                System.out.println("entries = " + entries);
-            }
-
             entries.sort(Comparator.comparingDouble(entry -> {
                 var databaseCharacter = entry.getKey().getDatabaseCharacter();
                 // Lower is more similar
                 return compareSizes(searchCharacter.getWidth(), searchCharacter.getHeight(), databaseCharacter.getAvgWidth(), databaseCharacter.getAvgHeight());
             }));
-
-            System.out.println(" \t \t entries = " + entries);
-        } else {
-            System.out.println("Pretty sure " + firstEntry.getKey() + " is right w/h ratio: " + diff(ratio, searchRatio) + " and difference of " + firstEntry.getDoubleValue());
         }
 
         ImageLetter first = entries.get(0).getKey();
