@@ -21,7 +21,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -262,7 +263,7 @@ public class OCRHandle {
      * Scans the input image and creates training data based off of it. It must be an input image created from
      * {@link TrainGenerator} or something of a similar format.
      *
-     * @param file The input image to be trained from
+     * @param file    The input image to be trained from
      * @param options The options used by the system
      */
     public void trainImage(File file, TrainOptions options) throws ExecutionException, InterruptedException {
@@ -412,42 +413,106 @@ public class OCRHandle {
 
         // Before writing the data to the database and finalizing the data, it needs to read the training image and
         // detect any differences, and then modify the collected data accordingly.
-        for (int i = 0; i < searchCharacterLines.size(); i++) {
-            var line = searchCharacterLines.get(i);
-            int lineNumber = i;
-            line.forEach(searchCharacter -> {
-                // Because the second and third W will be for space testing
-                AtomicBoolean foundW = new AtomicBoolean(false);
-                getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresentOrElse(imageLetter -> {
-                    var correct = searchCharacter.getKnownChar();
-                    var calculatedChar = imageLetter.getLetter();
-                    System.out.print(calculatedChar);
 
-                    if (foundW.get()) return;
-                    if (correct == 'W') {
-                        foundW.set(true);
-                    }
+        // TODO: Make this process automatic
+        var replace = Map.of(
+                'x', List.of('O'),
+                '.', List.of('w', '*', 'a'),
+                ':', List.of('i', ';'),
+                '"', List.of('\''));
 
-                    if (calculatedChar == 'O' && correct == 'x') {
-//                        System.err.println("Incorrect character for " + correct + " (Found as " + calculatedChar + " on line " + lineNumber + ")");
-                        var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, correct, searchCharacter.getModifier());
+        var exclude = new HashMap<Character, List<Character>>();
+        replace.forEach((key, value) -> exclude.put(key, new ArrayList<>()));
 
-                        for (int i1 = 0; i1 < 20; i1++) {
-                            System.out.println("i1 = " + i1);
-                            trainedSearchCharacter.recalculateTo(searchCharacter);
+        Map<Character, Integer> errorsForCharacter = new HashMap<>();
 
-                            var gotten = getCharacterFor(searchCharacter, trainedCharacterDataList);
-                            if (gotten.isEmpty()) break;
-                            var gottenCharacter = gotten.get();
+        getErrorsForAll(searchCharacterLines, trainedCharacterDataList).forEach((letter, adder) -> errorsForCharacter.put(letter, adder.intValue()));
 
-                            if (gottenCharacter.getLetter() == correct) break;
+        for (int i2 = 0; i2 < 10; i2++) {
+            System.out.println("=============================  [" + i2 + "]  ==============================");
+
+//            var found = new ArrayList<Character>();
+
+            var changes = new LongAdder();
+            for (int i = 0; i < searchCharacterLines.size(); i++) {
+                var line = searchCharacterLines.get(i);
+                int lineNumber = i;
+                line.forEach(searchCharacter -> {
+                    // Because the second and third W will be for space testing
+                    var foundW = new LongAdder();
+                    getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresentOrElse(imageLetter -> {
+                        var correct = searchCharacter.getKnownChar();
+                        var calculatedChar = imageLetter.getLetter();
+                        System.out.print(calculatedChar);
+
+                        if (correct == 'W') foundW.increment();
+                        if (foundW.intValue() == 2) return;
+
+                        if (correct != '?') {
+
+                            if (!replace.containsKey(correct)) return;
+                            if (!replace.get(correct).contains(calculatedChar)) return;
+
+//                            if (found.contains(correct)) return;
+//                        if (calculatedChar != '?' && calculatedChar != correct && correct == '.' && !foundP.get()) {
+//                            found.add(correct);
+
+                            if (exclude.containsKey(correct) && exclude.get(correct).contains(calculatedChar)) return;
+
+//                    if (calculatedChar == 'O' && correct == 'x') {
+                            System.err.println("\nIncorrect character for " + correct + " (Found as " + calculatedChar + " on line " + lineNumber + ")");
+                            var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, correct, searchCharacter.getModifier());
+
+                            // Try and correct the training data
+                            var maxIterations = 1000;
+
+                            int recalcAttempts;
+                            for (recalcAttempts = 0; recalcAttempts < maxIterations; recalcAttempts++) {
+                                trainedSearchCharacter.recalculateTo(searchCharacter);
+
+                                var gotten = getCharacterFor(searchCharacter, trainedCharacterDataList);
+                                if (gotten.isEmpty()) break;
+                                var gottenCharacter = gotten.get();
+
+                                if (gottenCharacter.getLetter() == correct) break;
+                            }
+
+                            if (recalcAttempts == maxIterations) {
+                                trainedSearchCharacter.undoLastRecalculations(recalcAttempts);
+                                exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(calculatedChar);
+                                return;
+                            }
+
+                            // If there is more errors than before, OR if it maxed out on attempts, undo it and add to exclusions
+                            var errors = getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct);
+                            var previousErrors = errorsForCharacter.getOrDefault(correct, Integer.MAX_VALUE);
+
+
+                            System.err.println("Recalculated " + correct + " after " + recalcAttempts + " attempts");
+
+                            if (errors > previousErrors) {
+                                System.err.println("The previous recalculation created " + (errors - previousErrors) + " more errors, so " + recalcAttempts + " recalculations are being undone.");
+                                trainedSearchCharacter.undoLastRecalculations(recalcAttempts);
+                                exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(calculatedChar);
+                                return;
+                            }
+
+                            changes.increment();
+//                            trainedSearchCharacter.finishRecalculations();
                         }
-                        trainedSearchCharacter.finishRecalculations();
-                    }
 
-                }, () -> System.err.println("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
-            });
-            System.out.print('\n');
+                    }, () -> System.err.println("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
+                });
+                System.out.print('\n');
+            }
+
+            System.out.println("===========================================================");
+
+            if (changes.intValue() == 0) {
+                System.out.println("Nothing changed, so stopping correction.");
+                break;
+            }
+//            if (!foundP.get()) break;
         }
 
         debug("Writing data to database...");
@@ -455,7 +520,7 @@ public class OCRHandle {
 
         // Add the apostropheRatios data into the database
         CompletableFuture.runAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios.stream().mapToDouble(Double::doubleValue).toArray()))
-        .thenRunAsync(() -> customSpaces.forEach((character, ratios) -> databaseManager.addCustomSpace(character, ratios.stream().mapToDouble(Double::doubleValue).average().orElse(0))));
+                .thenRunAsync(() -> customSpaces.forEach((character, ratios) -> databaseManager.addCustomSpace(character, ratios.stream().mapToDouble(Double::doubleValue).average().orElse(0))));
 
         // Inserts all character data into the database after recalculating the
         trainedCharacterDataList.forEach(databaseTrainedCharacter -> {
@@ -476,6 +541,35 @@ public class OCRHandle {
         });
 
         debug("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
+    }
+
+    private Map<Character, LongAdder> getErrorsForAll(List<List<SearchCharacter>> charData, List<TrainedCharacterData> trainedCharacterDataList) {
+        var errors = new HashMap<Character, LongAdder>();
+        charData.parallelStream().forEach(line -> {
+            var foundW = new LongAdder();
+            line.parallelStream()
+                    .forEach(searchCharacter -> getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresent(imageLetter -> {
+                        var correct = searchCharacter.getKnownChar();
+                        var calculatedChar = imageLetter.getLetter();
+                        if (correct == 'W') foundW.increment();
+                        if (foundW.intValue() == 2) return;
+                        if (calculatedChar != correct) errors.computeIfAbsent(correct, x -> new LongAdder()).increment();
+                    }));
+        });
+
+        return errors;
+    }
+
+    private int getErrorsForCharacter(List<List<SearchCharacter>> charData, List<TrainedCharacterData> trainedCharacterDataList, char checking) {
+        var errors = new AtomicInteger(0);
+        charData.parallelStream().forEach(line -> line.parallelStream()
+                .forEach(searchCharacter -> getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresent(imageLetter -> {
+                    var correct = searchCharacter.getKnownChar();
+                    var calculatedChar = imageLetter.getLetter();
+                    if (correct == checking && calculatedChar != correct) errors.incrementAndGet();
+                })));
+
+        return errors.get();
     }
 
     private TrainedCharacterData getTrainedCharacter(List<TrainedCharacterData> trainedCharacterDataList, char current, int finalModifier) {
@@ -735,9 +829,9 @@ public class OCRHandle {
     /**
      * Compares the ratios of the given width and heights
      *
-     * @param width1 Character from image
+     * @param width1  Character from image
      * @param height1 Character from image
-     * @param width2 Character from database
+     * @param width2  Character from database
      * @param height2 Character from database
      * @return The similarity of rectangles, lower being more similar
      */

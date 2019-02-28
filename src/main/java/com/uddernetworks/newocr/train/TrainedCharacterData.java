@@ -2,11 +2,8 @@ package com.uddernetworks.newocr.train;
 
 import com.uddernetworks.newocr.LetterMeta;
 import com.uddernetworks.newocr.character.SearchCharacter;
-import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
-import it.unimi.dsi.fastutil.doubles.DoubleList;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.OptionalDouble;
 
 /**
@@ -25,9 +22,9 @@ public class TrainedCharacterData {
     private double sizeRatio = -1; //        Width / Height
     private boolean empty = true;
     private LetterMeta letterMeta = LetterMeta.NONE;
-    private List<double[]> recalculatingList = new ArrayList<>();
-    private DoubleList recalculatingWidths = new DoubleArrayList();
-    private DoubleList recalculatingHeights = new DoubleArrayList();
+    private LinkedList<double[]> recalculatingList = new LinkedList<>();
+    private LinkedList<Double> recalculatingWidths = new LinkedList<>();
+    private LinkedList<Double> recalculatingHeights = new LinkedList<>();
 
     /**
      * Creates a {@link TrainedCharacterData} from a character value with a modifier of 0.
@@ -141,6 +138,27 @@ public class TrainedCharacterData {
         if (searchCharacter.getWidth() != 0 && searchCharacter.getHeight() != 0) {
             recalculatingWidths.add((double) searchCharacter.getWidth());
             recalculatingHeights.add((double) searchCharacter.getHeight());
+        }
+    }
+
+    /**
+     * Removed the last x entries added by {@link TrainedCharacterData#recalculateTo(SearchCharacter)}.
+     *
+     * @param amount The amount of entries to remove
+     */
+    public void undoLastRecalculations(int amount) {
+        boolean removingList = amount < this.recalculatingList.size();
+        boolean removingHeights = amount < this.recalculatingHeights.size();
+        boolean removingWidths = amount < this.recalculatingWidths.size();
+
+        if (!removingList) this.recalculatingList.clear();
+        if (!removingHeights) this.recalculatingHeights.clear();
+        if (!removingWidths) this.recalculatingWidths.clear();
+
+        for (int i = 0; i < amount; i++) {
+            if (removingList) this.recalculatingList.removeLast();
+            if (removingHeights) this.recalculatingHeights.removeLast();
+            if (removingWidths) this.recalculatingWidths.removeLast();
         }
     }
 

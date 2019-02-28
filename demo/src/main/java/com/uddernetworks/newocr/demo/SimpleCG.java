@@ -21,10 +21,10 @@ public class SimpleCG {
     private static final int WHITE = Color.WHITE.getRGB();
 
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
-        new SimpleCG().main();
+        new SimpleCG().mainInstance(args);
     }
 
-    private void main() throws IOException, InterruptedException, ExecutionException {
+    private void mainInstance(String[] args) throws IOException, InterruptedException, ExecutionException {
         var databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db"));
         var scanner = new Scanner(System.in);
         var ocrHandle = new OCRHandle(databaseManager);
@@ -33,7 +33,7 @@ public class SimpleCG {
 
         System.out.println("Do you want to train? (y)es/no");
 
-        var inputLine = scanner.nextLine();
+        var inputLine = args.length > 0 && args[0].equalsIgnoreCase("train") ? "yes" : scanner.nextLine();
 
         if ("yes".equalsIgnoreCase(inputLine) || "y".equalsIgnoreCase(inputLine)) {
             System.out.println("Generating features...");
