@@ -188,7 +188,7 @@ public class OCRHandle {
                 });
 
         var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
-        var apostropheDatabaseCharacter = databaseManager.getAllCharacterSegments().get().stream().filter(databaseCharacter -> databaseCharacter.getLetter() == '\'').findFirst().orElseThrow();
+//        var apostropheDatabaseCharacter = databaseManager.getAllCharacterSegments().get().stream().filter(databaseCharacter -> databaseCharacter.getLetter() == '\'').findFirst().orElseThrow();
 
 //      Combine " characters that are next to each other which would equate to a full " instead of the ' parts
         sortedLines.forEach((y, line) -> {
@@ -212,6 +212,7 @@ public class OCRHandle {
                 var avgLength = (double) last[0].getHeight() * apostropheRatio;
                 if (imageLetter.getX() - last[0].getX() <= avgLength) {
                     // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
+                    last[0].setLetter('"');
                     last[0].merge(imageLetter);
                     last[0] = null;
                     return true;
@@ -419,7 +420,8 @@ public class OCRHandle {
                 'x', List.of('O'),
                 '.', List.of('w', '*', 'a'),
                 ':', List.of('i', ';'),
-                '"', List.of('\''));
+                '"', List.of('\'')); // ,
+//        '\'', List.of('"'))
 
         var exclude = new HashMap<Character, List<Character>>();
         replace.forEach((key, value) -> exclude.put(key, new ArrayList<>()));
@@ -427,6 +429,9 @@ public class OCRHandle {
         Map<Character, Integer> errorsForCharacter = new HashMap<>();
 
         getErrorsForAll(searchCharacterLines, trainedCharacterDataList).forEach((letter, adder) -> errorsForCharacter.put(letter, adder.intValue()));
+
+        System.out.println("errorsForCharacter = " + errorsForCharacter);
+//        System.exit(0);
 
         for (int i2 = 0; i2 < 10; i2++) {
             System.out.println("=============================  [" + i2 + "]  ==============================");
@@ -483,6 +488,7 @@ public class OCRHandle {
                                 return;
                             }
 
+                            trainedSearchCharacter.finishRecalculations();
                             // If there is more errors than before, OR if it maxed out on attempts, undo it and add to exclusions
                             var errors = getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct);
                             var previousErrors = errorsForCharacter.getOrDefault(correct, Integer.MAX_VALUE);
