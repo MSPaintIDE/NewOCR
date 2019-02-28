@@ -1,6 +1,5 @@
 package com.uddernetworks.newocr.character;
 
-import com.uddernetworks.newocr.database.DatabaseCharacter;
 import com.uddernetworks.newocr.utils.IntPair;
 
 import java.util.List;
@@ -13,33 +12,35 @@ import java.util.stream.Stream;
  */
 public class ImageLetter {
 
-    private DatabaseCharacter databaseCharacter;
+    private char letter;
     private int x;
     private int y;
     private int width;
     private int height;
+    private double averageWidth;
+    private double averageHeight;
     private double ratio;
     private boolean[][] values;
     private List<IntPair> coordinates;
     private Object data;
+    private double maxCenter;
+    private double minCenter;
 
     /**
      * Creates an ImageLetter from collected data.
-     * @param databaseCharacter The {@link DatabaseCharacter} that is decided to be related to this character
      * @param x The X coordinate of this character
      * @param y The Y coordinate of this character
      * @param width The width of this character
      * @param height The height of this character
      * @param ratio The width/height ratio of this character
      */
-    public ImageLetter(DatabaseCharacter databaseCharacter, int x, int y, int width, int height, double ratio) {
-        this(databaseCharacter, x, y, width, height, ratio, null);
+    public ImageLetter(char letter, int x, int y, int width, int height, double averageWidth, double averageHeight, double ratio) {
+        this(letter, x, y, width, height, averageWidth, averageHeight, ratio, null);
     }
 
     /**
      * Creates an ImageLetter from collected data.
      *
-     * @param databaseCharacter The {@link DatabaseCharacter} that is decided to be related to this character
      * @param x The X coordinate of this character
      * @param y The Y coordinate of this character
      * @param width The width of this character
@@ -47,12 +48,14 @@ public class ImageLetter {
      * @param ratio The width/height ratio of this character
      * @param coordinates The data coordinates of this character (In form of [Black, Total])
      */
-    public ImageLetter(DatabaseCharacter databaseCharacter, int x, int y, int width, int height, double ratio, List<IntPair> coordinates) {
-        this.databaseCharacter = databaseCharacter;
+    public ImageLetter(char letter, int x, int y, int width, int height, double averageWidth, double averageHeight, double ratio, List<IntPair> coordinates) {
+        this.letter = letter;
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+        this.averageWidth = averageWidth;
+        this.averageHeight = averageHeight;
         this.ratio = ratio;
         this.coordinates = coordinates;
     }
@@ -103,15 +106,6 @@ public class ImageLetter {
         }
 
         this.coordinates.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
-    }
-
-    /**
-     * Gets the {@link DatabaseCharacter} found.
-     *
-     * @return The {@link DatabaseCharacter} found
-     */
-    public DatabaseCharacter getDatabaseCharacter() {
-        return databaseCharacter;
     }
 
     /**
@@ -188,6 +182,42 @@ public class ImageLetter {
     }
 
     /**
+     * Gets the average width of this character's trained data.
+     *
+     * @return The average width of the character
+     */
+    public double getAverageWidth() {
+        return averageWidth;
+    }
+
+    /**
+     * Sets the average width of this character's trained data.
+     *
+     * @param averageWidth The average width of the character
+     */
+    public void setAverageWidth(double averageWidth) {
+        this.averageWidth = averageWidth;
+    }
+
+    /**
+     * Gets the average height of this character's trained data.
+     *
+     * @return The average height of the character
+     */
+    public double getAverageHeight() {
+        return averageHeight;
+    }
+
+    /**
+     * Sets the average height of this character's trained data.
+     *
+     * @param averageHeight The average height of the character
+     */
+    public void setAverageHeight(double averageHeight) {
+        this.averageHeight = averageHeight;
+    }
+
+    /**
      * Gets the width/height ratio of this character.
      *
      * @return The width/height ratio of this character
@@ -220,11 +250,16 @@ public class ImageLetter {
      * @return The character value found for this character
      */
     public char getLetter() {
-        return this.databaseCharacter.getLetter();
+        return this.letter;
     }
 
-    public void setDatabaseCharacter(DatabaseCharacter databaseCharacter) {
-        this.databaseCharacter = databaseCharacter;
+    /**
+     * Sets the letter value for this character.
+     *
+     * @param letter The character value for this character.
+     */
+    public void setLetter(char letter) {
+        this.letter = letter;
     }
 
     /**
@@ -277,6 +312,42 @@ public class ImageLetter {
 
     @Override
     public String toString() {
-        return getLetter() + (databaseCharacter.getModifier() > 0 ? " [" + databaseCharacter.getModifier() + "]" : "");
+        return String.valueOf(getLetter());
+    }
+
+    /**
+     * Gets the minimum relative center value from the top of the character found in the training set for this font size.
+     *
+     * @return The minimum relative center value from the top of the character found in the training set for this font size
+     */
+    public double getMinCenter() {
+        return minCenter;
+    }
+
+    /**
+     * Sets the minimum relative center value from the top of the character found in the training set for this font size.
+     *
+     * @param minCenter The minimum relative center value from the top of the character found in the training set for this font size
+     */
+    public void setMinCenter(double minCenter) {
+        this.minCenter = minCenter;
+    }
+
+    /**
+     * Gets the maximum relative center value from the top of the character found in the training set for this font size.
+     *
+     * @return The maximum relative center value from the top of the character found in the training set for this font size
+     */
+    public double getMaxCenter() {
+        return maxCenter;
+    }
+
+    /**
+     * Sets the maximum relative center value from the top of the character found in the training set for this font size.
+     *
+     * @param maxCenter  The maximum relative center value from the top of the character found in the training set for this font size
+     */
+    public void setMaxCenter(double maxCenter) {
+        this.maxCenter = maxCenter;
     }
 }

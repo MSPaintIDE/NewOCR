@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class OCRHandle {
@@ -109,9 +109,9 @@ public class OCRHandle {
                     return -1;
                 })
                 .forEach(imageLetter -> {
-                    double maxCenter = imageLetter.getDatabaseCharacter().getMaxCenter();
-                    double minCenter = imageLetter.getDatabaseCharacter().getMinCenter();
-                    boolean subtract = maxCenter < 0 && imageLetter.getDatabaseCharacter().getMinCenter() < 0;
+                    double maxCenter = imageLetter.getMaxCenter();
+                    double minCenter = imageLetter.getMinCenter();
+                    boolean subtract = maxCenter < 0 && imageLetter.getMinCenter() < 0;
                     double centerDiff = subtract ?
                             maxCenter + minCenter :
                             maxCenter - minCenter;
@@ -149,7 +149,7 @@ public class OCRHandle {
                         return pair;
                     });
 
-                    double ratio = imageLetter.getDatabaseCharacter().getAvgWidth() / imageLetter.getDatabaseCharacter().getAvgHeight();
+                    double ratio = imageLetter.getAverageWidth() / imageLetter.getAverageHeight();
                     double diff = Math.max(ratio, imageLetter.getRatio()) - Math.min(ratio, imageLetter.getRatio());
 
                     // This is signaled when the difference of the ratios are a value that is probably incorrect.
@@ -195,7 +195,8 @@ public class OCRHandle {
             line.removeIf(imageLetter -> {
                 if (imageLetter.getLetter() != '"' && imageLetter.getLetter() != '\'') {
                     if (last[0] != null) {
-                        last[0].setDatabaseCharacter(apostropheDatabaseCharacter);
+//                        last[0].setDatabaseCharacter(apostropheDatabaseCharacter);
+                        last[0].setLetter('\'');
                     }
                     last[0] = null;
                     return false;
@@ -348,6 +349,7 @@ public class OCRHandle {
                         // If the current character is the FIRST `W`, sets beforeSpaceX to the current far right coordinate
                         // of the space (X + width), and go up another character (Skipping the space in trainString)
                     } else if (letterIndex == trainString.length() - 2) {
+                        searchCharacter.setKnownChar('W');
                         beforeSpaceX = searchCharacter.getX() + searchCharacter.getWidth();
                         letterIndex++;
                         continue;
@@ -355,6 +357,7 @@ public class OCRHandle {
                         // If it's the last character, add the space based on beforeSpaceX and the current X, (Getting the
                         // width of the space) and reset the line
                     } else if (letterIndex == trainString.length()) {
+                        searchCharacter.setKnownChar('W');
                         spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX, lineHeight);
                         letterIndex = 0;
                         continue;
@@ -406,32 +409,49 @@ public class OCRHandle {
 
         debug(searchCharacters.size() + " characters found");
 
-//
-//        // Before writing the data to the database and finalizing the data, it needs to read the training image and
-//        // detect any differences, and then modify the collected data accordingly.
-//        for (int i = 0; i < searchCharacterLines.size(); i++) {
-//            var line = searchCharacterLines.get(i);
-//            int lineNumber = i;
-//            line.forEach(searchCharacter -> {
-//
-//                getCharacterFor(searchCharacter).ifPresentOrElse(imageLetter -> {
-//                    var correct = searchCharacter.getKnownChar();
-//                    var calculatedChar = imageLetter.getLetter();
-//
-//                    if (calculatedChar != correct) {
+
+        // Before writing the data to the database and finalizing the data, it needs to read the training image and
+        // detect any differences, and then modify the collected data accordingly.
+        for (int i = 0; i < searchCharacterLines.size(); i++) {
+            var line = searchCharacterLines.get(i);
+            int lineNumber = i;
+            line.forEach(searchCharacter -> {
+                // Because the second and third W will be for space testing
+                AtomicBoolean foundW = new AtomicBoolean(false);
+                getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresentOrElse(imageLetter -> {
+                    var correct = searchCharacter.getKnownChar();
+                    var calculatedChar = imageLetter.getLetter();
+                    System.out.print(calculatedChar);
+
+                    if (foundW.get()) return;
+                    if (correct == 'W') {
+                        foundW.set(true);
+                    }
+
+                    if (calculatedChar == 'O' && correct == 'x') {
 //                        System.err.println("Incorrect character for " + correct + " (Found as " + calculatedChar + " on line " + lineNumber + ")");
-//                        var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, correct, searchCharacter.getModifier());
-//                        trainedSearchCharacter.recalculateTo(searchCharacter);
-//                    }
-//
-//                }, () -> System.err.println("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
-//            });
-//        }
+                        var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, correct, searchCharacter.getModifier());
+
+                        for (int i1 = 0; i1 < 20; i1++) {
+                            System.out.println("i1 = " + i1);
+                            trainedSearchCharacter.recalculateTo(searchCharacter);
+
+                            var gotten = getCharacterFor(searchCharacter, trainedCharacterDataList);
+                            if (gotten.isEmpty()) break;
+                            var gottenCharacter = gotten.get();
+
+                            if (gottenCharacter.getLetter() == correct) break;
+                        }
+                        trainedSearchCharacter.finishRecalculations();
+                    }
+
+                }, () -> System.err.println("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
+            });
+            System.out.print('\n');
+        }
 
         debug("Writing data to database...");
         long start = System.currentTimeMillis();
-
-        debug("trainedCharacterDataList = " + trainedCharacterDataList);
 
         // Add the apostropheRatios data into the database
         CompletableFuture.runAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios.stream().mapToDouble(Double::doubleValue).toArray()))
@@ -515,7 +535,7 @@ public class OCRHandle {
                 int spaces = '!' == searchCharacter.getLetter() ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
 
                 for (int i = 0; i < spaces; i++) {
-                    ret.add(new ImageLetter(space, (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, ratio));
+                    ret.add(new ImageLetter(' ', (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, usedWidth, fontSize, ratio));
                 }
 
                 prev = searchCharacter;
@@ -608,38 +628,38 @@ public class OCRHandle {
         return Math.abs(one - two);
     }
 
-    private int getEstimatedLineHeight(SearchImage image) {
-        var list = new ArrayList<Integer>();
-        var width = image.getWidth();
-        var emptyCounter = 0;
-        var topBuffer = true;
-        for (int y = 0; y < image.getHeight(); y++) {
-            int finalY = y;
-            var empty = IntStream.range(0, width).allMatch(x -> image.getValue(x, finalY));
-            if (empty) {
-                if (topBuffer) {
-                    topBuffer = false;
-                    continue;
-                }
+    /**
+     * Actually matches the {@link SearchCharacter} object to a real character from the database.
+     *
+     * @param searchCharacter The input {@link SearchCharacter} to match to
+     * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
+     */
+    private Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter) {
+        try {
+            Object2DoubleMap<ImageLetter> diffs = new Object2DoubleOpenHashMap<>(); // The lower value the better
 
-                if (emptyCounter > 0) {
-                    list.add(emptyCounter);
-                    emptyCounter = 0;
-                }
-            } else if (!topBuffer) {
-                emptyCounter++;
-            }
+            var data = new ArrayList<>(databaseManager.getAllCharacterSegments().get());
+
+            data.stream()
+                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
+                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
+                    .forEach(character ->
+                            OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
+                                var value = Arrays.stream(charDifference).average().orElse(0);
+                                // Gets the difference of the database character and searchCharacter (Lower is better)
+                                var imageLetter = new ImageLetter(character.getLetter(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getAvgWidth(), character.getAvgHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates());
+                                imageLetter.setMaxCenter(character.getMaxCenter());
+                                imageLetter.setMinCenter(character.getMinCenter());
+                                diffs.put(imageLetter, value);
+                            }));
+
+            return getCharacterFor(searchCharacter, diffs);
+
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
 
-        if (emptyCounter > 0) list.add(emptyCounter);
-
-        return (int) Math.round(list.stream().mapToInt(t -> t).average().orElse(10));
-    }
-
-    private int countFrequency(SearchImage input, int y) {
-        return (int) IntStream.range(0, input.getWidth())
-                .filter(x -> input.getValue(x, y))
-                .count();
+        return Optional.empty();
     }
 
     /**
@@ -648,26 +668,31 @@ public class OCRHandle {
      * @param searchCharacter The input {@link SearchCharacter} to match to
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
-    private Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter) {
+    private Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, List<TrainedCharacterData> data) {
         Object2DoubleMap<ImageLetter> diffs = new Object2DoubleOpenHashMap<>(); // The lower value the better
 
-        try {
-            // All the possible DatabaseCharacters that `searchCharacter` can be from the database
-            List<DatabaseCharacter> data = new ArrayList<>(databaseManager.getAllCharacterSegments().get());
+        data.stream()
+                .filter(character -> character.hasDot() == searchCharacter.hasDot())
+                .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
+                .forEach(character -> {
+                    character.finishRecalculations();
+                    OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getSegmentPercentages()).ifPresent(charDifference -> {
+                        var value = Arrays.stream(charDifference).average().orElse(0);
+                        // Gets the difference of the database character and searchCharacter (Lower is better)
+                        diffs.put(new ImageLetter(character.getValue(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getWidthAverage(), character.getHeightAverage(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates()), value);
+                    });
+                });
 
-            data.stream()
-                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
-                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
-                    .forEach(character ->
-                            OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
-                                        var value = Arrays.stream(charDifference).average().orElse(0);
-                                        // Gets the difference of the database character and searchCharacter (Lower is better)
-                                        diffs.put(new ImageLetter(character, searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates()), value);
-                                    }));
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
+        return getCharacterFor(searchCharacter, diffs);
+    }
 
+    /**
+     * Actually matches the {@link SearchCharacter} object to a real character from the database.
+     *
+     * @param searchCharacter The input {@link SearchCharacter} to match to
+     * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
+     */
+    private Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs) {
         // TODO: The following code can definitely be improved
         var entries = diffs.object2DoubleEntrySet()
                 .stream()
@@ -682,7 +707,7 @@ public class OCRHandle {
 
         var firstEntry = entries.get(0);
 
-        double ratio = firstEntry.getKey().getDatabaseCharacter().getAvgWidth() / firstEntry.getKey().getDatabaseCharacter().getAvgHeight();
+        double ratio = firstEntry.getKey().getAverageWidth() / firstEntry.getKey().getAverageHeight();
         double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
 
         var ratioDifference = diff(ratio, searchRatio);
@@ -697,9 +722,8 @@ public class OCRHandle {
 
         if (!verysmallDifference && (bigDifference || ratioDiff)) {
             entries.sort(Comparator.comparingDouble(entry -> {
-                var databaseCharacter = entry.getKey().getDatabaseCharacter();
                 // Lower is more similar
-                return compareSizes(searchCharacter.getWidth(), searchCharacter.getHeight(), databaseCharacter.getAvgWidth(), databaseCharacter.getAvgHeight());
+                return compareSizes(searchCharacter.getWidth(), searchCharacter.getHeight(), entry.getKey().getAverageWidth(), entry.getKey().getAverageHeight());
             }));
         }
 

@@ -139,7 +139,7 @@ public class OCRUtils {
      * @return An array with the same length as the inputs containing the difference of both arrays' respective values
      */
     public static Optional<double[]> getDifferencesFrom(double[] input1, double[] input2) {
-        if (input1.length != input2.length) return Optional.empty();
+        if (input1 == null || input2 == null || input1.length != input2.length) return Optional.empty();
         double[] ret = new double[input1.length];
 
         for (int i = 0; i < input1.length; i++) {

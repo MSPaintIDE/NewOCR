@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 
 public class OCRHandleTest {
 
-    private static final double MINIMUM_SUCCESS_RATE = 0.95; // Requires at least a 95% success rate
+    private static final double MINIMUM_SUCCESS_RATE = 95; // Requires at least a 95% success rate
     private static final String trainString = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
 
     private static DatabaseManager databaseManager;
@@ -34,6 +34,7 @@ public class OCRHandleTest {
     @Test
     public void accuracyTest() {
         var scannedString = trainImage.getPrettyString();
+        System.out.println(scannedString);
         var diffMatchPath = new DiffMatchPatch();
         var lines = scannedString.split("\n");
         var differences = 0;
