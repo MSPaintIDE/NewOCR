@@ -1,6 +1,6 @@
 package com.uddernetworks.newocr.database;
 
-import com.uddernetworks.newocr.LetterMeta;
+import com.uddernetworks.newocr.character.LetterMeta;
 
 import javax.sql.DataSource;
 import java.util.List;

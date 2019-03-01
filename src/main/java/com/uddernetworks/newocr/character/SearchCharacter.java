@@ -1,6 +1,5 @@
 package com.uddernetworks.newocr.character;
 
-import com.uddernetworks.newocr.LetterMeta;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 

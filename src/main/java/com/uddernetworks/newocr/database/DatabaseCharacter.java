@@ -1,6 +1,6 @@
 package com.uddernetworks.newocr.database;
 
-import com.uddernetworks.newocr.LetterMeta;
+import com.uddernetworks.newocr.character.LetterMeta;
 
 /**
  * Used for storage of data to go into our from the database.

@@ -59,6 +59,26 @@ public class OCRUtils {
         }
     }
 
+    /**
+     * Prints out an error message if the System property `newocr.error` is `true`.
+     *
+     * @param string The error to potentially print out
+     */
+    public static void error(String string) {
+        if (Boolean.getBoolean("newocr.error")) {
+            System.err.println(string);
+        }
+    }
+
+    /**
+     * Prints out a debug message if the System property `newocr.debug` is `true`.
+     *
+     * @param string The string to potentially print out
+     */
+    public static void debug(String string) {
+        if (Boolean.getBoolean("newocr.debug")) System.out.println(string);
+    }
+
     /*
      * Advanced/Convenient Comparisons
      */
@@ -70,8 +90,8 @@ public class OCRUtils {
      * @param two The second number
      * @return The difference
      */
-    public static double getDiff(double one, double two) {
-        return Math.max(one, two) - Math.min(one, two);
+    public static double diff(double one, double two) {
+        return Math.abs(one - two);
     }
 
     /**
@@ -81,8 +101,8 @@ public class OCRUtils {
      * @param two The second number
      * @return The difference
      */
-    public static int getDiff(int one, int two) {
-        return Math.max(one, two) - Math.min(one, two);
+    public static int diff(int one, int two) {
+        return Math.abs(one - two);
     }
 
     /**
@@ -266,23 +286,6 @@ public class OCRUtils {
                 temp.setRGB(x, y, input.getRGB(x, y));
             }
         }
-    }
-
-    /**
-     * Gets if a {@link SearchCharacter} is fully black for things like . or the sections of =
-     *
-     * @param searchCharacter The input {@link SearchCharacter} to check
-     * @return If the input is all black
-     */
-    public static boolean isAllBlack(SearchCharacter searchCharacter) {
-        // TODO: Replace with a difference check with threshold and/or a circular check for other fonts
-        for (boolean[] row : searchCharacter.getValues()) {
-            for (boolean bool : row) {
-                if (!bool) return false;
-            }
-        }
-
-        return true;
     }
 
     /**

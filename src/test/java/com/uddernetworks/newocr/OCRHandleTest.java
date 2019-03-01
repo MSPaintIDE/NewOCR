@@ -2,6 +2,8 @@ package com.uddernetworks.newocr;
 
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
+import com.uddernetworks.newocr.recognition.OCRScan;
+import com.uddernetworks.newocr.recognition.Scan;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -18,14 +20,14 @@ public class OCRHandleTest {
     private static final String trainString = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
 
     private static DatabaseManager databaseManager;
-    private static OCRHandle ocrHandle;
+    private static Scan ocrHandle;
     private static ScannedImage trainImage;
 
     @BeforeClass
     public static void setUp() throws Exception {
         System.out.println("Setting up database...");
         databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db"));
-        ocrHandle = new OCRHandle(databaseManager);
+        ocrHandle = new OCRScan(databaseManager);
 
         System.out.println("Scanning training image...");
         trainImage = ocrHandle.scanImage(new File("src\\test\\resources\\training.png"));

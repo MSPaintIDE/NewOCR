@@ -1,15 +1,18 @@
-package com.uddernetworks.newocr;
+package com.uddernetworks.newocr.character;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
 import java.util.Arrays;
 import java.util.Optional;
 
 /**
  * Meta for letters that is inserted into the database to help distinguish characters.
+ *
+ * This class is currently unused, but is still supported for future features planned.
  */
 public enum LetterMeta {
-    
+
     NONE(0),
     EVEN_DOTS(1), // : =
     DOT_UNDER(2), // ! ?
@@ -18,11 +21,11 @@ public enum LetterMeta {
     QUOTE(5);     // "
 
     private static final Int2ObjectMap<LetterMeta> LETTER_META = new Int2ObjectOpenHashMap<>(values().length);
-    
+
     static {
         Arrays.stream(values()).forEach(value -> LETTER_META.put(value.id, value));
     }
-    
+
     private int id;
 
     LetterMeta(int id) {
@@ -47,5 +50,5 @@ public enum LetterMeta {
     public static Optional<LetterMeta> fromID(int id) {
         return Optional.ofNullable(LETTER_META.get(id));
     }
-    
+
 }
