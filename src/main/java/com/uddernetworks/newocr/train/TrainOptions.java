@@ -13,17 +13,19 @@ public class TrainOptions {
         return specialSpaces;
     }
 
-    public void setSpecialSpaces(char... specialSpaces) {
+    public TrainOptions setSpecialSpaces(char... specialSpaces) {
         this.specialSpaces = IntStream.range(0, specialSpaces.length)
                 .mapToObj(x -> specialSpaces[x])
                 .collect(Collectors.toSet());
+        return this;
     }
 
     public int getMaxCorrectionIterations() {
         return maxCorrectionIterations;
     }
 
-    public void setMaxCorrectionIterations(int maxCorrectionIterations) {
+    public TrainOptions setMaxCorrectionIterations(int maxCorrectionIterations) {
         this.maxCorrectionIterations = maxCorrectionIterations;
+        return this;
     }
 }

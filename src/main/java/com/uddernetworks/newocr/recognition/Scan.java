@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public interface Scan {
+
     /**
      * Scans the input image and returns a {@link ScannedImage} containing all the characters and their info.
      *

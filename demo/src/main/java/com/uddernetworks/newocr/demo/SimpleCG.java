@@ -4,6 +4,8 @@ import com.uddernetworks.newocr.database.OCRDatabaseManager;
 import com.uddernetworks.newocr.recognition.OCRScan;
 import com.uddernetworks.newocr.recognition.OCRTrain;
 import com.uddernetworks.newocr.train.TrainOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +14,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class SimpleCG {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(SimpleCG.class);
 
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
         new SimpleCG().mainInstance(args);
@@ -25,19 +29,17 @@ public class SimpleCG {
 
         System.setProperty("newocr.debug", "true");
 
-        System.out.println("Do you want to train? (y)es/no");
+        LOGGER.info("Do you want to train? (y)es/no");
 
         var inputLine = args.length > 0 && args[0].equalsIgnoreCase("train") ? "yes" : scanner.nextLine();
 
         if ("yes".equalsIgnoreCase(inputLine) || "y".equalsIgnoreCase(inputLine)) {
-            System.out.println("Generating features...");
+            LOGGER.info("Starting training...");
 
             var start = System.currentTimeMillis();
-            ocrTrain.trainImage(new File("training.png"), new TrainOptions() {{
-                setSpecialSpaces('`');
-            }});
+            ocrTrain.trainImage(new File("training.png"), new TrainOptions().setSpecialSpaces('`'));
 
-            System.out.println("Finished training in " + (System.currentTimeMillis() - start) + "ms");
+            LOGGER.info("Finished training in " + (System.currentTimeMillis() - start) + "ms");
             // HSQLDB freaks out and kills the database file after writing if it doesn't have some kind of delay
             // before killing the threads.
             TimeUnit.SECONDS.sleep(1L);
@@ -51,7 +53,7 @@ public class SimpleCG {
 
         var scannedImage = ocrScan.scanImage(new File("training.png"));
 
-        System.out.println("Got:\n" + scannedImage.getPrettyString());
+        LOGGER.info("Got:\n" + scannedImage.getPrettyString());
 
         databaseManager.shutdown();
     }

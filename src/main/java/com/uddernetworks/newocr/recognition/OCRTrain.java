@@ -7,21 +7,22 @@ import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
-import static com.uddernetworks.newocr.utils.OCRUtils.debug;
-
 public class OCRTrain implements Train {
 
-    private String trainString = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
+    private static Logger LOGGER = LoggerFactory.getLogger(OCRTrain.class);
+
+    public static final String TRAIN_STRING = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
     private DatabaseManager databaseManager;
     private Actions actions;
 
@@ -33,12 +34,12 @@ public class OCRTrain implements Train {
     }
 
     @Override
-    public void trainImage(File file) throws ExecutionException, InterruptedException {
+    public void trainImage(File file) {
         trainImage(file, new TrainOptions());
     }
 
     @Override
-    public void trainImage(File file, TrainOptions options) throws ExecutionException, InterruptedException {
+    public void trainImage(File file, TrainOptions options) {
 
         // First clear the database
         databaseManager.clearData();
@@ -98,7 +99,7 @@ public class OCRTrain implements Train {
 
                 for (SearchCharacter searchCharacter : line) {
                     // Gets the next character it knows it will be
-                    char current = searchCharacter.getKnownChar() == ' ' ? ' ' : trainString.charAt(letterIndex++);
+                    char current = searchCharacter.getKnownChar() == ' ' ? ' ' : TRAIN_STRING.charAt(letterIndex++);
                     var modifier = 0;
                     var revertIndex = false;
 
@@ -119,8 +120,8 @@ public class OCRTrain implements Train {
                         }
 
                         // If the current character is the FIRST `W`, sets beforeSpaceX to the current far right coordinate
-                        // of the space (X + width), and go up another character (Skipping the space in trainString)
-                    } else if (letterIndex == trainString.length() - 2) {
+                        // of the space (X + width), and go up another character (Skipping the space in TRAIN_STRING)
+                    } else if (letterIndex == TRAIN_STRING.length() - 2) {
                         searchCharacter.setKnownChar('W');
                         beforeSpaceX = searchCharacter.getX() + searchCharacter.getWidth();
                         letterIndex++;
@@ -128,7 +129,7 @@ public class OCRTrain implements Train {
 
                         // If it's the last character, add the space based on beforeSpaceX and the current X, (Getting the
                         // width of the space) and reset the line
-                    } else if (letterIndex == trainString.length()) {
+                    } else if (letterIndex == TRAIN_STRING.length()) {
                         searchCharacter.setKnownChar('W');
                         spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX, lineHeight);
                         letterIndex = 0;
@@ -166,7 +167,7 @@ public class OCRTrain implements Train {
                     if (revertIndex) letterIndex--;
 
                     // Resets the current letter
-                    if (letterIndex >= trainString.length()) {
+                    if (letterIndex >= TRAIN_STRING.length()) {
                         letterIndex = 0;
                     }
                 }
@@ -179,7 +180,7 @@ public class OCRTrain implements Train {
 
         searchCharacters = searchCharactersCopy;
 
-        debug(searchCharacters.size() + " characters found");
+        LOGGER.debug(searchCharacters.size() + " characters found");
 
 
         // Before writing the data to the database and finalizing the data, it needs to read the training image and
@@ -190,7 +191,6 @@ public class OCRTrain implements Train {
         Map<Character, Integer> errorsForCharacter = new HashMap<>();
 
         for (int i2 = 0; i2 < options.getMaxCorrectionIterations(); i2++) {
-            System.out.println("Iteration " + i2);
             var foundThisRun = new ArrayList<Character>();
 
             var changes = new LongAdder();
@@ -215,7 +215,7 @@ public class OCRTrain implements Train {
 
                         if (exclude.containsKey(correct) && exclude.get(correct).contains(lineNumber)) return;
 
-                        System.err.println("Incorrect character for " + correct + " (Found as " + calculatedChar + " on line " + lineNumber + ")");
+                        LOGGER.debug("Incorrect character for " + correct + " (Found as " + calculatedChar + " on line " + lineNumber + ")");
                         var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, correct, searchCharacter.getModifier());
 
                         errorsForCharacter.putIfAbsent(correct, getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct));
@@ -248,15 +248,15 @@ public class OCRTrain implements Train {
                         var previousErrors = errorsForCharacter.getOrDefault(correct, Integer.MAX_VALUE);
 
 
-                        System.out.println("Recalculated " + correct + " after " + recalcAttempts + " attempts");
+                        LOGGER.debug("Recalculated " + correct + " after " + recalcAttempts + " attempts");
 
                         // If this recalculation creates more errors, undo it. This can probably be improved in the future, but works well enough for now.
                         if (errors > previousErrors) {
-                            System.err.println("The previous recalculation created " + (errors - previousErrors) + " more errors, so " + recalcAttempts + " recalculations are being undone on line " + lineNumber + ".");
+                            LOGGER.debug("The previous recalculation created " + (errors - previousErrors) + " more errors, so " + recalcAttempts + " recalculations are being undone on line " + lineNumber + ".");
                             trainedSearchCharacter.undoLastRecalculations(recalcAttempts + 1);
                             exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(lineNumber);
 
-                            System.out.println("There were " + previousErrors + " before, and " + errors + " after the previous calculations. This next number should be the previous errors: " + getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct));
+                            LOGGER.debug("There were " + previousErrors + " before, and " + errors + " after the previous calculations. This next number should be the previous errors: " + getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct));
                             return;
                         }
 
@@ -265,17 +265,17 @@ public class OCRTrain implements Train {
                         foundThisRun.add(correct);
                         changes.increment();
 
-                    }, () -> System.err.println("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
+                    }, () -> LOGGER.debug("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
                 });
             }
 
             if (changes.intValue() == 0) {
-                System.out.println("Nothing changed, so stopping correction.");
+                LOGGER.debug("Nothing changed, so stopping correction.");
                 break;
             }
         }
 
-        debug("Writing data to database...");
+        LOGGER.debug("Writing data to database...");
         long start = System.currentTimeMillis();
 
         // Add the apostropheRatios data into the database
@@ -300,7 +300,7 @@ public class OCRTrain implements Train {
             }
         });
 
-        debug("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
+        LOGGER.debug("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     @Override

@@ -67,8 +67,6 @@ public class ImageLetter {
      * @param imageLetter The {@link ImageLetter} to merge into the current one
      */
     public void merge(ImageLetter imageLetter) {
-//        System.out.println("this.coordinates = " + this.coordinates);
-//        System.out.println("imageLetter.coordinates = " + imageLetter.coordinates);
         this.coordinates = Stream.of(this.coordinates, imageLetter.coordinates).flatMap(List::stream).collect(Collectors.toList());
         int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE, minY = Integer.MAX_VALUE;

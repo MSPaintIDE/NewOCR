@@ -59,26 +59,6 @@ public class OCRUtils {
         }
     }
 
-    /**
-     * Prints out an error message if the System property `newocr.error` is `true`.
-     *
-     * @param string The error to potentially print out
-     */
-    public static void error(String string) {
-        if (Boolean.getBoolean("newocr.error")) {
-            System.err.println(string);
-        }
-    }
-
-    /**
-     * Prints out a debug message if the System property `newocr.debug` is `true`.
-     *
-     * @param string The string to potentially print out
-     */
-    public static void debug(String string) {
-        if (Boolean.getBoolean("newocr.debug")) System.out.println(string);
-    }
-
     /*
      * Advanced/Convenient Comparisons
      */

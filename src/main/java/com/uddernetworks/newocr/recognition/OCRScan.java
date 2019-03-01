@@ -8,6 +8,8 @@ import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -17,9 +19,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import static com.uddernetworks.newocr.utils.OCRUtils.*;
+import static com.uddernetworks.newocr.utils.OCRUtils.diff;
 
 public class OCRScan implements Scan {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(OCRScan.class);
 
     private DatabaseManager databaseManager;
     private Actions actions;
@@ -138,7 +142,7 @@ public class OCRScan implements Scan {
                     // This is signaled when the difference of the ratios are a value that is probably incorrect.
                     // If the ratio is very different, it should be looked into, as it could be from faulty detection.
                     if (diff > 0.2D) {
-                        error("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
+                        LOGGER.warn("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
                     }
 
                     lines.get(center).add(imageLetter);
@@ -171,7 +175,7 @@ public class OCRScan implements Scan {
 
         var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
 
-//      Combine " characters that are next to each other which would equate to a full " instead of the ' parts
+        // Combine " characters that are next to each other which would equate to a full " instead of the ' parts
         sortedLines.forEach((y, line) -> {
             final ImageLetter[] last = {null};
             line.removeIf(imageLetter -> {
@@ -189,7 +193,6 @@ public class OCRScan implements Scan {
                     return false;
                 }
 
-                // TODO: This logic with the apostropheRatio seems a bit sketchy... it may need to be looked at/tested
                 var avgLength = (double) last[0].getHeight() * apostropheRatio;
                 if (imageLetter.getX() - last[0].getX() <= avgLength) {
                     // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
@@ -217,7 +220,7 @@ public class OCRScan implements Scan {
             scannedImage.addLine(y, line.stream().sorted(Comparator.comparingInt(ImageLetter::getX)).collect(Collectors.toList()));
         });
 
-        debug("Finished in " + (System.currentTimeMillis() - start) + "ms");
+        LOGGER.debug("Finished in " + (System.currentTimeMillis() - start) + "ms");
         return scannedImage;
     }
 
@@ -232,7 +235,7 @@ public class OCRScan implements Scan {
             var spaceOptional = data.stream().filter(databaseCharacter -> databaseCharacter.getLetter() == ' ').findFirst();
 
             if (spaceOptional.isEmpty()) {
-                error("No space found for current font size: " + fontSize);
+                LOGGER.error("No space found for current font size: " + fontSize);
                 return line;
             }
 
