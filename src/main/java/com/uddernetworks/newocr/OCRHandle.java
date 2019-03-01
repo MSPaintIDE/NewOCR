@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
@@ -188,15 +189,14 @@ public class OCRHandle {
                 });
 
         var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
-//        var apostropheDatabaseCharacter = databaseManager.getAllCharacterSegments().get().stream().filter(databaseCharacter -> databaseCharacter.getLetter() == '\'').findFirst().orElseThrow();
 
 //      Combine " characters that are next to each other which would equate to a full " instead of the ' parts
         sortedLines.forEach((y, line) -> {
             final ImageLetter[] last = {null};
             line.removeIf(imageLetter -> {
                 if (imageLetter.getLetter() != '"' && imageLetter.getLetter() != '\'') {
+                    // If only one " (Or ') is found, just make it a '
                     if (last[0] != null) {
-//                        last[0].setDatabaseCharacter(apostropheDatabaseCharacter);
                         last[0].setLetter('\'');
                     }
                     last[0] = null;
@@ -240,16 +240,6 @@ public class OCRHandle {
         return scannedImage;
     }
 
-    private boolean[][] clone2DArray(boolean[][] input) {
-        boolean[][] clone = new boolean[input.length][input[0].length];
-
-        for (int y = 0; y < input.length; y++) {
-            clone[y] = Arrays.copyOf(input[y], input[y].length);
-        }
-
-        return clone;
-    }
-
     /**
      * Scans the input image and creates training data based off of it. It must be an input image created from
      * {@link TrainGenerator} or something of a similar format.
@@ -271,7 +261,6 @@ public class OCRHandle {
         this.training = true;
 
         // First clear the database
-        var clearStart = System.currentTimeMillis();
         databaseManager.clearData();
 
         List<TrainedCharacterData> trainedCharacterDataList = new ArrayList<>();
@@ -335,6 +324,7 @@ public class OCRHandle {
 
                     // If the index is on the quote
                     if (letterIndex == 2) {
+                        searchCharacter.setKnownChar('"');
                         if (firstQuote == null) {
                             firstQuote = searchCharacter;
 
@@ -416,27 +406,23 @@ public class OCRHandle {
         // detect any differences, and then modify the collected data accordingly.
 
         // TODO: Make this process automatic
-        var replace = Map.of(
-                'x', List.of('O'),
-                '.', List.of('w', '*', 'a'),
-                ':', List.of('i', ';'),
-                '"', List.of('\'')); // ,
-//        '\'', List.of('"'))
+//        var replace = Map.of(
+//                'x', List.of('O'),
+//                '.', List.of('w', '*', 'a'),
+//                ':', List.of('i', ';'),
+//                '"', List.of('\''));
 
-        var exclude = new HashMap<Character, List<Character>>();
-        replace.forEach((key, value) -> exclude.put(key, new ArrayList<>()));
+        var exclude = new HashMap<Character, List<Integer>>();
+//        replace.forEach((key, value) -> exclude.put(key, new ArrayList<>()));
 
         Map<Character, Integer> errorsForCharacter = new HashMap<>();
 
-        getErrorsForAll(searchCharacterLines, trainedCharacterDataList).forEach((letter, adder) -> errorsForCharacter.put(letter, adder.intValue()));
-
-        System.out.println("errorsForCharacter = " + errorsForCharacter);
-//        System.exit(0);
+//        getErrorsForAll(searchCharacterLines, trainedCharacterDataList).forEach((letter, adder) -> errorsForCharacter.put(letter, adder.intValue()));
 
         for (int i2 = 0; i2 < 10; i2++) {
             System.out.println("=============================  [" + i2 + "]  ==============================");
 
-//            var found = new ArrayList<Character>();
+            var foundThisRun = new ArrayList<Character>();
 
             var changes = new LongAdder();
             for (int i = 0; i < searchCharacterLines.size(); i++) {
@@ -453,72 +439,91 @@ public class OCRHandle {
                         if (correct == 'W') foundW.increment();
                         if (foundW.intValue() == 2) return;
 
-                        if (correct != '?') {
+                        if (correct == calculatedChar) return;
+                        if ((correct == '"' && calculatedChar == '\'') || (correct == '\'' && calculatedChar == '"')) return;
 
-                            if (!replace.containsKey(correct)) return;
-                            if (!replace.get(correct).contains(calculatedChar)) return;
+                        // Don't try and fix the same correct character twice in one run
+                        if (foundThisRun.contains(correct)) return;
 
-//                            if (found.contains(correct)) return;
-//                        if (calculatedChar != '?' && calculatedChar != correct && correct == '.' && !foundP.get()) {
-//                            found.add(correct);
-
-                            if (exclude.containsKey(correct) && exclude.get(correct).contains(calculatedChar)) return;
-
-//                    if (calculatedChar == 'O' && correct == 'x') {
-                            System.err.println("\nIncorrect character for " + correct + " (Found as " + calculatedChar + " on line " + lineNumber + ")");
-                            var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, correct, searchCharacter.getModifier());
-
-                            // Try and correct the training data
-                            var maxIterations = 1000;
-
-                            int recalcAttempts;
-                            for (recalcAttempts = 0; recalcAttempts < maxIterations; recalcAttempts++) {
-                                trainedSearchCharacter.recalculateTo(searchCharacter);
-
-                                var gotten = getCharacterFor(searchCharacter, trainedCharacterDataList);
-                                if (gotten.isEmpty()) break;
-                                var gottenCharacter = gotten.get();
-
-                                if (gottenCharacter.getLetter() == correct) break;
-                            }
-
-                            if (recalcAttempts == maxIterations) {
-                                trainedSearchCharacter.undoLastRecalculations(recalcAttempts);
-                                exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(calculatedChar);
-                                return;
-                            }
-
-                            trainedSearchCharacter.finishRecalculations();
-                            // If there is more errors than before, OR if it maxed out on attempts, undo it and add to exclusions
-                            var errors = getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct);
-                            var previousErrors = errorsForCharacter.getOrDefault(correct, Integer.MAX_VALUE);
+                        if (exclude.containsKey(correct) && exclude.get(correct).contains(lineNumber)) return;
 
 
-                            System.err.println("Recalculated " + correct + " after " + recalcAttempts + " attempts");
+//                        if (correct == '.' && calculatedChar == 'a') return;
 
-                            if (errors > previousErrors) {
-                                System.err.println("The previous recalculation created " + (errors - previousErrors) + " more errors, so " + recalcAttempts + " recalculations are being undone.");
-                                trainedSearchCharacter.undoLastRecalculations(recalcAttempts);
-                                exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(calculatedChar);
-                                return;
-                            }
+                        System.err.println("\nIncorrect character for " + correct + " (Found as " + calculatedChar + " on line " + lineNumber + ")");
+                        var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, correct, searchCharacter.getModifier());
 
-                            changes.increment();
-//                            trainedSearchCharacter.finishRecalculations();
+//                        if (correct == '.' && calculatedChar == 'a') {
+                            System.out.println("===] Initial");
+                            trainedSearchCharacter.debug();
+//                        }
+
+                        errorsForCharacter.putIfAbsent(correct, getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct));
+
+                        // Try and correct the training data by invoking TrainedCharacterData#recalculateTo until it works
+                        var maxIterations = 1000;
+
+                        int recalcAttempts;
+                        for (recalcAttempts = 0; recalcAttempts < maxIterations; recalcAttempts++) {
+                            trainedSearchCharacter.recalculateTo(searchCharacter);
+
+                            var gotten = getCharacterFor(searchCharacter, trainedCharacterDataList);
+                            if (gotten.isEmpty()) break;
+                            var gottenCharacter = gotten.get();
+
+                            if (gottenCharacter.getLetter() == correct) break;
                         }
+
+//                        if (correct == '.' && calculatedChar == 'a') {
+                            System.out.println("===] After recalculation");
+                            trainedSearchCharacter.debug();
+//                        }
+
+
+                        // If it reached maxIterations then just undo it, because it probably didn't work
+                        if (recalcAttempts == maxIterations) {
+                            System.err.println("Reached max iterations on " + correct);
+                            trainedSearchCharacter.undoLastRecalculations(recalcAttempts + 1);
+                            exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(lineNumber);
+                            return;
+                        }
+
+                        // If there is more errors than before, OR if it maxed out on attempts, undo it and add to exclusions
+                        var errors = getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct);
+                        var previousErrors = errorsForCharacter.getOrDefault(correct, Integer.MAX_VALUE);
+
+
+                        System.out.println("Recalculated " + correct + " after " + recalcAttempts + " attempts");
+
+                        // If this recalculation creates more errors, undo it. This can probably be improved in the future, but works well enough for now.
+                        if (errors > previousErrors) {
+                            System.err.println("The previous recalculation created " + (errors - previousErrors) + " more errors, so " + recalcAttempts + " recalculations are being undone on line " + lineNumber + ".");
+                            trainedSearchCharacter.undoLastRecalculations(recalcAttempts + 1);
+                            exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(lineNumber);
+
+//                            if (correct == '.' && calculatedChar == 'a') {
+                                System.out.println("===] Final (Should be same as initial)");
+                                trainedSearchCharacter.debug();
+//                            }
+
+                            System.out.println("There were " + previousErrors + " before, and " + errors + " after the previous calculations. This next number should be the previous errors: " + getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct));
+                            return;
+                        }
+
+                        errorsForCharacter.put(correct, errors);
+
+                        foundThisRun.add(correct);
+                        changes.increment();
 
                     }, () -> System.err.println("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
                 });
                 System.out.print('\n');
             }
 
-            System.out.println("===========================================================");
-
             if (changes.intValue() == 0) {
                 System.out.println("Nothing changed, so stopping correction.");
                 break;
             }
-//            if (!foundP.get()) break;
         }
 
         debug("Writing data to database...");
@@ -550,7 +555,7 @@ public class OCRHandle {
     }
 
     private Map<Character, LongAdder> getErrorsForAll(List<List<SearchCharacter>> charData, List<TrainedCharacterData> trainedCharacterDataList) {
-        var errors = new HashMap<Character, LongAdder>();
+        var errors = new ConcurrentHashMap<Character, LongAdder>();
         charData.parallelStream().forEach(line -> {
             var foundW = new LongAdder();
             line.parallelStream()
@@ -568,7 +573,8 @@ public class OCRHandle {
 
     private int getErrorsForCharacter(List<List<SearchCharacter>> charData, List<TrainedCharacterData> trainedCharacterDataList, char checking) {
         var errors = new AtomicInteger(0);
-        charData.parallelStream().forEach(line -> line.parallelStream()
+//        charData.parallelStream().forEach(line -> line.parallelStream()
+        charData.stream().forEach(line -> line.stream()
                 .forEach(searchCharacter -> getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresent(imageLetter -> {
                     var correct = searchCharacter.getKnownChar();
                     var calculatedChar = imageLetter.getLetter();
@@ -580,7 +586,8 @@ public class OCRHandle {
 
     private TrainedCharacterData getTrainedCharacter(List<TrainedCharacterData> trainedCharacterDataList, char current, int finalModifier) {
         return trainedCharacterDataList
-                .parallelStream()
+//                .parallelStream()
+                .stream()
                 .filter(trainedCharacterData -> trainedCharacterData.getValue() == current
                         && trainedCharacterData.getModifier() == finalModifier)
                 .findFirst()

@@ -141,6 +141,11 @@ public class TrainedCharacterData {
         }
     }
 
+    // TODO: REMOVE THIS
+    public void debug() {
+        System.out.println("====] Sizes: " + this.recalculatingWidths.size() + ", " + this.recalculatingHeights.size() + ", " + this.recalculatingList.size());
+    }
+
     /**
      * Removed the last x entries added by {@link TrainedCharacterData#recalculateTo(SearchCharacter)}.
      *
@@ -151,15 +156,20 @@ public class TrainedCharacterData {
         boolean removingHeights = amount < this.recalculatingHeights.size();
         boolean removingWidths = amount < this.recalculatingWidths.size();
 
-        if (!removingList) this.recalculatingList.clear();
-        if (!removingHeights) this.recalculatingHeights.clear();
-        if (!removingWidths) this.recalculatingWidths.clear();
+//        if (!removingList) this.recalculatingList.clear();
+//        if (!removingHeights) this.recalculatingHeights.clear();
+//        if (!removingWidths) this.recalculatingWidths.clear();
 
         for (int i = 0; i < amount; i++) {
-            if (removingList) this.recalculatingList.removeLast();
-            if (removingHeights) this.recalculatingHeights.removeLast();
-            if (removingWidths) this.recalculatingWidths.removeLast();
+//            if (removingList)
+                this.recalculatingList.removeLast();
+//            if (removingHeights)
+                this.recalculatingHeights.removeLast();
+//            if (removingWidths)
+                this.recalculatingWidths.removeLast();
         }
+
+        finishRecalculations();
     }
 
     /**
