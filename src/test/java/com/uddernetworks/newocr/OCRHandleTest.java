@@ -44,6 +44,8 @@ public class OCRHandleTest {
         var lines = scannedString.split("\n");
         var differences = 0;
         for (String line : lines) {
+//            if (line.contains("         ")) continue;
+//            System.out.println(line);
             var difference = diffMatchPath.diffMain(line, OCRTrain.TRAIN_STRING);
             final int[] insert = {0};
             final int[] delete = {0};

@@ -73,7 +73,20 @@ public class OCRTrain implements Train {
 
         // Pair<topY, bottomY> (Absolute coordinates)
         // Gets the top and bottom line bounds of every line
-        var lineBounds = getLineBoundsForTesting(values);
+        var lineBounds = getLineBoundsForTesting(values, options);
+
+//        for (IntPair lineBound : lineBounds) {
+//            OCRUtils.colorRow(input, Color.MAGENTA, lineBound.getKey(), 0, input.getWidth());
+//            OCRUtils.colorRow(input, Color.MAGENTA, lineBound.getValue(), 0, input.getWidth());
+//        }
+//
+//        try {
+//            ImageIO.write(input, "png", new File("E:\\NewOCR\\bounds.png"));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        System.exit(0);
 
         // Stores the height/distance ratio for apostrophe parts
         var apostropheRatios = new ArrayList<Double>();
@@ -191,6 +204,7 @@ public class OCRTrain implements Train {
         Map<Character, Integer> errorsForCharacter = new HashMap<>();
 
         for (int i2 = 0; i2 < options.getMaxCorrectionIterations(); i2++) {
+            System.out.println("========================== [" + i2 + "] ==========================");
             var foundThisRun = new ArrayList<Character>();
 
             var changes = new LongAdder();
@@ -203,6 +217,7 @@ public class OCRTrain implements Train {
                     this.actions.getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresentOrElse(imageLetter -> {
                         var correct = searchCharacter.getKnownChar();
                         var calculatedChar = imageLetter.getLetter();
+                        System.out.print(calculatedChar);
 
                         if (correct == 'W') foundW.increment();
                         if (foundW.intValue() == 2) return;
@@ -267,6 +282,8 @@ public class OCRTrain implements Train {
 
                     }, () -> LOGGER.debug("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
                 });
+
+                System.out.print("\n");
             }
 
             if (changes.intValue() == 0) {
@@ -331,7 +348,7 @@ public class OCRTrain implements Train {
     }
 
     @Override
-    public List<IntPair> getLineBoundsForTesting(boolean[][] values) {
+    public List<IntPair> getLineBoundsForTesting(boolean[][] values, TrainOptions options) {
         // Pair<topY, bottomY>
         List<IntPair> lines = new ArrayList<>();
 
@@ -367,19 +384,47 @@ public class OCRTrain implements Train {
                     if (height == finalSpace) {
                         y += finalSpace;
                         height += finalSpace;
-                    } else {
-                        lines.add(new IntPair(y - height, y));
-                        height = 0;
+                        continue;
                     }
-                } else {
-                    lines.add(new IntPair(y - height, y));
-                    height = 0;
                 }
+
+                LOGGER.debug("Height of " + height);
+                lines.add(new IntPair(y - height, y));
+                height = 0;
             } else {
                 if (height == 0) continue;
+                LOGGER.debug("Height: " + height);
                 lines.add(new IntPair(y - height, y));
                 height = 0;
             }
+        }
+
+        // <topY, bottomY>
+
+        var remove = new ArrayList<Integer>();
+        for (int i = 0; i < lines.size(); i++) {
+            var current = lines.get(i);
+            double currentHeight = current.getValue() - current.getKey();
+
+            var onLast = i == lines.size() - 1;
+
+            if (!onLast) {
+                var below = lines.get(i + 1);
+                double belowHeight = below.getValue() - below.getKey();
+                if (belowHeight / currentHeight <= options.getMaxPercentDiffToMerge()
+                    && ((double) current.getKey() - below.getKey()) / currentHeight <= options.getMaxPercentDiffToMerge()) {
+                    remove.add(++i);
+                    current.setValue(below.getValue());
+                }
+            }
+        }
+
+        remove.stream().sorted(Collections.reverseOrder()).forEach(i -> lines.remove(i.intValue()));
+
+        LOGGER.debug("After removal:");
+
+        for (IntPair line : lines) {
+            LOGGER.debug("Height: " + (line.getValue() - line.getKey()));
         }
 
         return lines;

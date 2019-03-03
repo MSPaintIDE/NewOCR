@@ -54,7 +54,8 @@ public interface Train {
      * training data.
      *
      * @param values The 2D array of values derived from the image to check from
+     * @param options The options for training, primarily used to merge near lines
      * @return A list of the absolute top and bottom line values
      */
-    List<IntPair> getLineBoundsForTesting(boolean[][] values);
+    List<IntPair> getLineBoundsForTesting(boolean[][] values, TrainOptions options);
 }

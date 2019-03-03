@@ -103,7 +103,7 @@ public class OCRScan implements Scan {
                             maxCenter + minCenter :
                             maxCenter - minCenter;
                     // The tolerance of how far away a character can be from the line's center for it to be included
-                    double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff / 2 * 1.1), 2D));
+                    double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff / 2 * 1.5), 2D));
 
                     int exactMin = (int) Math.round(imageLetter.getY() + minCenter);
                     int exactMax = (int) Math.round(imageLetter.getY() + maxCenter);

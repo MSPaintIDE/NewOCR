@@ -11,6 +11,9 @@ import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -28,10 +31,14 @@ public class OCRActions implements Actions {
     @Override
     public void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
         var histogram = new Histogram(searchImage);
+        boolean first = true;
         for (var coords : histogram.getWholeLines()) {
             var fromY = coords.getKey();
             var toY = coords.getValue();
-            if (diff(fromY, toY) <= 2) continue;
+//            if (diff(fromY, toY) <= 2) {
+//                System.out.println("111");
+//                continue;
+//            }
 
             var sub = searchImage.getSubimage(0, fromY, searchImage.getWidth(), toY - fromY);
 
@@ -40,14 +47,20 @@ public class OCRActions implements Actions {
             for (var columnCoords : subHistogram.getWholeColumns()) {
                 var fromX = columnCoords.getKey();
                 var toX = columnCoords.getValue();
-                if (diff(fromX, toX) <= 2) continue; // Don't recognize blobs with a width of <= 2
+//                if (diff(fromX, toX) <= 2) {
+//                    System.out.println("222");
+//                    continue; // Don't recognize blobs with a width of <= 2
+//                }
 
                 var charSub = searchImage.getSubimage(fromX, fromY, toX - fromX, toY - fromY);
                 var charHistogram = new Histogram(charSub);
 
                 var padding = charHistogram.getVerticalPadding();
                 var newHeight = charSub.getHeight() - padding.getKey() - padding.getValue();
-                if (newHeight <= 2) continue; // Don't recognize blobs with a height of <= 2
+//                if (newHeight <= 2) {
+//                    System.out.println("333");
+//                    continue; // Don't recognize blobs with a height of <= 2
+//                }
                 charSub = charSub.getSubimage(0, padding.getKey(), charSub.getWidth(), newHeight);
 
                 var coordinates = new ArrayList<IntPair>();
@@ -66,12 +79,22 @@ public class OCRActions implements Actions {
                     if (!hasAnything) hasDot = true;
                 }
 
+                if (first) {
+                    try {
+                        ImageIO.write(charSub.toImage(), "png", new File("E:\\NewOCR\\ind\\" + fromX + ".png"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 var searchCharacter = new SearchCharacter(coordinates);
                 searchCharacter.applySections();
                 searchCharacter.analyzeSlices();
                 searchCharacter.setHasDot(hasDot);
                 searchCharacters.add(searchCharacter);
             }
+
+            first = false;
         }
     }
 

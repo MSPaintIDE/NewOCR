@@ -71,12 +71,30 @@ public final class IntPair {
     }
 
     /**
+     * Sets this {@link IntPair}'s key.
+     *
+     * @param key The key as an {@code int}.
+     */
+    public void setKey(int key) {
+        this.key = key;
+    }
+
+    /**
      * Gets this {@link IntPair}'s value.
      *
      * @return the value as an {@code int}.
      */
     public int getValue() {
         return value;
+    }
+
+    /**
+     * Sets this {@link IntPair}'s value.
+     *
+     * @param value The value as an {@code int}.
+     */
+    public void setValue(int value) {
+        this.value = value;
     }
 
 }
