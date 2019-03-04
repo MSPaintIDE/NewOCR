@@ -1,8 +1,8 @@
 package com.uddernetworks.newocr.recognition;
 
-import com.uddernetworks.newocr.SearchImage;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
+import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.IntPair;

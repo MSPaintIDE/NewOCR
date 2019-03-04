@@ -1,10 +1,10 @@
 package com.uddernetworks.newocr.recognition;
 
 import com.uddernetworks.newocr.ScannedImage;
-import com.uddernetworks.newocr.SearchImage;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
+import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;

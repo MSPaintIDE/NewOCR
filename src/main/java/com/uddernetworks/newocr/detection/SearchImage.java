@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr;
+package com.uddernetworks.newocr.detection;
 
 import com.uddernetworks.newocr.utils.IntPair;
 

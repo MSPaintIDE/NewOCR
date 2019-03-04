@@ -1,6 +1,6 @@
 package com.uddernetworks.newocr.utils;
 
-import com.uddernetworks.newocr.SearchImage;
+import com.uddernetworks.newocr.detection.SearchImage;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

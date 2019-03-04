@@ -1,9 +1,9 @@
 package com.uddernetworks.newocr.recognition;
 
-import com.uddernetworks.newocr.SearchImage;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
+import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.Histogram;
 import com.uddernetworks.newocr.utils.IntPair;
@@ -31,7 +31,7 @@ public class OCRActions implements Actions {
     @Override
     public void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
         var histogram = new Histogram(searchImage);
-        boolean first = true;
+        int first = 2;
         for (var coords : histogram.getWholeLines()) {
             var fromY = coords.getKey();
             var toY = coords.getValue();
@@ -79,9 +79,9 @@ public class OCRActions implements Actions {
                     if (!hasAnything) hasDot = true;
                 }
 
-                if (first) {
+                if (first > 0) {
                     try {
-                        ImageIO.write(charSub.toImage(), "png", new File("E:\\NewOCR\\ind\\" + fromX + ".png"));
+                        ImageIO.write(charSub.toImage(), "png", new File("E:\\NewOCR\\ind\\" + fromX + "x" + fromY + ".png"));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -94,7 +94,7 @@ public class OCRActions implements Actions {
                 searchCharacters.add(searchCharacter);
             }
 
-            first = false;
+            first--;
         }
     }
 
