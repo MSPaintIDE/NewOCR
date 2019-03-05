@@ -11,9 +11,6 @@ import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
-import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -30,71 +27,75 @@ public class OCRActions implements Actions {
 
     @Override
     public void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
+        var coordinates = new ArrayList<IntPair>();
+
+        var width = searchImage.getWidth();
+        var height = searchImage.getHeight();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                searchImage.scanFrom(x, y, coordinates);
+
+                if (!coordinates.isEmpty()) {
+                    searchCharacters.add(new SearchCharacter(new ArrayList<>(coordinates)));
+                    coordinates.clear();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void getLettersDuringTraining(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
         var histogram = new Histogram(searchImage);
-        int first = 2;
         for (var coords : histogram.getWholeLines()) {
             var fromY = coords.getKey();
             var toY = coords.getValue();
-//            if (diff(fromY, toY) <= 2) {
-//                System.out.println("111");
-//                continue;
-//            }
 
             var sub = searchImage.getSubimage(0, fromY, searchImage.getWidth(), toY - fromY);
 
-            var subHistogram = new Histogram(sub);
+//                ImageIO.write(sub.toImage(), "png", new File("E:\\NewOCR\\ind\\" + fromY + ".png"));
 
-            for (var columnCoords : subHistogram.getWholeColumns()) {
-                var fromX = columnCoords.getKey();
-                var toX = columnCoords.getValue();
-//                if (diff(fromX, toX) <= 2) {
-//                    System.out.println("222");
-//                    continue; // Don't recognize blobs with a width of <= 2
-//                }
+            var width = sub.getWidth();
+            var height = sub.getHeight();
 
-                var charSub = searchImage.getSubimage(fromX, fromY, toX - fromX, toY - fromY);
-                var charHistogram = new Histogram(charSub);
+            var coordinates = new ArrayList<IntPair>();
+            var found = new ArrayList<SearchCharacter>();
 
-                var padding = charHistogram.getVerticalPadding();
-                var newHeight = charSub.getHeight() - padding.getKey() - padding.getValue();
-//                if (newHeight <= 2) {
-//                    System.out.println("333");
-//                    continue; // Don't recognize blobs with a height of <= 2
-//                }
-                charSub = charSub.getSubimage(0, padding.getKey(), charSub.getWidth(), newHeight);
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    sub.scanFrom(x, y, coordinates);
 
-                var coordinates = new ArrayList<IntPair>();
-
-                var hasDot = false;
-
-                var values = charSub.getValues();
-                for (int y = 0; y < values.length; y++) {
-                    var hasAnything = false;
-                    for (int x = 0; x < values[0].length; x++) {
-                        var val = values[y][x];
-                        if (val) hasAnything = true;
-                        if (val) coordinates.add(new IntPair(fromX + x, fromY + y));
-                    }
-
-                    if (!hasAnything) hasDot = true;
-                }
-
-                if (first > 0) {
-                    try {
-                        ImageIO.write(charSub.toImage(), "png", new File("E:\\NewOCR\\ind\\" + fromX + "x" + fromY + ".png"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    if (!coordinates.isEmpty()) {
+                        found.add(new SearchCharacter(new ArrayList<>(coordinates)));
+                        coordinates.clear();
                     }
                 }
-
-                var searchCharacter = new SearchCharacter(coordinates);
-                searchCharacter.applySections();
-                searchCharacter.analyzeSlices();
-                searchCharacter.setHasDot(hasDot);
-                searchCharacters.add(searchCharacter);
             }
 
-            first--;
+            System.out.println("Found size before: " + found.size());
+
+            // Get the characters with horizontal overlap
+
+            var ignored = new HashSet<SearchCharacter>();
+
+            for (SearchCharacter part1 : found) {
+                if (ignored.contains(part1)) continue;
+
+                for (SearchCharacter part2 : found) {
+                    if (part1.equals(part2)) continue;
+
+                    if (part1.isOverlapingX(part2)) {
+                        part1.merge(part2);
+                        ignored.add(part2);
+                        break;
+                    }
+                }
+            }
+
+            ignored.forEach(found::remove);
+            Collections.sort(found);
+
+            searchCharacters.addAll(found);
         }
     }
 

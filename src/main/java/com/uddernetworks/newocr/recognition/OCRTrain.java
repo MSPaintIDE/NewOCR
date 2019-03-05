@@ -22,7 +22,7 @@ public class OCRTrain implements Train {
 
     private static Logger LOGGER = LoggerFactory.getLogger(OCRTrain.class);
 
-    public static final String TRAIN_STRING = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghjiklmnopqrstuvwxyz{|}~W W";
+    public static final String TRAIN_STRING = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~W W";
     private DatabaseManager databaseManager;
     private Actions actions;
 
@@ -64,7 +64,9 @@ public class OCRTrain implements Train {
 
         var searchImage = new SearchImage(values);
 
-        this.actions.getLetters(searchImage, searchCharacters);
+        this.actions.getLettersDuringTraining(searchImage, searchCharacters);
+
+        System.exit(0);
 
         TrainedCharacterData spaceTrainedCharacter = new TrainedCharacterData(' ');
         trainedCharacterDataList.add(spaceTrainedCharacter);

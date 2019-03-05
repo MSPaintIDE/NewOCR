@@ -98,7 +98,7 @@ public class SearchImage {
      * Gets the value of the given coordinates. If it's true, it will set the value to false and return true.
      * @param x The X coordinate to check
      * @param y The Y coordinate to check
-     * @return The value of the coordinates
+     * @return The value of the coordinate, or false if the position is inexistant
      */
     public boolean hasValue(int x, int y) {
         if (x < 0 || y < 0 || y >= values.length || x >= values[y].length) return false;

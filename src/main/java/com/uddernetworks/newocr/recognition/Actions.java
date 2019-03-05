@@ -23,6 +23,15 @@ public interface Actions {
     void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters);
 
     /**
+     * Gets the {@link SearchCharacter}s found in training. This is different because it assumes that there are whole
+     * lines to help group characters.
+     *
+     * @param searchImage The training image to scan
+     * @param searchCharacters The list that will have all of the {@link SearchCharacter}s added to
+     */
+    void getLettersDuringTraining(SearchImage searchImage, List<SearchCharacter> searchCharacters);
+
+    /**
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
