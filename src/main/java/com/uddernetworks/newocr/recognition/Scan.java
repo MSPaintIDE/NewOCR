@@ -2,6 +2,8 @@ package com.uddernetworks.newocr.recognition;
 
 import com.uddernetworks.newocr.ScannedImage;
 import com.uddernetworks.newocr.character.ImageLetter;
+import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
+import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import java.io.File;
 import java.util.List;
@@ -26,6 +28,17 @@ public interface Scan {
      * @return A copy of the input {@link ImageLetter} List, but with spaces appended to the end
      */
     List<ImageLetter> getSpacesFor(List<ImageLetter> line, int fontSize);
+
+    /**
+     * Merges character parts that should be together, e.g. the parts of an " or i
+     *
+     * @param sortedLines The lines to go off of
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
+    void mergeCharacters(Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines) throws ExecutionException, InterruptedException;
+
+    MergenceManager getMergenceManager();
 
     /**
      * Gets the full space character count for the blank gap divided by the space width. This is calculated by getting

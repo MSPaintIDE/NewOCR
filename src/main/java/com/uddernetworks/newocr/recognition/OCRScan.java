@@ -5,6 +5,12 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
+import com.uddernetworks.newocr.recognition.mergence.DefaultMergenceManager;
+import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
+import com.uddernetworks.newocr.recognition.mergence.rules.ApostropheRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.OverDotRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.PercentRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.UnderDotRule;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
@@ -28,12 +34,19 @@ public class OCRScan implements Scan {
 
     private DatabaseManager databaseManager;
     private Actions actions;
+    private MergenceManager mergenceManager;
 
     public OCRScan(DatabaseManager databaseManager) {
         this.databaseManager = databaseManager;
         ImageIO.setUseCache(false);
 
         this.actions = new OCRActions(databaseManager);
+
+        this.mergenceManager = new DefaultMergenceManager();
+        this.mergenceManager.addRule(new OverDotRule());
+        this.mergenceManager.addRule(new UnderDotRule());
+        this.mergenceManager.addRule(new ApostropheRule());
+        this.mergenceManager.addRule(new PercentRule());
     }
 
     @Override
@@ -66,8 +79,6 @@ public class OCRScan implements Scan {
         this.actions.getLetters(searchImage, searchCharacters);
 //        this.actions.getLettersDuringTraining(searchImage, searchCharacters);
 
-        System.exit(0);
-
         System.out.println("DONE");
 
         // Gets all needed character data from the database based on the currently used font sizes
@@ -82,9 +93,6 @@ public class OCRScan implements Scan {
 
         // Key = Entry<MinCenter, MaxCenter>  centers are ABSOLUTE
         Map<IntPair, List<ImageLetter>> lines = new LinkedHashMap<>();
-
-
-        System.exit(0);
 
         // Gets the closest matching character (According to the database values) using OCRActions#getCharacterFor(SearchCharacter),
         // then it orders them by their X values, and then sorts the ImageLetters so certain ones go first, allowing the
@@ -188,47 +196,15 @@ public class OCRScan implements Scan {
                     sortedLines.put(y, databaseCharacters);
                 });
 
-        sortedLines.forEach((key, value) -> {
-            var i = 0;
-            for (ImageLetter imageLetter : value) {
-                OCRUtils.makeImage(imageLetter.getValues(), "E:\\NewOCR\\ind\\" + (i++) + ".png");
-            }
-            System.exit(0);
-        });
+//        sortedLines.forEach((key, value) -> {
+//            var i = 0;
+//            for (ImageLetter imageLetter : value) {
+//                OCRUtils.makeImage(imageLetter.getValues(), "E:\\NewOCR\\ind\\" + (i++) + ".png");
+//            }
+//            System.exit(0);
+//        });
 
-        var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
-
-        // Combine " characters that are next to each other which would equate to a full " instead of the ' parts
-        sortedLines.forEach((y, line) -> {
-            final ImageLetter[] last = {null};
-            line.removeIf(imageLetter -> {
-                if (imageLetter.getLetter() != '"' && imageLetter.getLetter() != '\'') {
-                    // If only one " (Or ') is found, just make it a '
-                    if (last[0] != null) {
-                        last[0].setLetter('\'');
-                    }
-                    last[0] = null;
-                    return false;
-                }
-
-                if (last[0] == null) {
-                    last[0] = imageLetter;
-                    return false;
-                }
-
-                var avgLength = (double) last[0].getHeight() * apostropheRatio;
-                if (imageLetter.getX() - last[0].getX() <= avgLength) {
-                    // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
-                    last[0].setLetter('"');
-                    last[0].merge(imageLetter);
-                    last[0] = null;
-                    return true;
-                }
-
-                last[0] = imageLetter;
-                return false;
-            });
-        });
+        this.mergenceManager.beginMergence(sortedLines);
 
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.
@@ -290,6 +266,49 @@ public class OCRScan implements Scan {
         }
 
         return ret;
+    }
+
+    // TODO: Remove
+    @Override
+    public void mergeCharacters(Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines) throws ExecutionException, InterruptedException {
+        var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
+
+        // Combine " characters that are next to each other which would equate to a full " instead of the ' parts
+        sortedLines.forEach((y, line) -> {
+            final ImageLetter[] last = {null};
+            line.removeIf(imageLetter -> {
+                if (imageLetter.getLetter() != '"' && imageLetter.getLetter() != '\'') {
+                    // If only one " (Or ') is found, just make it a '
+                    if (last[0] != null) {
+                        last[0].setLetter('\'');
+                    }
+                    last[0] = null;
+                    return false;
+                }
+
+                if (last[0] == null) {
+                    last[0] = imageLetter;
+                    return false;
+                }
+
+                var avgLength = (double) last[0].getHeight() * apostropheRatio;
+                if (imageLetter.getX() - last[0].getX() <= avgLength) {
+                    // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
+                    last[0].setLetter('"');
+                    last[0].merge(imageLetter);
+                    last[0] = null;
+                    return true;
+                }
+
+                last[0] = imageLetter;
+                return false;
+            });
+        });
+    }
+
+    @Override
+    public MergenceManager getMergenceManager() {
+        return this.mergenceManager;
     }
 
     @Override

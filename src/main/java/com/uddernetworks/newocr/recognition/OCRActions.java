@@ -13,7 +13,6 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.uddernetworks.newocr.utils.OCRUtils.diff;
@@ -58,6 +57,7 @@ public class OCRActions implements Actions {
             }
         }
 
+/*
         searchCharacters.removeIf(searchCharacter -> searchCharacter.getWidth() == 1);
 
         // distanceAbove
@@ -171,6 +171,7 @@ public class OCRActions implements Actions {
         for (SearchCharacter searchCharacter : searchCharacters) {
             OCRUtils.makeImage(searchCharacter.getValues(), "E:\\NewOCR\\ind\\final_" + i++ + ".png");
         }
+*/
     }
 
     @Override
