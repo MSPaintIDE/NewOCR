@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -52,11 +53,22 @@ public class OCRScan implements Scan {
 
         input = OCRUtils.filter(input).orElseThrow();
 
+        try {
+            ImageIO.write(input, "png", new File("E:\\NewOCR\\ind\\binz.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         OCRUtils.toGrid(input, values);
 
         var searchImage = new SearchImage(values);
 
         this.actions.getLetters(searchImage, searchCharacters);
+//        this.actions.getLettersDuringTraining(searchImage, searchCharacters);
+
+        System.exit(0);
+
+        System.out.println("DONE");
 
         // Gets all needed character data from the database based on the currently used font sizes
 
@@ -70,6 +82,9 @@ public class OCRScan implements Scan {
 
         // Key = Entry<MinCenter, MaxCenter>  centers are ABSOLUTE
         Map<IntPair, List<ImageLetter>> lines = new LinkedHashMap<>();
+
+
+        System.exit(0);
 
         // Gets the closest matching character (According to the database values) using OCRActions#getCharacterFor(SearchCharacter),
         // then it orders them by their X values, and then sorts the ImageLetters so certain ones go first, allowing the
@@ -172,6 +187,14 @@ public class OCRScan implements Scan {
                     databaseCharacters.sort(Comparator.comparingInt(ImageLetter::getX));
                     sortedLines.put(y, databaseCharacters);
                 });
+
+        sortedLines.forEach((key, value) -> {
+            var i = 0;
+            for (ImageLetter imageLetter : value) {
+                OCRUtils.makeImage(imageLetter.getValues(), "E:\\NewOCR\\ind\\" + (i++) + ".png");
+            }
+            System.exit(0);
+        });
 
         var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
 

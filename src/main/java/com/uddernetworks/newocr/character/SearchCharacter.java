@@ -31,6 +31,17 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      * @param coordinates Coordinates used by the character
      */
     public SearchCharacter(List<IntPair> coordinates) {
+        this(coordinates, 0, 0);
+    }
+
+    /**
+     * Creates a SearchCharacter from a list of coordinates used by the character.
+     *
+     * @param coordinates Coordinates used by the character
+     * @param xOffset The X offset of the coordinates
+     * @param yOffset The Y offset of the coordinates
+     */
+    public SearchCharacter(List<IntPair> coordinates, int xOffset, int yOffset) {
         this.coordinates = coordinates;
         int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE, minY = Integer.MAX_VALUE;
@@ -55,19 +66,19 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
             }
         }
 
-        this.x = minX;
-        this.y = minY;
+        this.x = minX + xOffset;
+        this.y = minY + yOffset;
 
-        this.width = maxX - minX;
-        this.height = maxY - minY;
+        this.width = maxX - minX + 1;
+        this.height = maxY - minY + 1;
 
-        values = new boolean[this.height + 1][];
+        values = new boolean[this.height][];
 
         for (int i = 0; i < values.length; i++) {
-            values[i] = new boolean[width + 1];
+            values[i] = new boolean[width];
         }
 
-        coordinates.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
+        coordinates.forEach(pair -> values[pair.getValue() - this.y + yOffset][pair.getKey() - this.x + xOffset] = true);
     }
 
     public void merge(SearchCharacter searchCharacter) {
@@ -323,16 +334,31 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     /**
+     * Gets if another {@link SearchCharacter}'s black pixels overlap the current {@link SearchCharacter} at all.
+     *
+     * @param searchCharacter The {@link SearchCharacter} to check for overlapping
+     * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
+     */
+    public boolean isOverlappingPixels(SearchCharacter searchCharacter) {
+        return searchCharacter.coordinates.parallelStream().anyMatch(coordinate -> this.coordinates.contains(coordinate));
+//        return !Collections.disjoint(searchCharacter.coordinates, this.coordinates);
+    }
+
+    /**
      * Gets if another {@link SearchCharacter} is overlapping the current {@link SearchCharacter} at all in the X axis.
      *
      * @param searchCharacter The {@link SearchCharacter} to check for overlapping
      * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
      */
-    public boolean isOverlapingX(SearchCharacter searchCharacter) {
-        if (isInBounds(searchCharacter.getX(), getY())) return true;
-        if (isInBounds(searchCharacter.getX(), getY() + getHeight())) return true;
-        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), getY())) return true;
-        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), getY() + getHeight())) return true;
+    public boolean isOverlappingX(SearchCharacter searchCharacter) {
+        System.out.println("SearchCharacter.isOverlappingX this = " + getX() + ", " + getWidth() + " search = " + searchCharacter.getX() + ", " + searchCharacter.getWidth());
+
+//        if (isInBounds(searchCharacter.getX(), getY())) return true;
+//        if (isInBounds(searchCharacter.getX(), getY() + getHeight())) return true;
+//        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), getY())) return true;
+//        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), getY() + getHeight())) return true;
+        if (isInXBounds(searchCharacter.getX())) return true;
+        if (isInXBounds(searchCharacter.getX() + searchCharacter.getWidth())) return true;
         return false;
     }
 

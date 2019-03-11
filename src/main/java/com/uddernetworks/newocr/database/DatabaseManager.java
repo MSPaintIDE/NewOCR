@@ -1,6 +1,7 @@
 package com.uddernetworks.newocr.database;
 
 import com.uddernetworks.newocr.character.LetterMeta;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -79,9 +80,17 @@ public interface DatabaseManager {
      * Adds a piece of data in the database (Never overrides existing data) to be averaged and fetched later.
      *
      * @param name The name of the data
-     * @param value The value to be added
+     * @param values The value to be added
      */
-    void addAveragedData(String name, double[] value);
+    void addAveragedData(String name, double[] values);
+
+    /**
+     * Adds a piece of data in the database (Never overrides existing data) to be averaged and fetched later.
+     *
+     * @param name The name of the data
+     * @param values The value to be added
+     */
+    void addAveragedData(String name, DoubleList values);
 
     /**
      * Gets the average value of the given data name, added from {@link DatabaseManager#addAveragedData(String, double[])}.

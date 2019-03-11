@@ -7,16 +7,17 @@ import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.LongAdder;
 
 public class OCRTrain implements Train {
 
@@ -60,13 +61,19 @@ public class OCRTrain implements Train {
 
         input = OCRUtils.filter(input).orElseThrow();
 
+        try {
+            ImageIO.write(input, "png", new File("E:\\NewOCR\\ind\\binz.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         OCRUtils.toGrid(input, values);
 
         var searchImage = new SearchImage(values);
 
         this.actions.getLettersDuringTraining(searchImage, searchCharacters);
 
-        System.exit(0);
+//        System.exit(0);
 
         TrainedCharacterData spaceTrainedCharacter = new TrainedCharacterData(' ');
         trainedCharacterDataList.add(spaceTrainedCharacter);
@@ -91,7 +98,9 @@ public class OCRTrain implements Train {
 //        System.exit(0);
 
         // Stores the height/distance ratio for apostrophe parts
-        var apostropheRatios = new ArrayList<Double>();
+        var apostropheRatios = new DoubleArrayList();
+        var distancesAbove = new DoubleArrayList();
+        var distancesBelow = new DoubleArrayList();
 
         var searchCharactersCopy = new ArrayList<>(searchCharacters);
         var searchCharacterLines = new ArrayList<List<SearchCharacter>>();
@@ -164,6 +173,9 @@ public class OCRTrain implements Train {
                         nextMeasuringSpace = searchCharacter;
                     }
 
+                    searchCharacter.getTrainingMeta("distanceAbove").ifPresent(distancesAbove::add);
+                    searchCharacter.getTrainingMeta("distanceBelow").ifPresent(distancesBelow::add);
+
                     searchCharacter.setModifier(modifier);
                     var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, current, modifier);
 
@@ -205,100 +217,102 @@ public class OCRTrain implements Train {
         // This is how many errors exist per character to know if a potential fix has actually worked or not
         Map<Character, Integer> errorsForCharacter = new HashMap<>();
 
-        for (int i2 = 0; i2 < options.getMaxCorrectionIterations(); i2++) {
-            System.out.println("========================== [" + i2 + "] ==========================");
-            var foundThisRun = new ArrayList<Character>();
-
-            var changes = new LongAdder();
-            for (int i = 0; i < searchCharacterLines.size(); i++) {
-                var line = searchCharacterLines.get(i);
-                int lineNumber = i;
-                line.forEach(searchCharacter -> {
-                    // Because the second and third W will be for space testing
-                    var foundW = new LongAdder();
-                    this.actions.getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresentOrElse(imageLetter -> {
-                        var correct = searchCharacter.getKnownChar();
-                        var calculatedChar = imageLetter.getLetter();
-                        System.out.print(calculatedChar);
-
-                        if (correct == 'W') foundW.increment();
-                        if (foundW.intValue() == 2) return;
-
-                        if (correct == calculatedChar) return;
-                        if ((correct == '"' && calculatedChar == '\'') || (correct == '\'' && calculatedChar == '"')) return;
-
-                        // Don't try and fix the same correct character twice in one run
-                        if (foundThisRun.contains(correct)) return;
-
-                        if (exclude.containsKey(correct) && exclude.get(correct).contains(lineNumber)) return;
-
-                        LOGGER.debug("Incorrect character for " + correct + " (Found as " + calculatedChar + " on line " + lineNumber + ")");
-                        var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, correct, searchCharacter.getModifier());
-
-                        errorsForCharacter.putIfAbsent(correct, getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct));
-
-                        // Try and correct the training data by invoking TrainedCharacterData#recalculateTo until it works
-                        var maxIterations = 1000;
-
-                        int recalcAttempts;
-                        for (recalcAttempts = 0; recalcAttempts < maxIterations; recalcAttempts++) {
-                            trainedSearchCharacter.recalculateTo(searchCharacter);
-
-                            var gotten = this.actions.getCharacterFor(searchCharacter, trainedCharacterDataList);
-                            if (gotten.isEmpty()) break;
-                            var gottenCharacter = gotten.get();
-
-                            if (gottenCharacter.getLetter() == correct) break;
-                        }
-
-
-                        // If it reached maxIterations then just undo it, because it probably didn't work
-                        if (recalcAttempts == maxIterations) {
-                            System.err.println("Reached max iterations on " + correct);
-                            trainedSearchCharacter.undoLastRecalculations(recalcAttempts + 1);
-                            exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(lineNumber);
-                            return;
-                        }
-
-                        // If there is more errors than before, OR if it maxed out on attempts, undo it and add to exclusions
-                        var errors = getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct);
-                        var previousErrors = errorsForCharacter.getOrDefault(correct, Integer.MAX_VALUE);
-
-
-                        LOGGER.debug("Recalculated " + correct + " after " + recalcAttempts + " attempts");
-
-                        // If this recalculation creates more errors, undo it. This can probably be improved in the future, but works well enough for now.
-                        if (errors > previousErrors) {
-                            LOGGER.debug("The previous recalculation created " + (errors - previousErrors) + " more errors, so " + recalcAttempts + " recalculations are being undone on line " + lineNumber + ".");
-                            trainedSearchCharacter.undoLastRecalculations(recalcAttempts + 1);
-                            exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(lineNumber);
-
-                            LOGGER.debug("There were " + previousErrors + " before, and " + errors + " after the previous calculations. This next number should be the previous errors: " + getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct));
-                            return;
-                        }
-
-                        errorsForCharacter.put(correct, errors);
-
-                        foundThisRun.add(correct);
-                        changes.increment();
-
-                    }, () -> LOGGER.debug("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
-                });
-
-                System.out.print("\n");
-            }
-
-            if (changes.intValue() == 0) {
-                LOGGER.debug("Nothing changed, so stopping correction.");
-                break;
-            }
-        }
+//        for (int i2 = 0; i2 < options.getMaxCorrectionIterations(); i2++) {
+//            System.out.println("========================== [" + i2 + "] ==========================");
+//            var foundThisRun = new ArrayList<Character>();
+//
+//            var changes = new LongAdder();
+//            for (int i = 0; i < searchCharacterLines.size(); i++) {
+//                var line = searchCharacterLines.get(i);
+//                int lineNumber = i;
+//                line.forEach(searchCharacter -> {
+//                    // Because the second and third W will be for space testing
+//                    var foundW = new LongAdder();
+//                    this.actions.getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresentOrElse(imageLetter -> {
+//                        var correct = searchCharacter.getKnownChar();
+//                        var calculatedChar = imageLetter.getLetter();
+//                        System.out.print(calculatedChar);
+//
+//                        if (correct == 'W') foundW.increment();
+//                        if (foundW.intValue() == 2) return;
+//
+//                        if (correct == calculatedChar) return;
+//                        if ((correct == '"' && calculatedChar == '\'') || (correct == '\'' && calculatedChar == '"')) return;
+//
+//                        // Don't try and fix the same correct character twice in one run
+//                        if (foundThisRun.contains(correct)) return;
+//
+//                        if (exclude.containsKey(correct) && exclude.get(correct).contains(lineNumber)) return;
+//
+//                        LOGGER.debug("Incorrect character for " + correct + " (Found as " + calculatedChar + " on line " + lineNumber + ")");
+//                        var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, correct, searchCharacter.getModifier());
+//
+//                        errorsForCharacter.putIfAbsent(correct, getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct));
+//
+//                        // Try and correct the training data by invoking TrainedCharacterData#recalculateTo until it works
+//                        var maxIterations = 1000;
+//
+//                        int recalcAttempts;
+//                        for (recalcAttempts = 0; recalcAttempts < maxIterations; recalcAttempts++) {
+//                            trainedSearchCharacter.recalculateTo(searchCharacter);
+//
+//                            var gotten = this.actions.getCharacterFor(searchCharacter, trainedCharacterDataList);
+//                            if (gotten.isEmpty()) break;
+//                            var gottenCharacter = gotten.get();
+//
+//                            if (gottenCharacter.getLetter() == correct) break;
+//                        }
+//
+//
+//                        // If it reached maxIterations then just undo it, because it probably didn't work
+//                        if (recalcAttempts == maxIterations) {
+//                            System.err.println("Reached max iterations on " + correct);
+//                            trainedSearchCharacter.undoLastRecalculations(recalcAttempts + 1);
+//                            exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(lineNumber);
+//                            return;
+//                        }
+//
+//                        // If there is more errors than before, OR if it maxed out on attempts, undo it and add to exclusions
+//                        var errors = getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct);
+//                        var previousErrors = errorsForCharacter.getOrDefault(correct, Integer.MAX_VALUE);
+//
+//
+//                        LOGGER.debug("Recalculated " + correct + " after " + recalcAttempts + " attempts");
+//
+//                        // If this recalculation creates more errors, undo it. This can probably be improved in the future, but works well enough for now.
+//                        if (errors > previousErrors) {
+//                            LOGGER.debug("The previous recalculation created " + (errors - previousErrors) + " more errors, so " + recalcAttempts + " recalculations are being undone on line " + lineNumber + ".");
+//                            trainedSearchCharacter.undoLastRecalculations(recalcAttempts + 1);
+//                            exclude.computeIfAbsent(correct, x -> new ArrayList<>()).add(lineNumber);
+//
+//                            LOGGER.debug("There were " + previousErrors + " before, and " + errors + " after the previous calculations. This next number should be the previous errors: " + getErrorsForCharacter(searchCharacterLines, trainedCharacterDataList, correct));
+//                            return;
+//                        }
+//
+//                        errorsForCharacter.put(correct, errors);
+//
+//                        foundThisRun.add(correct);
+//                        changes.increment();
+//
+//                    }, () -> LOGGER.debug("Couldn't find a value for the SearchCharacter at (" + searchCharacter.getX() + "x" + searchCharacter.getY() + ")"));
+//                });
+//
+//                System.out.print("\n");
+//            }
+//
+//            if (changes.intValue() == 0) {
+//                LOGGER.debug("Nothing changed, so stopping correction.");
+//                break;
+//            }
+//        }
 
         LOGGER.debug("Writing data to database...");
         long start = System.currentTimeMillis();
 
         // Add the apostropheRatios data into the database
-        CompletableFuture.runAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios.stream().mapToDouble(Double::doubleValue).toArray()))
+        CompletableFuture.runAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios))
+                .thenRunAsync(() -> databaseManager.addAveragedData("distanceAbove", distancesAbove))
+                .thenRunAsync(() -> databaseManager.addAveragedData("distanceBelow", distancesBelow))
                 .thenRunAsync(() -> customSpaces.forEach((character, ratios) -> databaseManager.addCustomSpace(character, ratios.stream().mapToDouble(Double::doubleValue).average().orElse(0))));
 
         // Inserts all character data into the database after recalculating the

@@ -13,6 +13,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.uddernetworks.newocr.utils.OCRUtils.diff;
@@ -21,12 +22,26 @@ public class OCRActions implements Actions {
 
     private DatabaseManager databaseManager;
 
+    private double distanceAbove = -1;
+    private double distanceBelow = -1;
+    private int index = 0;
+
     public OCRActions(DatabaseManager databaseManager) {
         this.databaseManager = databaseManager;
     }
 
     @Override
     public void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
+        try {
+            if (this.distanceAbove == -1) this.distanceAbove = this.databaseManager.getAveragedData("distanceAbove").get();
+            if (this.distanceBelow == -1) this.distanceBelow = this.databaseManager.getAveragedData("distanceBelow").get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("distanceAbove = " + distanceAbove);
+        System.out.println("distanceBelow = " + distanceBelow);
+
         var coordinates = new ArrayList<IntPair>();
 
         var width = searchImage.getWidth();
@@ -41,6 +56,120 @@ public class OCRActions implements Actions {
                     coordinates.clear();
                 }
             }
+        }
+
+        searchCharacters.removeIf(searchCharacter -> searchCharacter.getWidth() == 1);
+
+        // distanceAbove
+        var ignoring = new HashSet<SearchCharacter>();
+
+        for (SearchCharacter searchCharacter : searchCharacters) {
+            if (ignoring.contains(searchCharacter)) continue;
+
+            System.out.println(searchCharacter.getWidth());
+            System.out.println(searchCharacter.getHeight());
+
+            System.out.println("\n\n======================== [" + (++index) + "] ========================");
+//            OCRUtils.makeImage(searchCharacter.getValues(), "E:\\NewOCR\\ind\\" + index + ".png");
+
+            System.out.println("ignoring = " + ignoring);
+
+            var charactersAbove = new ArrayList<SearchCharacter>();
+            var charactersBelow = new ArrayList<SearchCharacter>();
+            var charactersOverlapping = new ArrayList<SearchCharacter>();
+
+            // TODO: Parallel this?
+            searchCharacters.stream()
+                    .filter(Predicate.not(ignoring::contains))
+                    .filter(Predicate.not(searchCharacter::equals))
+                    .filter(filterChar -> filterChar.isOverlappingX(searchCharacter))
+                    .forEach(filterChar -> {
+                        List<SearchCharacter> listToAdd;
+                        if (searchCharacter.isOverlappingPixels(filterChar)) {
+                            listToAdd = charactersOverlapping;
+                        } else
+                            if (filterChar.getY() < searchCharacter.getY()) {
+                            listToAdd = charactersAbove;
+                        } else {
+                            listToAdd = charactersBelow;
+                        }
+
+                        listToAdd.add(filterChar);
+                    });
+
+            System.out.println("charactersAbove = " + charactersAbove);
+            System.out.println("charactersBelow = " + charactersBelow);
+
+            var aboveIndex = 0;
+            for (SearchCharacter part : charactersAbove) {
+                System.out.println("Above!");
+//                OCRUtils.makeImage(part.getValues(), "E:\\NewOCR\\ind\\above_" + aboveIndex++ + ".png");
+
+                var bottomOfCharacterY = part.getY() + part.getHeight();
+                var difference = Math.abs(bottomOfCharacterY - searchCharacter.getY());
+                var isPartAbove = part.getHeight() < searchCharacter.getHeight();
+                double minHeight = Math.min(part.getHeight(), searchCharacter.getHeight());
+                double projectedDifference = this.distanceBelow * minHeight;
+                double delta = projectedDifference * 0.25;
+
+                System.out.println("difference = " + difference);
+                System.out.println("projectedDifference = " + projectedDifference);
+                System.out.println("Delta = " + delta);
+
+                // Definitely can be improved
+                if (diff(difference, projectedDifference) <= delta) {
+                    System.out.println("Moving part");
+                    var base = !isPartAbove ? part : searchCharacter;
+                    var adding = !isPartAbove ? searchCharacter : part;
+                    base.merge(adding);
+                    ignoring.add(adding);
+                }
+            }
+
+            var belowIndex = 0;
+            for (SearchCharacter part : charactersBelow) {
+                System.out.println("Below!");
+//                OCRUtils.makeImage(part.getValues(), "E:\\NewOCR\\ind\\below_" + belowIndex++ + ".png");
+
+                var bottomOfCharacterY = part.getY();
+                var aboveY = searchCharacter.getY() + searchCharacter.getHeight();
+                var difference = Math.abs(bottomOfCharacterY - aboveY);
+                var isBelowBase = part.getHeight() < searchCharacter.getHeight();
+                double minHeight = Math.min(part.getHeight(), searchCharacter.getHeight());
+                double projectedDifference = this.distanceBelow * minHeight;
+                double delta = projectedDifference * 0.25;
+                System.out.println("difference = " + difference);
+                System.out.println("projectedDifference = " + projectedDifference);
+                System.out.println("Delta = " + delta);
+
+                // Definitely can be improved
+                if (diff(difference, projectedDifference) <= delta) {
+                    System.out.println("Merging");
+                    var base = !isBelowBase ? part : searchCharacter;
+                    var adding = !isBelowBase ? searchCharacter : part;
+                    base.merge(adding);
+                    ignoring.add(adding);
+                }
+            }
+
+            for (SearchCharacter overlap : charactersOverlapping) {
+                System.out.println("Overlapping");
+                var overlapBigger = overlap.getWidth() > searchCharacter.getWidth() && overlap.getHeight() > searchCharacter.getHeight();
+                var base = overlapBigger ? overlap : searchCharacter;
+                var adding = overlapBigger ? searchCharacter : overlap;
+
+                base.merge(adding);
+                ignoring.add(adding);
+            }
+        }
+
+        searchCharacters.removeAll(ignoring);
+
+        Collections.sort(searchCharacters);
+
+        var i = 0;
+        for (SearchCharacter searchCharacter : searchCharacters) {
+            OCRUtils.makeImage(searchCharacter.getValues(), "E:\\NewOCR\\ind\\final_" + i++ + ".png");
         }
     }
 
@@ -66,7 +195,7 @@ public class OCRActions implements Actions {
                     sub.scanFrom(x, y, coordinates);
 
                     if (!coordinates.isEmpty()) {
-                        found.add(new SearchCharacter(new ArrayList<>(coordinates)));
+                        found.add(new SearchCharacter(new ArrayList<>(coordinates), 0, fromY));
                         coordinates.clear();
                     }
                 }
@@ -84,7 +213,25 @@ public class OCRActions implements Actions {
                 for (SearchCharacter part2 : found) {
                     if (part1.equals(part2)) continue;
 
-                    if (part1.isOverlapingX(part2)) {
+                    if (part1.isOverlappingX(part2)) {
+
+                        System.out.println("part1: y = " + part1.getY() + " height = " + part1.getHeight());
+                        System.out.println("part2: y = " + part2.getY() + " height = " + part2.getHeight());
+
+                        double maxHeight = Math.max(part1.getHeight(), part2.getHeight());
+                        if (part2.getY() < part1.getY()) { // If it's a dot on the i or anything
+                            double diff = (double) (part1.getY() - (part2.getY() + part2.getHeight())) - 1;
+                            System.out.println("1 diff = " + diff);
+                            var distance = maxHeight / diff;
+                            part1.setTrainingMeta("distanceAbove", distance);
+                        } else {
+                            // part 2 > part 1
+                            double diff = (double) (part2.getY() - (part1.getY() + part1.getHeight())) - 1;
+                            System.out.println("2 diff = " + diff);
+                            var distance = maxHeight / diff;
+                            part1.setTrainingMeta("distanceBelow", distance);
+                        }
+
                         part1.merge(part2);
                         ignored.add(part2);
                         break;
@@ -173,10 +320,10 @@ public class OCRActions implements Actions {
         // Skip everything if it has a very high confidence of the character (Much higher than the closest one OR is <= 0.01 in confidence),
         // and make sure that the difference in width/height is very low, or else it will continue and sort by width/height difference.
         var bigDifference = firstEntry.getDoubleValue() * 2 > secondEntry.getDoubleValue(); // If true, SORT
-        var verysmallDifference = ratioDifference <= 0.01 || firstEntry.getDoubleValue() <= 0.01; // If true, skip sorting
+        var verySmallDifference = ratioDifference <= 0.01 || firstEntry.getDoubleValue() <= 0.01; // If true, skip sorting
         var ratioDiff = ratioDifference > 0.1; // If true, SORT
 
-        if (!verysmallDifference && (bigDifference || ratioDiff)) {
+        if (!verySmallDifference && (bigDifference || ratioDiff)) {
             entries.sort(Comparator.comparingDouble(entry -> {
                 // Lower is more similar
                 return compareSizes(searchCharacter.getWidth(), searchCharacter.getHeight(), entry.getKey().getAverageWidth(), entry.getKey().getAverageHeight());

@@ -3,6 +3,7 @@ package com.uddernetworks.newocr.database;
 import com.uddernetworks.newocr.character.LetterMeta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 import javax.sql.DataSource;
 import java.io.BufferedReader;
@@ -300,6 +301,11 @@ public class OCRDatabaseManager implements DatabaseManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void addAveragedData(String name, DoubleList values) {
+        addAveragedData(name, values.stream().mapToDouble(Double::doubleValue).toArray());
     }
 
     @Override
