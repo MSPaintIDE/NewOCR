@@ -351,12 +351,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
      */
     public boolean isOverlappingX(SearchCharacter searchCharacter) {
-        System.out.println("SearchCharacter.isOverlappingX this = " + getX() + ", " + getWidth() + " search = " + searchCharacter.getX() + ", " + searchCharacter.getWidth());
-
-//        if (isInBounds(searchCharacter.getX(), getY())) return true;
-//        if (isInBounds(searchCharacter.getX(), getY() + getHeight())) return true;
-//        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), getY())) return true;
-//        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), getY() + getHeight())) return true;
         if (isInXBounds(searchCharacter.getX())) return true;
         if (isInXBounds(searchCharacter.getX() + searchCharacter.getWidth())) return true;
         return false;
@@ -383,17 +377,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         return x <= this.x + this.width
                 && x >= this.x;
     }
-
-//    /**
-//     * Gets if the given x1 and x2 overlap the current character at all.
-//     *
-//     * @param x1 The x coordinate to start
-//     * @param x2 The second coordinate; must be bigger than x
-//     * @return
-//     */
-//    public boolean isHorizontallyOverlapping(int x1, int x2) {
-//
-//    }
 
     /**
      * Creates sections and invokes {@link #addSegment(IntPair)} for each one. This is vital for the use of this object.

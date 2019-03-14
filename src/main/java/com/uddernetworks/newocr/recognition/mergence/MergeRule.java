@@ -3,6 +3,7 @@ package com.uddernetworks.newocr.recognition.mergence;
 import com.uddernetworks.newocr.character.ImageLetter;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MergeRule {
 
@@ -27,6 +28,7 @@ public interface MergeRule {
      * horizontal overlap in a column.
      *
      * @param letterData The letter data
+     * @return The {@link ImageLetter} that should be removed if the merge was successful
      */
-    void mergeCharacters(List<ImageLetter> letterData);
+    Optional<ImageLetter> mergeCharacters(List<ImageLetter> letterData);
 }

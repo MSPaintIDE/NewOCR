@@ -5,6 +5,7 @@ import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 
 import java.util.List;
+import java.util.Optional;
 
 public class PercentRule implements MergeRule {
 
@@ -19,7 +20,9 @@ public class PercentRule implements MergeRule {
     }
 
     @Override
-    public void mergeCharacters(List<ImageLetter> letterData) {
+    public Optional<ImageLetter> mergeCharacters(List<ImageLetter> letterData) {
         // TODO: Implement method
+
+        return Optional.empty();
     }
 }
