@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr.demo;
+package com.uddernetworks.newocr.utils;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import java.util.function.Consumer;
  */
 public class MuteItList<E> extends ArrayList<E> {
 
-    // TODO: CLean and add tests
+    // TODO: Clean and add tests
     public static void main(String[] args) throws Exception {
         System.out.println("Starting");
         var test = new MuteItList<String>();
@@ -44,8 +44,9 @@ public class MuteItList<E> extends ArrayList<E> {
     private Object[] elementData = null;
 
     private boolean copyInternalElements = true;
-    private int loopMods = 0;
+    private int sizeMod = 0;
     private int activelyLooping = -1;
+    private boolean modified = false;
 
     private static Field reflected;
 
@@ -70,68 +71,85 @@ public class MuteItList<E> extends ArrayList<E> {
 
     @Override
     public void forEach(Consumer<? super E> action) {
-        loopMods = 0;
+        sizeMod = 0;
         refreshElementData();
+        copyInternalElements = true;
         System.out.println("elementData = " + Arrays.toString(elementData));
+        modified = false;
 
         Objects.requireNonNull(action);
-        final int expectedModCount = modCount;
-        final Object[] es = elementData;
-        final int size = size();
-        for (int i = 0; modCount == expectedModCount && i < size + loopMods; i++) {
+        int expectedModCount = modCount;
+        Object[] es = elementData;
+        int size = size();
+
+        for (int i = 0; modCount == expectedModCount && i < size + sizeMod; i++) {
             activelyLooping = i;
             action.accept(elementAt(es, i));
             i = activelyLooping;
+
+            if (modified) {
+                refreshElementData();
+                es = elementData;
+                expectedModCount = modCount;
+                sizeMod = 0;
+                size = size();
+                modified = false;
+            }
         }
 //        if (modCount != expectedModCount)
 //            throw new ConcurrentModificationException();
 
-        loopMods = 0;
+        sizeMod = 0;
         activelyLooping = -1;
+        copyInternalElements = false;
     }
 
     private static <E> E elementAt(Object[] es, int index) {
         return (E) es[index];
     }
 
+    public boolean isModified() {
+        return modified;
+    }
+
+    public void setModified(boolean modified) {
+        this.modified = modified;
+    }
+
     public boolean isCopyInternalElements() {
         return copyInternalElements;
     }
 
-    public MuteItList<E> setCopyInternalElements(boolean copyInternalElements) {
+    public void setCopyInternalElements(boolean copyInternalElements) {
         this.copyInternalElements = copyInternalElements;
-        return this;
     }
 
     @Override
     public boolean add(E e) {
         var res = super.add(e);
-        loopMods++;
-        modCount--;
+        modified = true;
         return res;
     }
 
     @Override
     public void add(int index, E element) {
         super.add(index, element);
-        if (activelyLooping > index) {
-            activelyLooping++;
-            loopMods++;
-        }
         modCount--;
+        if (activelyLooping <= index) modified = true;
     }
 
     @Override
     public E remove(int index) {
         var ret = super.remove(index);
+        modCount--;
+
         if (activelyLooping > index) {
             activelyLooping--;
-            loopMods--;
         } else {
-            loopMods--;
+            modified = true;
         }
 
-        modCount--;
+        sizeMod--;
 
         return ret;
     }
@@ -139,16 +157,16 @@ public class MuteItList<E> extends ArrayList<E> {
     @Override
     public boolean remove(Object o) {
         var index = indexOf(o);
-        remove(index);
-        if (activelyLooping > index) {
-            activelyLooping--;
-            loopMods--;
-        } else if (activelyLooping <= index) {
-            loopMods--;
-        }
-
+        super.remove(index);
         modCount--;
 
+        if (activelyLooping > index) {
+            activelyLooping--;
+        } else {
+            modified = true;
+        }
+
+        sizeMod--;
         return true;
     }
 }
