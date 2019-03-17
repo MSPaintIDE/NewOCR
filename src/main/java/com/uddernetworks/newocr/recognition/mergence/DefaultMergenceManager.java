@@ -28,23 +28,41 @@ public class DefaultMergenceManager implements MergenceManager {
 
     @Override
     public void beginMergence(Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines) {
+        System.out.println("111");
         this.mergeRules.sort(Comparator.comparingInt(rule -> rule.getPriority().getPriorityIndex()));
 
         long start = System.currentTimeMillis();
         flatKeys(sortedLines).forEach(imageLetter -> verticalLetterRelations.put(imageLetter, getVerticalTo(imageLetter, sortedLines)));
 
+        System.out.println("222");
+
         sortedLines.forEach((y, line) -> line.forEach(imageLetter -> horizontalLetterRelations.put(imageLetter, line)));
         System.out.println("Finished first in " + (System.currentTimeMillis() - start) + "ms");
+        System.out.println("333");
 
-        var removed = new HashSet<ImageLetter>();
+        System.out.println("horizontalLetterRelations = " + horizontalLetterRelations);
+        System.out.println("verticalLetterRelations = " + verticalLetterRelations);
 
-        this.mergeRules.forEach(rule -> {
-            if (rule.isHorizontal()) {
-                // TODO: Merge characters matching rules and then *remove them from all lists* (This is where I'm wondering about the best solution)
-            } else {
-                // TODO: Here as well
-            }
+        System.out.println("mergeRules = " + mergeRules);
+
+        start = System.currentTimeMillis();
+        this.mergeRules.forEach(this::processRule);
+        System.out.println("Finished in " + (System.currentTimeMillis() - start));
+    }
+
+    private void processRule(MergeRule rule) {
+        var iterating = rule.isHorizontal() ? horizontalLetterRelations : verticalLetterRelations;
+        var removing = new HashSet<ImageLetter>();
+        iterating.forEach((base, context) -> {
+            if (removing.contains(base)) return;
+            rule.mergeCharacters(base, context).ifPresent(remove -> {
+                removing.add(remove);
+                iterating.forEach((key, list) -> list.remove(remove));
+            });
         });
+
+        removing.forEach(horizontalLetterRelations::remove);
+        removing.forEach(verticalLetterRelations::remove);
     }
 
     private void removeFromAll(ImageLetter imageLetter) {

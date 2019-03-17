@@ -1,17 +1,31 @@
 package com.uddernetworks.newocr.recognition.mergence.rules;
 
 import com.uddernetworks.newocr.character.ImageLetter;
+import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
-public class ApostropheRule implements MergeRule {
+public class ApostropheRule extends MergeRule {
+
+    private double apostropheRatio;
+
+    public ApostropheRule(DatabaseManager databaseManager) {
+        super(databaseManager);
+
+        try {
+            this.apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public boolean isHorizontal() {
-        return true;
+        return false;
     }
 
     @Override
@@ -20,8 +34,30 @@ public class ApostropheRule implements MergeRule {
     }
 
     @Override
-    public Optional<ImageLetter> mergeCharacters(List<ImageLetter> letterData) {
-        // TODO: Implement method
+    public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
+        System.out.println("ApostropheRule.mergeCharacters");
+        var letter = target.getLetter();
+
+        if (letter != '\'' && letter != '"') return Optional.empty();
+
+        var index = letterData.indexOf(target);
+
+        var before = letterData.size() <= index - 1 ? null : letterData.get(index - 1);
+
+        if (before == null) return Optional.empty();
+        if (before.getLetter() != '\'' && before.getLetter() != '\'') {
+            before.setLetter('\'');
+            return Optional.empty();
+        }
+
+        var avgLength = (double) before.getHeight() * apostropheRatio;
+        if (target.getX() - before.getX() <= avgLength) {
+            System.out.println("Merging");
+            // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
+            before.setLetter('"');
+            before.merge(target);
+            return Optional.of(target);
+        }
 
         return Optional.empty();
     }

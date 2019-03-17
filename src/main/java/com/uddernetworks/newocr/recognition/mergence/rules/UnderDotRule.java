@@ -1,13 +1,18 @@
 package com.uddernetworks.newocr.recognition.mergence.rules;
 
 import com.uddernetworks.newocr.character.ImageLetter;
+import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 
 import java.util.List;
 import java.util.Optional;
 
-public class UnderDotRule implements MergeRule {
+public class UnderDotRule extends MergeRule {
+
+    public UnderDotRule(DatabaseManager databaseManager) {
+        super(databaseManager);
+    }
 
     @Override
     public boolean isHorizontal() {
@@ -20,7 +25,7 @@ public class UnderDotRule implements MergeRule {
     }
 
     @Override
-    public Optional<ImageLetter> mergeCharacters(List<ImageLetter> letterData) {
+    public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
         // TODO: Implement method
 
         return Optional.empty();

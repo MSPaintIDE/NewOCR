@@ -43,10 +43,10 @@ public class OCRScan implements Scan {
         this.actions = new OCRActions(databaseManager);
 
         this.mergenceManager = new DefaultMergenceManager();
-        this.mergenceManager.addRule(new OverDotRule());
-        this.mergenceManager.addRule(new UnderDotRule());
-        this.mergenceManager.addRule(new ApostropheRule());
-        this.mergenceManager.addRule(new PercentRule());
+        this.mergenceManager.addRule(new OverDotRule(this.databaseManager));
+        this.mergenceManager.addRule(new UnderDotRule(this.databaseManager));
+        this.mergenceManager.addRule(new ApostropheRule(this.databaseManager));
+        this.mergenceManager.addRule(new PercentRule(this.databaseManager));
     }
 
     @Override
@@ -77,6 +77,8 @@ public class OCRScan implements Scan {
         var searchImage = new SearchImage(values);
 
         this.actions.getLetters(searchImage, searchCharacters);
+
+        searchCharacters.forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind\\1character_" + searchCharacter.getX() + ".png"));
 //        this.actions.getLettersDuringTraining(searchImage, searchCharacters);
 
         System.out.println("DONE");
@@ -206,6 +208,8 @@ public class OCRScan implements Scan {
 
         this.mergenceManager.beginMergence(sortedLines);
 
+        sortedLines.values().stream().flatMap(List::stream).forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind\\2character_" + searchCharacter.getX() + ".png"));
+
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.
         sortedLines.values().forEach(line -> line.addAll(getSpacesFor(line, line.stream().mapToInt(ImageLetter::getHeight).max().getAsInt())));
@@ -266,44 +270,6 @@ public class OCRScan implements Scan {
         }
 
         return ret;
-    }
-
-    // TODO: Remove
-    @Override
-    public void mergeCharacters(Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines) throws ExecutionException, InterruptedException {
-        var apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();
-
-        // Combine " characters that are next to each other which would equate to a full " instead of the ' parts
-        sortedLines.forEach((y, line) -> {
-            final ImageLetter[] last = {null};
-            line.removeIf(imageLetter -> {
-                if (imageLetter.getLetter() != '"' && imageLetter.getLetter() != '\'') {
-                    // If only one " (Or ') is found, just make it a '
-                    if (last[0] != null) {
-                        last[0].setLetter('\'');
-                    }
-                    last[0] = null;
-                    return false;
-                }
-
-                if (last[0] == null) {
-                    last[0] = imageLetter;
-                    return false;
-                }
-
-                var avgLength = (double) last[0].getHeight() * apostropheRatio;
-                if (imageLetter.getX() - last[0].getX() <= avgLength) {
-                    // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
-                    last[0].setLetter('"');
-                    last[0].merge(imageLetter);
-                    last[0] = null;
-                    return true;
-                }
-
-                last[0] = imageLetter;
-                return false;
-            });
-        });
     }
 
     @Override
