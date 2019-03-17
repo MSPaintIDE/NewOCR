@@ -35,17 +35,17 @@ public class ApostropheRule extends MergeRule {
 
     @Override
     public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
-        System.out.println("ApostropheRule.mergeCharacters");
         var letter = target.getLetter();
 
         if (letter != '\'' && letter != '"') return Optional.empty();
 
-        var index = letterData.indexOf(target);
+        var index = letterData.indexOf(target) - 1;
 
-        var before = letterData.size() <= index - 1 ? null : letterData.get(index - 1);
+        if (letterData.size() <= index || index < 0) return Optional.empty();
+        var before = letterData.get(index);
 
         if (before == null) return Optional.empty();
-        if (before.getLetter() != '\'' && before.getLetter() != '\'') {
+        if (before.getLetter() != '\'' && before.getLetter() != '\'') { // 0 1 2 3
             before.setLetter('\'');
             return Optional.empty();
         }

@@ -357,6 +357,18 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     /**
+     * Gets if another {@link SearchCharacter} is overlapping the current {@link SearchCharacter} at all in the X axis.
+     *
+     * @param searchCharacter The {@link SearchCharacter} to check for overlapping
+     * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
+     */
+    public boolean isOverlappingY(SearchCharacter searchCharacter) {
+        if (isInYBounds(searchCharacter.getY())) return true;
+        if (isInYBounds(searchCharacter.getY() + searchCharacter.getHeight())) return true;
+        return false;
+    }
+
+    /**
      * Gets if the given Y position is within the Y bounds of the current character.
      *
      * @param y The Y position to check

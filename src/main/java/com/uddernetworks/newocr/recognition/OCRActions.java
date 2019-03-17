@@ -204,7 +204,7 @@ public class OCRActions implements Actions {
 
             System.out.println("Found size before: " + found.size());
 
-            // Get the characters with horizontal overlap
+//          Get the characters with horizontal overlap
 
             var ignored = new HashSet<SearchCharacter>();
 
@@ -216,21 +216,22 @@ public class OCRActions implements Actions {
 
                     if (part1.isOverlappingX(part2)) {
 
-                        System.out.println("part1: y = " + part1.getY() + " height = " + part1.getHeight());
-                        System.out.println("part2: y = " + part2.getY() + " height = " + part2.getHeight());
+                        if (part1.isOverlappingY(part2)) {
 
-                        double maxHeight = Math.max(part1.getHeight(), part2.getHeight());
-                        if (part2.getY() < part1.getY()) { // If it's a dot on the i or anything
-                            double diff = (double) (part1.getY() - (part2.getY() + part2.getHeight())) - 1;
-                            System.out.println("1 diff = " + diff);
-                            var distance = maxHeight / diff;
-                            part1.setTrainingMeta("distanceAbove", distance);
                         } else {
-                            // part 2 > part 1
-                            double diff = (double) (part2.getY() - (part1.getY() + part1.getHeight())) - 1;
-                            System.out.println("2 diff = " + diff);
-                            var distance = maxHeight / diff;
-                            part1.setTrainingMeta("distanceBelow", distance);
+                            double maxHeight = Math.max(part1.getHeight(), part2.getHeight());
+                            if (part2.getY() < part1.getY()) { // If it's a dot on the i or anything
+                                double diff = (double) (part1.getY() - (part2.getY() + part2.getHeight())) - 1;
+                                System.out.println("1 diff = " + diff);
+                                var distance = maxHeight / diff;
+                                part1.setTrainingMeta("distanceAbove", distance);
+                            } else {
+                                // part 2 > part 1
+                                double diff = (double) (part2.getY() - (part1.getY() + part1.getHeight())) - 1;
+                                System.out.println("2 diff = " + diff);
+                                var distance = maxHeight / diff;
+                                part1.setTrainingMeta("distanceBelow", distance);
+                            }
                         }
 
                         part1.merge(part2);
@@ -238,9 +239,13 @@ public class OCRActions implements Actions {
                         break;
                     }
                 }
-            }
 
-            ignored.forEach(found::remove);
+
+            }
+//
+//
+//
+//            ignored.forEach(found::remove);
             Collections.sort(found);
 
             searchCharacters.addAll(found);
