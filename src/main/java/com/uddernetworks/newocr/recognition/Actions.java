@@ -4,7 +4,9 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseCharacter;
 import com.uddernetworks.newocr.detection.SearchImage;
+import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
+import com.uddernetworks.newocr.utils.IntPair;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
 import java.util.List;
@@ -27,9 +29,9 @@ public interface Actions {
      * lines to help group characters.
      *
      * @param searchImage The training image to scan
-     * @param searchCharacters The list that will have all of the {@link SearchCharacter}s added to
+     * @return A collection of a list contianing the characters in a line
      */
-    void getLettersDuringTraining(SearchImage searchImage, List<SearchCharacter> searchCharacters);
+    List<CharacterLine> getLettersDuringTraining(SearchImage searchImage, TrainOptions options);
 
     /**
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
@@ -65,4 +67,15 @@ public interface Actions {
      * @return The similarity of rectangles, lower being more similar
      */
     double compareSizes(double width1, double height1, double width2, double height2);
+
+    /**
+     * Gets the top and bottom line bounds found from the value 2D array. This is used for getting characters for
+     * training data.
+     *
+     * @param image The image to get the line bounds from
+     * @param options The options for training, primarily used to merge near lines
+     * @return A list of the absolute top and bottom line values
+     */
+    List<IntPair> getLineBoundsForTraining(SearchImage image, TrainOptions options);
+
 }

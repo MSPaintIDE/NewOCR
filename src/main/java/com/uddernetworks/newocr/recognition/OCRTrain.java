@@ -5,7 +5,6 @@ import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
-import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import org.slf4j.Logger;
@@ -71,8 +70,6 @@ public class OCRTrain implements Train {
 
         var searchImage = new SearchImage(values);
 
-        this.actions.getLettersDuringTraining(searchImage, searchCharacters);
-
 //        System.exit(0);
 
         TrainedCharacterData spaceTrainedCharacter = new TrainedCharacterData(' ');
@@ -82,7 +79,6 @@ public class OCRTrain implements Train {
 
         // Pair<topY, bottomY> (Absolute coordinates)
         // Gets the top and bottom line bounds of every line
-        var lineBounds = getLineBoundsForTesting(values, options);
 
 //        for (IntPair lineBound : lineBounds) {
 //            OCRUtils.colorRow(input, Color.MAGENTA, lineBound.getKey(), 0, input.getWidth());
@@ -103,28 +99,23 @@ public class OCRTrain implements Train {
         var distancesBelow = new DoubleArrayList();
 
         var searchCharactersCopy = new ArrayList<>(searchCharacters);
-        var searchCharacterLines = new ArrayList<List<SearchCharacter>>();
         var customSpaces = new HashMap<Character, List<Double>>();
 
         // Goes through each line found
-        for (var lineBound : lineBounds) {
-            int lineHeight = lineBound.getValue() - lineBound.getKey();
+        for (var line : this.actions.getLettersDuringTraining(searchImage, options)) {
 
             // Gets all characters found at the line bounds from the searchCharacters (Collected from the double for loops)
-            var line = OCRUtils.findCharactersAtLine(lineBound.getKey(), lineBound.getValue(), searchCharacters);
-            searchCharacterLines.add(line);
-
             SearchCharacter nextMeasuringSpace = null;
 
-            if (!line.isEmpty()) {
+            if (!line.getLetters().isEmpty()) {
                 var letterIndex = 0;
                 var beforeSpaceX = 0;
                 SearchCharacter firstQuote = null;
 
-                for (SearchCharacter searchCharacter : line) {
+                for (SearchCharacter searchCharacter : line.getLetters()) {
                     // Gets the next character it knows it will be
                     char current = searchCharacter.getKnownChar() == ' ' ? ' ' : TRAIN_STRING.charAt(letterIndex++);
-                    var modifier = 0;
+                    var modifier = searchCharacter.getModifier();
                     var revertIndex = false;
 
                     // If the index is on the quote
@@ -155,7 +146,7 @@ public class OCRTrain implements Train {
                         // width of the space) and reset the line
                     } else if (letterIndex == TRAIN_STRING.length()) {
                         searchCharacter.setKnownChar('W');
-                        spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX, lineHeight);
+                        spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX, line.topY() - line.bottomY());
                         letterIndex = 0;
                         continue;
                     } else {
@@ -182,8 +173,8 @@ public class OCRTrain implements Train {
                     // Adds the current segment values of the current searchCharacter to the trainedSearchCharacter
                     trainedSearchCharacter.recalculateTo(searchCharacter);
 
-                    double halfOfLineHeight = ((double) lineBound.getValue() - (double) lineBound.getKey()) / 2;
-                    double middleToTopChar = (double) searchCharacter.getY() - (double) lineBound.getKey();
+                    double halfOfLineHeight = ((double) line.bottomY() - (double) line.topY()) / 2;
+                    double middleToTopChar = (double) searchCharacter.getY() - (double) line.topY();
                     double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
 
                     // Sets the current center to be calculated, along with any meta it may have
@@ -201,7 +192,7 @@ public class OCRTrain implements Train {
 
                 // Removes any used letters from the line in searchCharacters, so none will be duplicated and to
                 // increase performance.
-                searchCharacters.removeAll(line);
+                searchCharacters.removeAll(line.getLetters());
             }
         }
 
@@ -306,6 +297,10 @@ public class OCRTrain implements Train {
 //            }
 //        }
 
+        System.out.println("apostropheRatios = " + apostropheRatios);
+        System.out.println("distancesAbove = " + distancesAbove);
+        System.out.println("distancesBelow = " + distancesBelow);
+
         LOGGER.debug("Writing data to database...");
         long start = System.currentTimeMillis();
 
@@ -361,88 +356,5 @@ public class OCRTrain implements Train {
                     trainedCharacterDataList.add(trained);
                     return trained;
                 });
-    }
-
-    @Override
-    public List<IntPair> getLineBoundsForTesting(boolean[][] values, TrainOptions options) {
-        // Pair<topY, bottomY>
-        List<IntPair> lines = new ArrayList<>();
-
-        int height = 0;
-
-        for (int y = 0; y < values.length; y++) {
-            // If there's something on the line, add to their height of it.
-            if (OCRUtils.isRowPopulated(values, y)) {
-                height++;
-            } else if (height > 0) { // If the row has nothing on it and the line is populated, add it to the values
-                int heightUntil = 0;
-                int finalSpace = -1;
-
-                // Seeing if the gap under the character is <= the height of the above piece. This is mainly for seeing
-                // if the dot on an 'i' (And other similar characters) is <= is above the rest of the character the same
-                // amount as its height (Making it a proper 'i' in Verdana and other fonts)
-                for (int i = 0; i < height; i++) {
-                    if (y + i >= values.length) {
-                        finalSpace = 0;
-                        break;
-                    }
-
-                    if (OCRUtils.isRowPopulated(values, y + i)) {
-                        if (finalSpace == -1) {
-                            finalSpace = heightUntil;
-                        }
-                    } else {
-                        heightUntil++;
-                    }
-                }
-
-                if (finalSpace > 0) {
-                    if (height == finalSpace) {
-                        y += finalSpace;
-                        height += finalSpace;
-                        continue;
-                    }
-                }
-
-                LOGGER.debug("Height of " + height);
-                lines.add(new IntPair(y - height, y));
-                height = 0;
-            } else {
-                if (height == 0) continue;
-                LOGGER.debug("Height: " + height);
-                lines.add(new IntPair(y - height, y));
-                height = 0;
-            }
-        }
-
-        // <topY, bottomY>
-
-        var remove = new ArrayList<Integer>();
-        for (int i = 0; i < lines.size(); i++) {
-            var current = lines.get(i);
-            double currentHeight = current.getValue() - current.getKey();
-
-            var onLast = i == lines.size() - 1;
-
-            if (!onLast) {
-                var below = lines.get(i + 1);
-                double belowHeight = below.getValue() - below.getKey();
-                if (belowHeight / currentHeight <= options.getMaxPercentDiffToMerge()
-                    && ((double) current.getKey() - below.getKey()) / currentHeight <= options.getMaxPercentDiffToMerge()) {
-                    remove.add(++i);
-                    current.setValue(below.getValue());
-                }
-            }
-        }
-
-        remove.stream().sorted(Collections.reverseOrder()).forEach(i -> lines.remove(i.intValue()));
-
-        LOGGER.debug("After removal:");
-
-        for (IntPair line : lines) {
-            LOGGER.debug("Height: " + (line.getValue() - line.getKey()));
-        }
-
-        return lines;
     }
 }

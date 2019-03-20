@@ -25,7 +25,7 @@ public class ApostropheRule extends MergeRule {
 
     @Override
     public boolean isHorizontal() {
-        return false;
+        return true;
     }
 
     @Override
@@ -45,7 +45,7 @@ public class ApostropheRule extends MergeRule {
         var before = letterData.get(index);
 
         if (before == null) return Optional.empty();
-        if (before.getLetter() != '\'' && before.getLetter() != '\'') { // 0 1 2 3
+        if (before.getLetter() != '\'' && before.getLetter() != '\'') {
             before.setLetter('\'');
             return Optional.empty();
         }

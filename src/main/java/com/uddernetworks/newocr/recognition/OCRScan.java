@@ -206,7 +206,7 @@ public class OCRScan implements Scan {
 //            System.exit(0);
 //        });
 
-        this.mergenceManager.beginMergence(sortedLines);
+//        this.mergenceManager.beginMergence(sortedLines);
 
         sortedLines.values().stream().flatMap(List::stream).forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind\\2character_" + searchCharacter.getX() + ".png"));
 

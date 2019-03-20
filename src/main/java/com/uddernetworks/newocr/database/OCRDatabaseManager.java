@@ -289,6 +289,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
     @Override
     public void addAveragedData(String name, double[] values) {
+        if (values.length == 0) return;
         try (var connection = dataSource.getConnection();
              var addData = connection.prepareStatement(this.addAverageData)) {
             for (double value : values) {

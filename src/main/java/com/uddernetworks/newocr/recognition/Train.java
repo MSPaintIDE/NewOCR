@@ -4,7 +4,6 @@ import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.train.ComputerTrainGenerator;
 import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
-import com.uddernetworks.newocr.utils.IntPair;
 
 import java.io.File;
 import java.util.List;
@@ -48,14 +47,4 @@ public interface Train {
      * @return The {@link TrainedCharacterData} with the same character and modifier
      */
     TrainedCharacterData getTrainedCharacter(List<TrainedCharacterData> trainedCharacterDataList, char current, int finalModifier);
-
-    /**
-     * Gets the top and bottom line bounds found from the value 2D array. This is used for getting characters for
-     * training data.
-     *
-     * @param values The 2D array of values derived from the image to check from
-     * @param options The options for training, primarily used to merge near lines
-     * @return A list of the absolute top and bottom line values
-     */
-    List<IntPair> getLineBoundsForTesting(boolean[][] values, TrainOptions options);
 }
