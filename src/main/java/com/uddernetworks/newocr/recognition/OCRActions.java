@@ -122,8 +122,6 @@ public class OCRActions implements Actions {
                         .sorted(Comparator.comparingInt(SearchCharacter::getY))
                         .sorted(Comparator.reverseOrder())
                         .forEach(part2 -> {
-
-
                             double maxHeight = Math.max(part1.getHeight(), part2.getHeight());
 
                             if (finalI == 0 || finalI == 37) { // ! ?
