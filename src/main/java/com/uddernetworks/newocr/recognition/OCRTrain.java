@@ -22,7 +22,7 @@ public class OCRTrain implements Train {
 
     private static Logger LOGGER = LoggerFactory.getLogger(OCRTrain.class);
 
-    public static final String TRAIN_STRING = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~W W";
+    public static final String TRAIN_STRING = "!!\"#$%%%&'()*+,-./0123456789::;;<==>??@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghiijjklmnopqrstuvwxyz{|}~W W";
     private DatabaseManager databaseManager;
     private Actions actions;
 
@@ -100,6 +100,7 @@ public class OCRTrain implements Train {
 
         var searchCharactersCopy = new ArrayList<>(searchCharacters);
         var customSpaces = new HashMap<Character, List<Double>>();
+        var first = true;
 
         // Goes through each line found
         for (var line : this.actions.getLettersDuringTraining(searchImage, options)) {
@@ -119,7 +120,7 @@ public class OCRTrain implements Train {
                     var revertIndex = false;
 
                     // If the index is on the quote
-                    if (letterIndex == 2) {
+                    if (letterIndex == 3) {
                         searchCharacter.setKnownChar('"');
                         if (firstQuote == null) {
                             firstQuote = searchCharacter;
@@ -164,6 +165,11 @@ public class OCRTrain implements Train {
                         nextMeasuringSpace = searchCharacter;
                     }
 
+                    if (first) {
+                        System.out.println("Drawing " + current + "_" + modifier + " (" + ((int) current) + ")");
+                        OCRUtils.makeImage(searchCharacter.getValues(), "ind\\" + ((int) current) + "_" + modifier + ".png");
+                    }
+
                     searchCharacter.getTrainingMeta("distanceAbove").ifPresent(distancesAbove::add);
                     searchCharacter.getTrainingMeta("distanceBelow").ifPresent(distancesBelow::add);
 
@@ -189,6 +195,8 @@ public class OCRTrain implements Train {
                         letterIndex = 0;
                     }
                 }
+
+                first = false;
 
                 // Removes any used letters from the line in searchCharacters, so none will be duplicated and to
                 // increase performance.

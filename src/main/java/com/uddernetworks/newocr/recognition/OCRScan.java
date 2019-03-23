@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.uddernetworks.newocr.utils.OCRUtils.diff;
@@ -78,7 +79,11 @@ public class OCRScan implements Scan {
 
         this.actions.getLetters(searchImage, searchCharacters);
 
-        searchCharacters.forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind\\1character_" + searchCharacter.getX() + ".png"));
+        var i2 = new AtomicInteger();
+
+        searchCharacters.stream()
+                .sorted(Comparator.comparingInt(SearchCharacter::getX))
+                .forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind2\\" + i2.getAndIncrement() + ".png"));
 //        this.actions.getLettersDuringTraining(searchImage, searchCharacters);
 
         System.out.println("DONE");
@@ -208,7 +213,7 @@ public class OCRScan implements Scan {
 
 //        this.mergenceManager.beginMergence(sortedLines);
 
-        sortedLines.values().stream().flatMap(List::stream).forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind\\2character_" + searchCharacter.getX() + ".png"));
+//        sortedLines.values().stream().flatMap(List::stream).forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind\\2character_" + searchCharacter.getX() + ".png"));
 
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.

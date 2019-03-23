@@ -513,6 +513,23 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         return String.valueOf(knownChar);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.knownChar, this.letterMeta, this.x, this.y, this.width, this.height);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SearchCharacter)) return false;
+        var character = (SearchCharacter) obj;
+        return character.knownChar == this.knownChar
+                && character.letterMeta == this.letterMeta
+                && character.x == this.x
+                && character.y == this.y
+                && character.width == this.width
+                && character.height == this.height;
+    }
+
     /**
      * Gets the raw 2D array of values of the character.
      *

@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.uddernetworks.newocr.utils.OCRUtils.diff;
@@ -57,7 +57,10 @@ public class OCRActions implements Actions {
                 searchImage.scanFrom(x, y, coordinates);
 
                 if (!coordinates.isEmpty()) {
-                    searchCharacters.add(new SearchCharacter(new ArrayList<>(coordinates)));
+                    var foundCharacter = new SearchCharacter(new ArrayList<>(coordinates));
+                    foundCharacter.applySections();
+                    foundCharacter.analyzeSlices();
+                    searchCharacters.add(foundCharacter);
                     coordinates.clear();
                 }
             }
@@ -88,7 +91,10 @@ public class OCRActions implements Actions {
                     sub.scanFrom(x, y, coordinates);
 
                     if (!coordinates.isEmpty()) {
-                        found.add(new SearchCharacter(new ArrayList<>(coordinates), 0, fromY));
+                        var foundCharacter = new SearchCharacter(new ArrayList<>(coordinates), 0, fromY);
+                        foundCharacter.applySections();
+                        foundCharacter.analyzeSlices();
+                        found.add(foundCharacter);
                         coordinates.clear();
                     }
                 }
@@ -107,44 +113,71 @@ public class OCRActions implements Actions {
 
             for (int i1 = 0; i1 < found.size(); i1++) {
                 var part1 = found.get(i1);
+
+//                OCRUtils.makeImage(part1.getValues(), "ind\\" + i1 + ".png");
+
                 if (ignored.contains(part1)) continue;
-
-                OCRUtils.makeImage(part1.getValues(), "ind\\" + i1 + ".png");
-
                 if (!multipleParts.contains(i1)) continue;
                 System.out.println("here: " + i1);
 
                 var increment = new AtomicInteger(0);
                 int finalI = i1;
-                found.stream()
-                        .filter(Predicate.not(part1::equals))
+                AtomicBoolean first = new AtomicBoolean(true);
+                var list = found.stream()
+//                        .filter(Predicate.not(part1::equals))
                         .filter(part1::isOverlappingX)
                         .sorted(Comparator.comparingInt(SearchCharacter::getY))
                         .sorted(Comparator.reverseOrder())
-                        .forEach(part2 -> {
-                            double maxHeight = Math.max(part1.getHeight(), part2.getHeight());
+                        .collect(Collectors.toList());
 
-                            if (finalI == 0 || finalI == 37) { // ! ?
-                                double diff = (double) (part2.getY() - (part1.getY() + part1.getHeight())) - 1;
-                                System.out.println("2 diff = " + diff);
-                                var distance = maxHeight / diff;
-                                part1.setTrainingMeta("distanceBelow", distance);
-                            } else if (finalI == 80 || finalI == 82) { // i j
-                                double diff = (double) (part1.getY() - (part2.getY() + part2.getHeight())) - 1;
-                                System.out.println("1 diff = " + diff);
-                                var distance = maxHeight / diff;
-                                part1.setTrainingMeta("distanceAbove", distance);
-                            }
+                SearchCharacter tempBase;
 
-                            System.out.println("GOT");
-                            var i = increment.getAndIncrement();
-                            part2.setModifier(i);
-                            ignored.add(part2);
-                            OCRUtils.makeImage(part2.getValues(), "ind\\" + finalI + "_m" + i + ".png");
-                        });
+                if (finalI == index('!') || finalI == index('?')) { // part1 above
+                    tempBase = list.get(0);
+                } else if (finalI == index('i') || finalI == index('j')) { // part1 below
+                    tempBase = list.get(list.size() - 1);
+                } else if (finalI == index('%')) {
+                    tempBase = list.get(0);
+                } else {
+                    tempBase = list.get(0);
+                }
+
+                var base = tempBase;
+
+                list.forEach(part2 -> {
+                    double maxHeight = Math.max(base.getHeight(), part2.getHeight());
+
+                    if (!base.equals(part2)) {
+                        if (finalI == index('!') || finalI == index('?')) { // ! ?
+                            double diff = (double) (part2.getY() - (base.getY() + base.getHeight())) - 1;
+//                                System.out.println("2 diff = " + diff);
+                            var distance = maxHeight / diff;
+                            base.setTrainingMeta("distanceBelow", distance);
+                        } else if (finalI == index('i') || finalI == index('j')) { // i j   base below
+                            double diff = (double) (base.getY() - (part2.getY() + part2.getHeight())) - 1;
+//                                System.out.println("1 diff = " + diff);
+                            var distance = maxHeight / diff;
+                            base.setTrainingMeta("distanceAbove", distance);
+                        }
+                    }
+
+//                            System.out.println("GOT");
+                    var i = increment.getAndIncrement();
+                    System.out.println("i = " + i);
+                    part2.setModifier(i);
+                    ignored.add(part2);
+
+                    if (first.get()) {
+                        first.set(false);
+//                                OCRUtils.makeImage(base.getValues(), "ind\\" + finalI1 + ".png");
+                    }
+
+//                            OCRUtils.makeImage(part2.getValues(), "ind\\" + finalI + "_m" + i + ".png");
+                });
             }
 
             ret.add(new TrainLine(found, fromY, toY));
+//            System.exit(0);
 
         }
 
@@ -343,5 +376,10 @@ public class OCRActions implements Actions {
 
         return lines;
     }
+
+    private int index(char character) {
+        return OCRTrain.TRAIN_STRING.indexOf(character);
+    }
+
 
 }
