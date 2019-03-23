@@ -17,6 +17,7 @@ import java.net.MalformedURLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -138,18 +139,15 @@ public class OCRUtils {
      * @param input2 The second array
      * @return An array with the same length as the inputs containing the difference of both arrays' respective values
      */
-    public static Optional<double[]> getDifferencesFrom(double[] input1, double[] input2) {
-        if (input1 == null || input2 == null || input1.length != input2.length) return Optional.empty();
-        double[] ret = new double[input1.length];
+    public static OptionalDouble getDifferencesFrom(double[] input1, double[] input2) {
+        if (input1 == null || input2 == null || input1.length != input2.length) return OptionalDouble.empty();
+        var res = 0D;
 
         for (int i = 0; i < input1.length; i++) {
-            double one = input1[i];
-            double two = input2[i];
-
-            ret[i] = Math.max(one, two) - Math.min(one, two);
+            res += Math.pow(input1[i] - input2[i], 2);
         }
 
-        return Optional.of(ret);
+        return OptionalDouble.of(res);
     }
 
     /**

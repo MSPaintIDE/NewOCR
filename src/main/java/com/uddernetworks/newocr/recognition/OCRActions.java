@@ -196,12 +196,11 @@ public class OCRActions implements Actions {
                     .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
                     .forEach(character ->
                             OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
-                                var value = Arrays.stream(charDifference).average().orElse(0);
                                 // Gets the difference of the database character and searchCharacter (Lower is better)
-                                var imageLetter = new ImageLetter(character.getLetter(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getAvgWidth(), character.getAvgHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates());
+                                var imageLetter = new ImageLetter(character.getLetter(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getAvgWidth(), character.getAvgHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates());
                                 imageLetter.setMaxCenter(character.getMaxCenter());
                                 imageLetter.setMinCenter(character.getMinCenter());
-                                diffs.put(imageLetter, value);
+                                diffs.put(imageLetter, charDifference);
                             }));
 
             return getCharacterFor(searchCharacter, diffs);
@@ -223,9 +222,8 @@ public class OCRActions implements Actions {
                 .forEach(character -> {
                     character.finishRecalculations();
                     OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getSegmentPercentages()).ifPresent(charDifference -> {
-                        var value = Arrays.stream(charDifference).average().orElse(0);
                         // Gets the difference of the database character and searchCharacter (Lower is better)
-                        diffs.put(new ImageLetter(character.getValue(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getWidthAverage(), character.getHeightAverage(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates()), value);
+                        diffs.put(new ImageLetter(character.getValue(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getWidthAverage(), character.getHeightAverage(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates()), charDifference);
                     });
                 });
 
@@ -253,24 +251,99 @@ public class OCRActions implements Actions {
 
         var ratioDifference = diff(ratio, searchRatio);
 
-        var secondEntry = entries.get(1);
+        // TODO: Modulize this
+        // This makes the secondEntry anything that can't be interchanged, so it won't try something else
+        // if the top 2 options are % mod 0 and % mod 1 (The dots of a %) or a " mod 0 and " mod 2
 
-        // Skip everything if it has a very high confidence of the character (Much higher than the closest one OR is <= 0.01 in confidence),
-        // and make sure that the difference in width/height is very low, or else it will continue and sort by width/height difference.
-        var bigDifference = firstEntry.getDoubleValue() * 2 > secondEntry.getDoubleValue(); // If true, SORT
-        var verySmallDifference = ratioDifference <= 0.01 || firstEntry.getDoubleValue() <= 0.01; // If true, skip sorting
-        var ratioDiff = ratioDifference > 0.1; // If true, SORT
+        getSecondHighest(firstEntry.getKey(), entries).ifPresentOrElse(secondEntry -> {
+            // Skip everything if it has a very high confidence of the character (Much higher than the closest one OR is <= 0.01 in confidence),
+            // and make sure that the difference in width/height is very low, or else it will continue and sort by width/height difference.
+            var bigDifference = firstEntry.getDoubleValue() * 2 > secondEntry.getDoubleValue(); // If true, SORT
+            System.out.println((firstEntry.getDoubleValue()) + " * 2 > " + secondEntry.getDoubleValue());
+            var verySmallDifference = ratioDifference <= 0.01 || firstEntry.getDoubleValue() <= 0.01; // If true, skip sorting
+            var ratioDiff = ratioDifference > 0.1; // If true, SORT
 
-        if (!verySmallDifference && (bigDifference || ratioDiff)) {
-            entries.sort(Comparator.comparingDouble(entry -> {
-                // Lower is more similar
-                return compareSizes(searchCharacter.getWidth(), searchCharacter.getHeight(), entry.getKey().getAverageWidth(), entry.getKey().getAverageHeight());
-            }));
-        }
+            System.out.println("verySmallDifference = " + verySmallDifference);
+            System.out.println("bigDifference = " + bigDifference);
+            System.out.println("ratioDiff = " + ratioDiff);
+
+            if (!verySmallDifference && (bigDifference || ratioDiff)) {
+                System.out.println("Comparing sizes");
+                entries.sort(Comparator.comparingDouble(entry -> {
+                    // Lower is more similar
+                    return compareSizes(searchCharacter.getWidth(), searchCharacter.getHeight(), entry.getKey().getAverageWidth(), entry.getKey().getAverageHeight());
+                }));
+            }
+        }, () -> {
+            System.out.println("Perfect match!");
+        });
+
+        System.out.println("entries = " + entries);
 
         ImageLetter first = entries.get(0).getKey();
         first.setValues(searchCharacter.getValues());
         return Optional.of(first);
+    }
+
+    private Optional<Object2DoubleMap.Entry<ImageLetter>> getSecondHighest(ImageLetter first, List<Object2DoubleMap.Entry<ImageLetter>> data) {
+        var firstLetter = first.getLetter();
+        var firstMod = first.getModifier();
+
+        System.out.println("firstLetter = " + firstLetter);
+
+        // TODO: Java 12 update? This can also definitely be optimised/minified in the future, this is mainly for seeing if this will work
+        switch (firstLetter) {
+            case '%':
+                if (firstMod <= 1) {
+                    for (int i = 1; i < data.size(); i++) {
+                        var entry = data.get(i);
+                        var letter = entry.getKey();
+
+                        var cha = letter.getLetter();
+                        var mod = letter.getModifier();
+
+                        if ((cha == firstLetter && (mod == 0 || mod == 1))
+                                || (cha == 'o')) continue;
+                        return Optional.of(entry);
+                    }
+                }
+
+                return Optional.empty();
+            case '\'':
+            case '"':
+            case 'i':
+                if (firstLetter == 'i' && firstMod != 1) break;
+                for (int i = 1; i < data.size(); i++) {
+                    var entry = data.get(i);
+                    var letter = entry.getKey();
+
+                    var cha = letter.getLetter();
+                    var mod = letter.getModifier();
+
+                    if (cha == '\"' || cha == '\'' || (cha == 'i' && mod == 1)) continue;
+                    return Optional.of(entry);
+                }
+
+                return Optional.empty();
+            case '-':
+            case '=':
+            case '_':
+                for (int i = 1; i < data.size(); i++) {
+                    var entry = data.get(i);
+                    var letter = entry.getKey();
+
+                    var cha = letter.getLetter();
+
+                    if (cha == '-' || cha == '=' || cha == '_') continue;
+                    return Optional.of(entry);
+                }
+
+                return Optional.empty();
+        }
+
+        // TODO: Add dots too
+
+        return Optional.of(data.get(1));
     }
 
     @Override

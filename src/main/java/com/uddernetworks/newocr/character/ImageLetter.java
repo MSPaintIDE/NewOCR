@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 public class ImageLetter {
 
     private char letter;
+    private int modifier;
     private int x;
     private int y;
     private int width;
@@ -34,8 +35,8 @@ public class ImageLetter {
      * @param height The height of this character
      * @param ratio The width/height ratio of this character
      */
-    public ImageLetter(char letter, int x, int y, int width, int height, double averageWidth, double averageHeight, double ratio) {
-        this(letter, x, y, width, height, averageWidth, averageHeight, ratio, null);
+    public ImageLetter(char letter, int modifier, int x, int y, int width, int height, double averageWidth, double averageHeight, double ratio) {
+        this(letter, modifier, x, y, width, height, averageWidth, averageHeight, ratio, null);
     }
 
     /**
@@ -48,8 +49,9 @@ public class ImageLetter {
      * @param ratio The width/height ratio of this character
      * @param coordinates The data coordinates of this character (In form of [Black, Total])
      */
-    public ImageLetter(char letter, int x, int y, int width, int height, double averageWidth, double averageHeight, double ratio, List<IntPair> coordinates) {
+    public ImageLetter(char letter, int modifier, int x, int y, int width, int height, double averageWidth, double averageHeight, double ratio, List<IntPair> coordinates) {
         this.letter = letter;
+        this.modifier = modifier;
         this.x = x;
         this.y = y;
         this.width = width;
@@ -104,6 +106,24 @@ public class ImageLetter {
         }
 
         this.coordinates.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
+    }
+
+    /**
+     * Sets the modifier of the character.
+     *
+     * @return The modifier of the character
+     */
+    public int getModifier() {
+        return modifier;
+    }
+
+    /**
+     * Sets the modifier of the character.
+     *
+     * @param modifier The modifier to set
+     */
+    public void setModifier(int modifier) {
+        this.modifier = modifier;
     }
 
     /**
