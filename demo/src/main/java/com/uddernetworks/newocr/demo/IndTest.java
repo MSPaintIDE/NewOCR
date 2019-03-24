@@ -4,6 +4,7 @@ import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.recognition.OCRActions;
+import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
 import com.uddernetworks.newocr.utils.OCRUtils;
 
 import java.io.File;
@@ -23,7 +24,7 @@ public class IndTest {
         var searchImage = new SearchImage(values);
 
         var databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db"));
-        var actions = new OCRActions(databaseManager);
+        var actions = new OCRActions(databaseManager, new DefaultSimilarityManager().loadDefaults());
 
         var characters = new ArrayList<SearchCharacter>();
         actions.getLetters(searchImage, characters);

@@ -15,7 +15,7 @@ public interface MergenceManager {
     void addRule(MergeRule rule);
 
     /**
-     * Orders and invokes all merge rules' {@link MergeRule#mergeCharacters(List)} method with appropriate data.
+     * Orders and invokes all merge rules' {@link MergeRule#mergeCharacters(ImageLetter, List)} method with appropriate data.
      *
      * @param sortedLines The read image data
      */

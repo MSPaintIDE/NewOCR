@@ -3,6 +3,7 @@ package com.uddernetworks.newocr.recognition;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
+import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
 import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.OCRUtils;
@@ -30,7 +31,7 @@ public class OCRTrain implements Train {
         this.databaseManager = databaseManager;
         ImageIO.setUseCache(false);
 
-        this.actions = new OCRActions(databaseManager);
+        this.actions = new OCRActions(databaseManager, new DefaultSimilarityManager().loadDefaults());
     }
 
     @Override

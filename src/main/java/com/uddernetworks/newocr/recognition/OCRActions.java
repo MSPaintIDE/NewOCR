@@ -4,6 +4,7 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.IntPair;
@@ -26,13 +27,15 @@ public class OCRActions implements Actions {
     private static Logger LOGGER = LoggerFactory.getLogger(OCRActions.class);
 
     private DatabaseManager databaseManager;
+    private SimilarityManager similarityManager;
 
     private double distanceAbove = -1;
     private double distanceBelow = -1;
     private int index = 0;
 
-    public OCRActions(DatabaseManager databaseManager) {
+    public OCRActions(DatabaseManager databaseManager, SimilarityManager similarityManager) {
         this.databaseManager = databaseManager;
+        this.similarityManager = similarityManager;
     }
 
     @Override
@@ -255,7 +258,7 @@ public class OCRActions implements Actions {
         // This makes the secondEntry anything that can't be interchanged, so it won't try something else
         // if the top 2 options are % mod 0 and % mod 1 (The dots of a %) or a " mod 0 and " mod 2
 
-        getSecondHighest(firstEntry.getKey(), entries).ifPresentOrElse(secondEntry -> {
+        this.similarityManager.getSecondHighest(entries).ifPresentOrElse(secondEntry -> {
             // Skip everything if it has a very high confidence of the character (Much higher than the closest one OR is <= 0.01 in confidence),
             // and make sure that the difference in width/height is very low, or else it will continue and sort by width/height difference.
             var bigDifference = firstEntry.getDoubleValue() * 2 > secondEntry.getDoubleValue(); // If true, SORT
@@ -285,6 +288,7 @@ public class OCRActions implements Actions {
         return Optional.of(first);
     }
 
+    // TODO: Remove this
     private Optional<Object2DoubleMap.Entry<ImageLetter>> getSecondHighest(ImageLetter first, List<Object2DoubleMap.Entry<ImageLetter>> data) {
         var firstLetter = first.getLetter();
         var firstMod = first.getModifier();

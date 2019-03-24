@@ -7,10 +7,7 @@ import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.recognition.mergence.DefaultMergenceManager;
 import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
-import com.uddernetworks.newocr.recognition.mergence.rules.ApostropheRule;
-import com.uddernetworks.newocr.recognition.mergence.rules.OverDotRule;
-import com.uddernetworks.newocr.recognition.mergence.rules.PercentRule;
-import com.uddernetworks.newocr.recognition.mergence.rules.UnderDotRule;
+import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
@@ -41,13 +38,8 @@ public class OCRScan implements Scan {
         this.databaseManager = databaseManager;
         ImageIO.setUseCache(false);
 
-        this.actions = new OCRActions(databaseManager);
-
-        this.mergenceManager = new DefaultMergenceManager();
-        this.mergenceManager.addRule(new OverDotRule(this.databaseManager));
-        this.mergenceManager.addRule(new UnderDotRule(this.databaseManager));
-        this.mergenceManager.addRule(new ApostropheRule(this.databaseManager));
-        this.mergenceManager.addRule(new PercentRule(this.databaseManager));
+        this.actions = new OCRActions(databaseManager, new DefaultSimilarityManager().loadDefaults());
+        this.mergenceManager = new DefaultMergenceManager().loadDefaults(this.databaseManager);
     }
 
     @Override

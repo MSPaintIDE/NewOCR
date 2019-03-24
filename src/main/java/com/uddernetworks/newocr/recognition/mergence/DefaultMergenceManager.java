@@ -2,6 +2,11 @@ package com.uddernetworks.newocr.recognition.mergence;
 
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
+import com.uddernetworks.newocr.database.DatabaseManager;
+import com.uddernetworks.newocr.recognition.mergence.rules.ApostropheRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.OverDotRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.PercentRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.UnderDotRule;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import java.util.Comparator;
@@ -20,6 +25,20 @@ public class DefaultMergenceManager implements MergenceManager {
     // Concurrent from parallel streams
     private Map<ImageLetter, List<ImageLetter>> horizontalLetterRelations = new ConcurrentHashMap<>();
     private Map<ImageLetter, List<ImageLetter>> verticalLetterRelations = new ConcurrentHashMap<>();
+
+    /**
+     * Adds the default {@link MergeRule}s, otherwise all rules will need to be added manually via
+     * {@link MergenceManager#addRule(MergeRule)}.
+     *
+     * @return The current {@link MergenceManager}
+     */
+    public MergenceManager loadDefaults(DatabaseManager databaseManager) {
+        addRule(new OverDotRule(databaseManager));
+        addRule(new UnderDotRule(databaseManager));
+        addRule(new ApostropheRule(databaseManager));
+        addRule(new PercentRule(databaseManager));
+        return this;
+    }
 
     @Override
     public void addRule(MergeRule rule) {
