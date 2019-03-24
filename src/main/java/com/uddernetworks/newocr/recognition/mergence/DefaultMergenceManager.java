@@ -3,10 +3,10 @@ package com.uddernetworks.newocr.recognition.mergence;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
-import com.uddernetworks.newocr.recognition.mergence.rules.ApostropheRule;
-import com.uddernetworks.newocr.recognition.mergence.rules.OverDotRule;
-import com.uddernetworks.newocr.recognition.mergence.rules.PercentRule;
-import com.uddernetworks.newocr.recognition.mergence.rules.UnderDotRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.ApostropheMergeRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.OverDotMergeRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.PercentMergeRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.UnderDotMergeRule;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import java.util.Comparator;
@@ -33,10 +33,10 @@ public class DefaultMergenceManager implements MergenceManager {
      * @return The current {@link MergenceManager}
      */
     public MergenceManager loadDefaults(DatabaseManager databaseManager) {
-        addRule(new OverDotRule(databaseManager));
-        addRule(new UnderDotRule(databaseManager));
-        addRule(new ApostropheRule(databaseManager));
-        addRule(new PercentRule(databaseManager));
+        addRule(new OverDotMergeRule(databaseManager));
+        addRule(new UnderDotMergeRule(databaseManager));
+        addRule(new ApostropheMergeRule(databaseManager));
+        addRule(new PercentMergeRule(databaseManager));
         return this;
     }
 

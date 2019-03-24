@@ -10,10 +10,11 @@ import com.uddernetworks.newocr.utils.OCRUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class IndTest {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         var input = OCRUtils.readImage(new File("E:\\NewOCR\\ind2\\8.png"));
         var values = OCRUtils.createGrid(input);
 
@@ -40,6 +41,9 @@ public class IndTest {
         }, () -> {
             System.out.println("Couldn't find a matching character!");
         });
+
+        TimeUnit.SECONDS.sleep(1L);
+        databaseManager.shutdown();
     }
 
 }

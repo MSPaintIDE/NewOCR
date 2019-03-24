@@ -1,6 +1,10 @@
 package com.uddernetworks.newocr.recognition.similarity;
 
 import com.uddernetworks.newocr.character.ImageLetter;
+import com.uddernetworks.newocr.recognition.similarity.rules.DotSimilarityRule;
+import com.uddernetworks.newocr.recognition.similarity.rules.HorizontalLineSimilarityRule;
+import com.uddernetworks.newocr.recognition.similarity.rules.PercentDotSimilarityRule;
+import com.uddernetworks.newocr.recognition.similarity.rules.VerticalLineSimilarityRule;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
 import java.util.ArrayList;
@@ -18,7 +22,10 @@ public class DefaultSimilarityManager implements SimilarityManager {
      * @return The current {@link SimilarityManager}
      */
     public SimilarityManager loadDefaults() {
-        // TODO: Add defaults
+        addSimilarity(new DotSimilarityRule());
+        addSimilarity(new VerticalLineSimilarityRule());
+        addSimilarity(new HorizontalLineSimilarityRule());
+        addSimilarity(new PercentDotSimilarityRule());
         return this;
     }
 
@@ -30,6 +37,6 @@ public class DefaultSimilarityManager implements SimilarityManager {
     @Override
     public Optional<Object2DoubleMap.Entry<ImageLetter>> getSecondHighest(List<Object2DoubleMap.Entry<ImageLetter>> data) {
         var first = data.get(0);
-        return this.similarRules.stream().filter(rule -> rule.matchesFirst(first.getKey())).findFirst().flatMap(rule -> rule.process(data));
+        return this.similarRules.stream().filter(rule -> rule.matchesLetter(first.getKey())).findFirst().flatMap(rule -> rule.process(data));
     }
 }

@@ -8,9 +8,9 @@ import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 import java.util.List;
 import java.util.Optional;
 
-public class PercentRule extends MergeRule {
+public class PercentMergeRule extends MergeRule {
 
-    public PercentRule(DatabaseManager databaseManager) {
+    public PercentMergeRule(DatabaseManager databaseManager) {
         super(databaseManager);
     }
 

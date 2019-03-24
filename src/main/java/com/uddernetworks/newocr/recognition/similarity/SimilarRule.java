@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import java.util.List;
 import java.util.Optional;
 
+// TODO: Add tests!!!
 public interface SimilarRule {
 
     /**
@@ -14,7 +15,7 @@ public interface SimilarRule {
      * @param first The first {@link ImageLetter} of the data
      * @return If the given {@link ImageLetter} can be processed by the current rule
      */
-    boolean matchesFirst(ImageLetter first);
+    boolean matchesLetter(ImageLetter first);
 
     /**
      * When given a list of the potential results of a character (Irrelevant what character it is), this will find the
@@ -24,5 +25,12 @@ public interface SimilarRule {
      * @param data The possible combination data
      * @return If found, the second character
      */
-    Optional<Object2DoubleMap.Entry<ImageLetter>> process(List<Object2DoubleMap.Entry<ImageLetter>> data);
+    default Optional<Object2DoubleMap.Entry<ImageLetter>> process(List<Object2DoubleMap.Entry<ImageLetter>> data) {
+        for (var entry : data) {
+            if (matchesLetter(entry.getKey())) continue;
+            return Optional.of(entry);
+        }
+
+        return Optional.empty();
+    }
 }

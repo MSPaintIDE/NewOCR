@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-public class ApostropheRule extends MergeRule {
+public class ApostropheMergeRule extends MergeRule {
 
     private double apostropheRatio;
 
-    public ApostropheRule(DatabaseManager databaseManager) {
+    public ApostropheMergeRule(DatabaseManager databaseManager) {
         super(databaseManager);
 
         try {
