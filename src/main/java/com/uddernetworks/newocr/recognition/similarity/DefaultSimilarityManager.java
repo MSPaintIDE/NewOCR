@@ -35,8 +35,25 @@ public class DefaultSimilarityManager implements SimilarityManager {
     }
 
     @Override
+    public boolean isSimilar(ImageLetter first, ImageLetter second) {
+        return this.similarRules.stream()
+                .filter(rule -> rule.matchesLetter(first))
+                .anyMatch(rule -> rule.matchesLetter(second));
+    }
+
+    @Override
+    public Optional<SimilarRule> getRule(Class<? extends SimilarRule> similarityRuleClass) {
+        return this.similarRules.stream()
+                .filter(rule -> rule.getClass().equals(similarityRuleClass))
+                .findFirst();
+    }
+
+    @Override
     public Optional<Object2DoubleMap.Entry<ImageLetter>> getSecondHighest(List<Object2DoubleMap.Entry<ImageLetter>> data) {
         var first = data.get(0);
-        return this.similarRules.stream().filter(rule -> rule.matchesLetter(first.getKey())).findFirst().flatMap(rule -> rule.process(data));
+        return this.similarRules.stream()
+                .filter(rule -> rule.matchesLetter(first.getKey()))
+                .findFirst()
+                .flatMap(rule -> rule.process(data));
     }
 }

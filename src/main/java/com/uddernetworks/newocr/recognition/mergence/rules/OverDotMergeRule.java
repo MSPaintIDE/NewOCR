@@ -4,6 +4,12 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
+import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
+import com.uddernetworks.newocr.recognition.similarity.rules.DotSimilarityRule;
+import com.uddernetworks.newocr.recognition.similarity.rules.VerticalLineSimilarityRule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,10 +19,22 @@ import static com.uddernetworks.newocr.utils.OCRUtils.diff;
 
 public class OverDotMergeRule extends MergeRule {
 
-    private double distanceAbove;
+    private static Logger LOGGER = LoggerFactory.getLogger(OverDotMergeRule.class);
 
-    public OverDotMergeRule(DatabaseManager databaseManager) {
-        super(databaseManager);
+    private double distanceAbove;
+    private SimilarRule dotRule;
+    private SimilarRule verticalLineRule;
+
+    public OverDotMergeRule(DatabaseManager databaseManager, SimilarityManager similarityManager) {
+        super(databaseManager, similarityManager);
+
+        similarityManager.getRule(DotSimilarityRule.class).ifPresentOrElse(rule ->
+                this.dotRule = rule, () ->
+                LOGGER.error("Tried to use uninitialized rule from " + similarityManager.getClass().getCanonicalName()));
+
+        similarityManager.getRule(VerticalLineSimilarityRule.class).ifPresentOrElse(rule ->
+                this.verticalLineRule = rule, () ->
+                LOGGER.error("Tried to use uninitialized rule from " + similarityManager.getClass().getCanonicalName()));
 
         try {
             this.distanceAbove = this.databaseManager.getAveragedData("distanceAbove").get();
@@ -42,12 +60,12 @@ public class OverDotMergeRule extends MergeRule {
 
         if (letterData.size() <= index) return Optional.empty();
 
-        var letter = target.getLetter();
-        // If the base is a straight line (Common misconceptions for the bottoms of characters requiring dots)
-        if (letter != 'i' && letter != 'j' && letter != 'l' && letter != '!' && letter != '|') return Optional.empty();
+        // Base
+        if (!this.verticalLineRule.matchesLetter(target)) return Optional.empty();
 
+        // Dot
         var above = letterData.get(index);
-        if (above.getLetter() != '.' && above.getLetter() != '.') return Optional.empty();
+        if (!this.dotRule.matchesLetter(above)) return Optional.empty();
 
         var bottomOfCharacterY = above.getY() + above.getHeight();
         var difference = Math.abs(bottomOfCharacterY - target.getY());

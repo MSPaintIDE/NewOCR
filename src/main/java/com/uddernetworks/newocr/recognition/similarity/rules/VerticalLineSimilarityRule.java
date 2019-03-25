@@ -11,6 +11,8 @@ public class VerticalLineSimilarityRule implements SimilarRule {
         var mod = first.getModifier();
         return (letter == '\'')
                 || (letter == '"')
-                || (letter == 'i' && mod == 1);
+                || (letter == '|')
+                || (letter == 'i' && mod == 1)
+                || (letter == '!' && mod == 0);
     }
 }

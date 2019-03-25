@@ -7,6 +7,7 @@ import com.uddernetworks.newocr.recognition.mergence.rules.ApostropheMergeRule;
 import com.uddernetworks.newocr.recognition.mergence.rules.OverDotMergeRule;
 import com.uddernetworks.newocr.recognition.mergence.rules.PercentMergeRule;
 import com.uddernetworks.newocr.recognition.mergence.rules.UnderDotMergeRule;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import java.util.Comparator;
@@ -32,11 +33,11 @@ public class DefaultMergenceManager implements MergenceManager {
      *
      * @return The current {@link MergenceManager}
      */
-    public MergenceManager loadDefaults(DatabaseManager databaseManager) {
-        addRule(new OverDotMergeRule(databaseManager));
-        addRule(new UnderDotMergeRule(databaseManager));
-        addRule(new ApostropheMergeRule(databaseManager));
-        addRule(new PercentMergeRule(databaseManager));
+    public MergenceManager loadDefaults(DatabaseManager databaseManager, SimilarityManager similarityManager) {
+        addRule(new OverDotMergeRule(databaseManager, similarityManager));
+        addRule(new UnderDotMergeRule(databaseManager, similarityManager));
+        addRule(new ApostropheMergeRule(databaseManager, similarityManager));
+        addRule(new PercentMergeRule(databaseManager, similarityManager));
         return this;
     }
 

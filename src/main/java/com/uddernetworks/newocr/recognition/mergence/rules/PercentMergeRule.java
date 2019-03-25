@@ -4,14 +4,15 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 
 import java.util.List;
 import java.util.Optional;
 
 public class PercentMergeRule extends MergeRule {
 
-    public PercentMergeRule(DatabaseManager databaseManager) {
-        super(databaseManager);
+    public PercentMergeRule(DatabaseManager databaseManager, SimilarityManager similarityManager) {
+        super(databaseManager, similarityManager);
     }
 
     @Override

@@ -16,6 +16,24 @@ public interface SimilarityManager {
     void addSimilarity(SimilarRule rule);
 
     /**
+     * Finds any matching {@link SimilarRule}s for the first {@link ImageLetter}, and then checks if the second
+     * {@link ImageLetter} also matches any of them.
+     *
+     * @param first The first {@link ImageLetter}
+     * @param second The second {@link ImageLetter}
+     * @return If the two {@link ImageLetter}s are similar
+     */
+    boolean isSimilar(ImageLetter first, ImageLetter second);
+
+    /**
+     * Gets the instance of {@link SimilarRule} with the given class.
+     *
+     * @param similarityRuleClass The class to get the instance of
+     * @return A {@link SimilarRule} with the given class
+     */
+    Optional<SimilarRule> getRule(Class<? extends SimilarRule> similarityRuleClass);
+
+    /**
      * When given a list of the potential results of a character (Irrelevant what character it is), this will find the
      * character lowest in the list that does not match the first character's letter and modifier to any of the added
      * {@link SimilarRule}s.

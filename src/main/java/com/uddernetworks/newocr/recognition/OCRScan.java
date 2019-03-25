@@ -38,8 +38,10 @@ public class OCRScan implements Scan {
         this.databaseManager = databaseManager;
         ImageIO.setUseCache(false);
 
-        this.actions = new OCRActions(databaseManager, new DefaultSimilarityManager().loadDefaults());
-        this.mergenceManager = new DefaultMergenceManager().loadDefaults(this.databaseManager);
+        var similarityManager = new DefaultSimilarityManager().loadDefaults();
+
+        this.actions = new OCRActions(databaseManager, similarityManager);
+        this.mergenceManager = new DefaultMergenceManager().loadDefaults(this.databaseManager, similarityManager);
     }
 
     @Override
@@ -203,7 +205,9 @@ public class OCRScan implements Scan {
 //            System.exit(0);
 //        });
 
-//        this.mergenceManager.beginMergence(sortedLines);
+        System.out.println("sortedLines = " + sortedLines);
+
+        this.mergenceManager.beginMergence(sortedLines);
 
 //        sortedLines.values().stream().flatMap(List::stream).forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind\\2character_" + searchCharacter.getX() + ".png"));
 

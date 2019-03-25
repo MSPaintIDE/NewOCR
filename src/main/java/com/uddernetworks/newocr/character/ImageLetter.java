@@ -26,6 +26,7 @@ public class ImageLetter {
     private Object data;
     private double maxCenter;
     private double minCenter;
+    private int amountOfMerges = 0;
 
     /**
      * Creates an ImageLetter from collected data.
@@ -69,6 +70,7 @@ public class ImageLetter {
      * @param imageLetter The {@link ImageLetter} to merge into the current one
      */
     public void merge(ImageLetter imageLetter) {
+        this.amountOfMerges++;
         this.coordinates = Stream.of(this.coordinates, imageLetter.coordinates).flatMap(List::stream).collect(Collectors.toList());
         int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE, minY = Integer.MAX_VALUE;
@@ -367,5 +369,17 @@ public class ImageLetter {
      */
     public void setMaxCenter(double maxCenter) {
         this.maxCenter = maxCenter;
+    }
+
+    /**
+     * Gets how many times the current {@link ImageLetter} has been merged via {@link ImageLetter#merge(ImageLetter)}
+     * with another {@link ImageLetter}. This value is added every time {@link ImageLetter#merge(ImageLetter)} is
+     * invoked, and adds the amount of merges the argument of that method to the current merge value, as well as
+     * incrementing normally.
+     *
+     * @return The amount of merge operations affecting the current {@link ImageLetter}
+     */
+    public int getAmountOfMerges() {
+        return amountOfMerges;
     }
 }

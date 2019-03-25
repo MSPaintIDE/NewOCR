@@ -2,6 +2,7 @@ package com.uddernetworks.newocr.recognition.mergence;
 
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.database.DatabaseManager;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 
 import java.util.List;
 import java.util.Optional;
@@ -9,9 +10,11 @@ import java.util.Optional;
 public abstract class MergeRule {
 
     protected DatabaseManager databaseManager;
+    protected SimilarityManager similarityManager;
 
-    public MergeRule(DatabaseManager databaseManager) {
+    public MergeRule(DatabaseManager databaseManager, SimilarityManager similarityManager) {
         this.databaseManager = databaseManager;
+        this.similarityManager = similarityManager;
     }
 
     /**
