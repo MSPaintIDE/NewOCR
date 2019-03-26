@@ -10,10 +10,7 @@ import com.uddernetworks.newocr.recognition.mergence.rules.UnderDotMergeRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -51,6 +48,15 @@ public class DefaultMergenceManager implements MergenceManager {
         System.out.println("111");
         this.mergeRules.sort(Comparator.comparingInt(rule -> rule.getPriority().getPriorityIndex()));
 
+        flatKeys(sortedLines).forEach(letter -> {
+            System.out.println(letter + " at (" + letter.getX() + ", " + letter.getY() + ") wh is (" + letter.getWidth() + " x " + letter.getHeight() + ")");
+        });
+
+        var tt = flatKeys(sortedLines).findFirst().get();
+
+        System.out.println("Vertical for first is " + tt);
+        System.out.println(getVerticalTo(tt, sortedLines));
+
         long start = System.currentTimeMillis();
         flatKeys(sortedLines).forEach(imageLetter -> verticalLetterRelations.put(imageLetter, getVerticalTo(imageLetter, sortedLines)));
 
@@ -66,11 +72,12 @@ public class DefaultMergenceManager implements MergenceManager {
         System.out.println("mergeRules = " + mergeRules);
 
         start = System.currentTimeMillis();
-        this.mergeRules.forEach(this::processRule);
+        this.mergeRules.stream().map(this::processRule).flatMap(Set::stream).forEach(imageLetter -> removeFromSorted(imageLetter, sortedLines));
+
         System.out.println("Finished in " + (System.currentTimeMillis() - start));
     }
 
-    private void processRule(MergeRule rule) {
+    private Set<ImageLetter> processRule(MergeRule rule) {
         var iterating = rule.isHorizontal() ? horizontalLetterRelations : verticalLetterRelations;
         var removing = new HashSet<ImageLetter>();
         iterating.forEach((base, context) -> {
@@ -81,18 +88,32 @@ public class DefaultMergenceManager implements MergenceManager {
             });
         });
 
+        System.out.println("removing = " + removing);
+
         removing.forEach(horizontalLetterRelations::remove);
         removing.forEach(verticalLetterRelations::remove);
+
+        return removing;
     }
 
-    private void removeFromAll(ImageLetter imageLetter) {
-        horizontalLetterRelations.values().forEach(line -> line.remove(imageLetter));
-        verticalLetterRelations.values().forEach(line -> line.remove(imageLetter));
+    private void removeFromSorted(ImageLetter imageLetter, Map<Integer, List<ImageLetter>> sortedLines) {
+        var iterator = sortedLines.entrySet().iterator();
+        while (iterator.hasNext()) {
+            var currentEntry = iterator.next();
+            var currentLine = currentEntry.getValue();
+            var removed = currentLine.remove(imageLetter);
+            if (removed) {
+                if (currentLine.isEmpty()) iterator.remove();
+                break;
+            }
+        }
     }
 
     private List<ImageLetter> getVerticalTo(ImageLetter imageLetter, Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines) {
         return flatKeys(sortedLines)
                 .filter(filterChar -> isOverlappingX(filterChar, imageLetter))
+                .sorted(Comparator.comparingInt(ImageLetter::getY))
+//                .collect(Collectors.toCollection(LinkedList::new));
                 .collect(Collectors.toList());
     }
 
@@ -112,7 +133,7 @@ public class DefaultMergenceManager implements MergenceManager {
      */
     public boolean isOverlappingX(ImageLetter letter1, ImageLetter letter2) {
         if (isInXBounds(letter1, letter2.getX())) return true;
-        if (isInXBounds(letter2, letter2.getX() + letter2.getWidth())) return true;
+        if (isInXBounds(letter1, letter2.getX() + letter2.getWidth())) return true;
         return false;
     }
 

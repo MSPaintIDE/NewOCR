@@ -332,7 +332,7 @@ public class ImageLetter {
 
     @Override
     public String toString() {
-        return String.valueOf(getLetter());
+        return getLetter() + "_" + getModifier();
     }
 
     /**

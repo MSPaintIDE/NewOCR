@@ -114,6 +114,12 @@ public class OCRActions implements Actions {
             // These values represent the indices of characters that require multiple parts
             var multipleParts = Arrays.asList(0, 7, 29, 31, 34, 37, 80, 82);
 
+            System.out.println("===================================================================");
+            System.out.println("===================================================================");
+            System.out.println("===================================================================");
+            System.out.println("===================================================================");
+            System.out.println("===================================================================");
+            System.out.println("===================================================================");
             for (int i1 = 0; i1 < found.size(); i1++) {
                 var part1 = found.get(i1);
 
@@ -135,11 +141,13 @@ public class OCRActions implements Actions {
 
                 SearchCharacter tempBase;
 
-                if (finalI == index('!') || finalI == index('?')) { // part1 above
+                var currentChar = OCRTrain.TRAIN_STRING.charAt(finalI);
+
+                if (currentChar == '!') { // part1 above
                     tempBase = list.get(0);
-                } else if (finalI == index('i') || finalI == index('j')) { // part1 below
+                } else if (currentChar == 'i' || currentChar == 'j' || currentChar == '?') { // part1 below
                     tempBase = list.get(list.size() - 1);
-                } else if (finalI == index('%')) {
+                } else if (currentChar == '%') {
                     tempBase = list.get(0);
                 } else {
                     tempBase = list.get(0);
@@ -147,26 +155,46 @@ public class OCRActions implements Actions {
 
                 var base = tempBase;
 
+                System.out.println("finalI = " + finalI);
+
+                System.out.println("INDEX OF I = " + index('i') + " AND " + index('j'));
+
                 list.forEach(part2 -> {
                     double maxHeight = Math.max(base.getHeight(), part2.getHeight());
 
-                    if (!base.equals(part2)) {
-                        if (finalI == index('!') || finalI == index('?')) { // ! ?
+                    if (!base.equals(part2)) { // If part2 is NOT the base
+                        if (currentChar == '!' || currentChar == '?') { // ! ?
+                            System.out.println("Looking up " + currentChar + " with dot below");
                             double diff = (double) (part2.getY() - (base.getY() + base.getHeight())) - 1;
-//                                System.out.println("2 diff = " + diff);
-                            var distance = maxHeight / diff;
+                            System.out.println(part2.getY() + " - (" + base.getY() + " + " + base.getHeight() + ") - 1 = " + diff + "\t\tshit");
+//                            System.exit(0);
+                                System.out.println("2 diff = " + diff);
+                                if (diff < 0) {
+                                    OCRUtils.makeImage(base.getValues(), "ind\\parts\\err_base.png");
+                                    OCRUtils.makeImage(part2.getValues(), "ind\\parts\\err_part2.png");
+                                    System.out.println("=======] err " + diff);
+                                } else {
+                                    OCRUtils.makeImage(base.getValues(), "ind\\parts\\base.png");
+                                    OCRUtils.makeImage(part2.getValues(), "ind\\parts\\part2.png");
+                                    System.out.println("=====] good " + diff);
+                                }
+                            var distance = diff / maxHeight;
                             base.setTrainingMeta("distanceBelow", distance);
-                        } else if (finalI == index('i') || finalI == index('j')) { // i j   base below
+                        } else if (currentChar == 'i' || currentChar == 'j') { // i j   base below
                             double diff = (double) (base.getY() - (part2.getY() + part2.getHeight())) - 1;
+//                            System.out.println(base.getY() + " - " + (part2.getY() + part2.getHeight()) + " - 1 = " + diff + " shit");
+//                            OCRUtils.makeImage(base.getValues(), "ind\\parts\\base.png");
+//                            OCRUtils.makeImage(part2.getValues(), "ind\\parts\\part2.png");
+//                            System.out.println("diff = " + diff + "\t\tshit");
 //                                System.out.println("1 diff = " + diff);
-                            var distance = maxHeight / diff;
+                            var distance = diff / maxHeight;
                             base.setTrainingMeta("distanceAbove", distance);
                         }
                     }
 
 //                            System.out.println("GOT");
                     var i = increment.getAndIncrement();
-                    System.out.println("i = " + i);
+//                    System.out.println("i = " + i);
                     part2.setModifier(i);
                     ignored.add(part2);
 
@@ -452,6 +480,10 @@ public class OCRActions implements Actions {
         }
 
         return lines;
+    }
+
+    private boolean characterAt(int index, char character) {
+        return OCRTrain.TRAIN_STRING.charAt(index) == character;
     }
 
     private int index(char character) {

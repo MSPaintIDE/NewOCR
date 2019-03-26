@@ -86,18 +86,19 @@ public class OCRUtils {
         return Math.abs(one - two);
     }
 
-    /**
-     * Gets if two ints are within a given double.
-     *
-     * @param one    Bound 1
-     * @param two    Bound 2
-     * @param within The number
-     * @return If one and two are within `within`
-     */
-    public static boolean isWithin(int one, int two, double within) {
-        double diff = Math.max((double) one, (double) two) - Math.min((double) one, (double) two);
-        return diff <= within;
-    }
+    // TODO: Rename method
+//    /**
+//     * Gets if two ints are within a given double.
+//     *
+//     * @param one    Bound 1
+//     * @param two    Bound 2
+//     * @param within The number
+//     * @return If one and two are within `within`
+//     */
+//    public static boolean isWithin(int one, int two, double within) {
+//        double diff = Math.max((double) one, (double) two) - Math.min((double) one, (double) two);
+//        return diff <= within;
+//    }
 
     /**
      * Gets if the difference of the two given ints are between both of the two doubles given.

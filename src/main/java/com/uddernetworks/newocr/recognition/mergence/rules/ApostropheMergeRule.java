@@ -47,41 +47,41 @@ public class ApostropheMergeRule extends MergeRule {
 
     @Override
     public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
-        System.out.println("=== Merging ===");
+//        System.out.println("=== Merging ===");
         if (!this.apostropheRule.matchesLetter(target)) {
-            System.out.println("Base character does not match (" + target + ")");
+//            System.out.println("Base character does not match (" + target + ")");
             return Optional.empty();
         }
 
         var index = letterData.indexOf(target) - 1;
 
         if (letterData.size() <= index || index < 0) {
-            System.out.println("Can't have a before");
+//            System.out.println("Can't have a before");
             return Optional.empty();
         }
         var before = letterData.get(index);
 
         if (before == null) {
-            System.out.println("Before is null");
+//            System.out.println("Before is null");
             return Optional.empty();
         }
 
-        if (before.getAmountOfMerges() > 0) {
-            System.out.println("Already had merges!");
+        if (target.getAmountOfMerges() > 0 || before.getAmountOfMerges() > 0) {
+//            System.out.println("Already had merges!");
             return Optional.empty();
         }
 
         if (!this.apostropheRule.matchesLetter(before)) {
-            System.out.println("Before does NOT match!");
+//            System.out.println("Before does NOT match!");
 //            before.setLetter('\'');
             return Optional.empty();
         }
 
-        System.out.println("Continuing");
+//        System.out.println("Continuing");
 
         var avgLength = (double) before.getHeight() * apostropheRatio;
         if (target.getX() - before.getX() <= avgLength) {
-            System.out.println("Merging");
+//            System.out.println("Merging");
             // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
             before.setLetter('"');
             before.merge(target);

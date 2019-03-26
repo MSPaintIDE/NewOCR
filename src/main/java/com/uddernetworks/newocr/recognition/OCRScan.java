@@ -8,6 +8,7 @@ import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.recognition.mergence.DefaultMergenceManager;
 import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
 import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
+import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
@@ -23,8 +24,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import static com.uddernetworks.newocr.utils.OCRUtils.diff;
 
 public class OCRScan implements Scan {
 
@@ -71,6 +70,18 @@ public class OCRScan implements Scan {
 
         var searchImage = new SearchImage(values);
 
+
+        // Moved from below
+        // Key = Entry<MinCenter, MaxCenter>  centers are ABSOLUTE
+        Map<IntPair, List<ImageLetter>> lines = new LinkedHashMap<>();
+
+        // TODO: This is EXPERIMENTAL
+
+        this.actions.getLineBoundsForTraining(searchImage, new TrainOptions()).forEach(pair -> lines.put(pair, new LinkedList<>()));
+        System.out.println("lines = " + lines);
+
+        //
+
         this.actions.getLetters(searchImage, searchCharacters);
 
         var i2 = new AtomicInteger();
@@ -91,9 +102,6 @@ public class OCRScan implements Scan {
                 e.printStackTrace();
             }
         });
-
-        // Key = Entry<MinCenter, MaxCenter>  centers are ABSOLUTE
-        Map<IntPair, List<ImageLetter>> lines = new LinkedHashMap<>();
 
         // Gets the closest matching character (According to the database values) using OCRActions#getCharacterFor(SearchCharacter),
         // then it orders them by their X values, and then sorts the ImageLetters so certain ones go first, allowing the
@@ -120,56 +128,73 @@ public class OCRScan implements Scan {
                     return -1;
                 })
                 .forEach(imageLetter -> {
-                    double maxCenter = imageLetter.getMaxCenter();
-                    double minCenter = imageLetter.getMinCenter();
-                    boolean subtract = maxCenter < 0 && imageLetter.getMinCenter() < 0;
-                    double centerDiff = subtract ?
-                            maxCenter + minCenter :
-                            maxCenter - minCenter;
-                    // The tolerance of how far away a character can be from the line's center for it to be included
-                    double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff / 2 * 1.5), 2D));
 
-                    int exactMin = (int) Math.round(imageLetter.getY() + minCenter);
-                    int exactMax = (int) Math.round(imageLetter.getY() + maxCenter);
+                    var center = imageLetter.getY() + ((double) imageLetter.getHeight() / 2);
 
-                    int exactTolerantMin = (int) Math.max(exactMin - tolerance, 0);
-                    int exactTolerantMax = (int) (exactMax + tolerance);
+                    // Get the place where it fits
+                    lines.entrySet().stream().filter(entry -> {
+                        var pair = entry.getKey();
+                        var topX = pair.getKey(); // Less than bottom
+                        var bottomX = pair.getValue();
 
-                    int potentialY = (int) Math.round(imageLetter.getY() + centerDiff);
-
-                    // Gets the nearest line and its Y value, if any
-                    var possibleCenter = lines.keySet()
-                            .stream()
-                            .filter(centers -> {
-                                int x1 = centers.getKey();
-                                int y1 = centers.getValue();
-                                int x2 = exactTolerantMin;
-                                int y2 = exactTolerantMax;
-                                return Math.max(y1, y2) - Math.min(x1, x2) < (y1 - x1) + (y2 - x2);
-                            })
-                            .min(Comparator.comparing(centers -> {
-                                double min = centers.getKey();
-                                double max = centers.getValue();
-                                double centerBeginningY = ((max - min) / 2) + min;
-                                return diff(centerBeginningY, potentialY);
-                            }));
-
-                    var center = possibleCenter.orElseGet(() -> {
-                        var pair = new IntPair(exactTolerantMin, exactTolerantMax); // Included tolerance
-                        lines.put(pair, new LinkedList<>());
-                        return pair;
+                        return OCRUtils.isWithin(topX, bottomX, center);
+                    }).findFirst().ifPresentOrElse(matchingPair -> {
+                        matchingPair.getValue().add(imageLetter);
+                    }, () -> {
+                        LOGGER.warn("Found a letter not conforming to any bounds at (" + imageLetter.getX() + ", " + imageLetter.getY() + ") with a center Y of " + center);
                     });
 
-                    double ratio = imageLetter.getAverageWidth() / imageLetter.getAverageHeight();
-                    double diff = Math.max(ratio, imageLetter.getRatio()) - Math.min(ratio, imageLetter.getRatio());
 
-                    // This is signaled when the difference of the ratios are a value that is probably incorrect.
-                    // If the ratio is very different, it should be looked into, as it could be from faulty detection.
-                    if (diff > 0.2D) {
-                        LOGGER.warn("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
-                    }
+//                    double maxCenter = imageLetter.getMaxCenter();
+//                    double minCenter = imageLetter.getMinCenter();
+//                    boolean subtract = maxCenter < 0 && imageLetter.getMinCenter() < 0;
+//                    double centerDiff = subtract ?
+//                            maxCenter + minCenter :
+//                            maxCenter - minCenter;
+//                    // The tolerance of how far away a character can be from the line's center for it to be included
+//                    double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff / 2 * 1.5), 2D));
+//
+//                    int exactMin = (int) Math.round(imageLetter.getY() + minCenter);
+//                    int exactMax = (int) Math.round(imageLetter.getY() + maxCenter);
+//
+//                    int exactTolerantMin = (int) Math.max(exactMin - tolerance, 0);
+//                    int exactTolerantMax = (int) (exactMax + tolerance);
+//
+//                    int potentialY = (int) Math.round(imageLetter.getY() + centerDiff);
+//
+//                    // Gets the nearest line and its Y value, if any
+//                    var possibleCenter = lines.keySet()
+//                            .stream()
+//                            .filter(centers -> {
+//                                int x1 = centers.getKey();
+//                                int y1 = centers.getValue();
+//                                int x2 = exactTolerantMin;
+//                                int y2 = exactTolerantMax;
+//                                return Math.max(y1, y2) - Math.min(x1, x2) < (y1 - x1) + (y2 - x2);
+//                            })
+//                            .min(Comparator.comparing(centers -> {
+//                                double min = centers.getKey();
+//                                double max = centers.getValue();
+//                                double centerBeginningY = ((max - min) / 2) + min;
+//                                return diff(centerBeginningY, potentialY);
+//                            }));
+//
+//                    var center = possibleCenter.orElseGet(() -> {
+//                        var pair = new IntPair(exactTolerantMin, exactTolerantMax); // Included tolerance
+//                        lines.put(pair, new LinkedList<>());
+//                        return pair;
+//                    });
+//
+//                    double ratio = imageLetter.getAverageWidth() / imageLetter.getAverageHeight();
+//                    double diff = Math.max(ratio, imageLetter.getRatio()) - Math.min(ratio, imageLetter.getRatio());
+//
+//                    // This is signaled when the difference of the ratios are a value that is probably incorrect.
+//                    // If the ratio is very different, it should be looked into, as it could be from faulty detection.
+//                    if (diff > 0.2D) {
+//                        LOGGER.warn("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
+//                    }
 
-                    lines.get(center).add(imageLetter);
+//                    lines.get(center).add(imageLetter);
                 });
 
         // End ordering

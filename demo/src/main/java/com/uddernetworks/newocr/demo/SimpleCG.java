@@ -3,6 +3,9 @@ package com.uddernetworks.newocr.demo;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
 import com.uddernetworks.newocr.recognition.OCRScan;
 import com.uddernetworks.newocr.recognition.OCRTrain;
+import com.uddernetworks.newocr.train.ComputerTrainGenerator;
+import com.uddernetworks.newocr.train.TrainGeneratorOptions;
+import com.uddernetworks.newocr.train.TrainOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleCG {
 
@@ -28,7 +32,7 @@ public class SimpleCG {
         LOGGER.info("Do you want to train? (y)es/no");
 
         var inputLine = args.length > 0 && args[0].equalsIgnoreCase("train") ? "yes" : scanner.nextLine();
-/*
+
         if ("yes".equalsIgnoreCase(inputLine) || "y".equalsIgnoreCase(inputLine)) {
 
             if (args.length >= 2) {
@@ -51,12 +55,12 @@ public class SimpleCG {
             databaseManager.shutdown();
             return;
         }
-*/
+
 //         Warm up and load classes for everything, which can add over 1400ms to the first scan
         // TODO: Fully implement warming up
 //        ocrScan.scanImage(new File("src\\main\\resources\\warmup.png"));
 
-        var scannedImage = ocrScan.scanImage(new File("test_apos.png"));
+        var scannedImage = ocrScan.scanImage(new File("dotTest.png"));
 
         LOGGER.info("Got:\n" + scannedImage.getPrettyString());
 

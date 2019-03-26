@@ -13,6 +13,7 @@ public class VerticalLineSimilarityRule implements SimilarRule {
                 || (letter == '"')
                 || (letter == '|')
                 || (letter == 'i' && mod == 1)
+                || (letter == 'j' && mod == 1)
                 || (letter == '!' && mod == 0);
     }
 }
