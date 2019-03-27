@@ -9,6 +9,9 @@ import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Merges all pieces of a percent sign
+ */
 public class PercentMergeRule extends MergeRule {
 
     public PercentMergeRule(DatabaseManager databaseManager, SimilarityManager similarityManager) {

@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * Merges pieces of apostrophes.
+ */
 public class ApostropheMergeRule extends MergeRule {
 
     private static Logger LOGGER = LoggerFactory.getLogger(ApostropheMergeRule.class);

@@ -180,15 +180,23 @@ public class OCRActions implements Actions {
                                 }
                             var distance = diff / maxHeight;
                             base.setTrainingMeta("distanceBelow", distance);
-                        } else if (currentChar == 'i' || currentChar == 'j') { // i j   base below
-                            double diff = (double) (base.getY() - (part2.getY() + part2.getHeight())) - 1;
+                        } else if (currentChar == 'i' || currentChar == 'j' || currentChar == ':' || currentChar == '=') { // i j   base below
+                            double diff = (double) (part2.getY() - (base.getY() + base.getHeight())) - 1;
 //                            System.out.println(base.getY() + " - " + (part2.getY() + part2.getHeight()) + " - 1 = " + diff + " shit");
 //                            OCRUtils.makeImage(base.getValues(), "ind\\parts\\base.png");
 //                            OCRUtils.makeImage(part2.getValues(), "ind\\parts\\part2.png");
 //                            System.out.println("diff = " + diff + "\t\tshit");
 //                                System.out.println("1 diff = " + diff);
                             var distance = diff / maxHeight;
-                            base.setTrainingMeta("distanceAbove", distance);
+                            String metaName = "distanceAbove";
+
+                            if (currentChar == ':') {
+                                metaName = "colonDistance";
+                            } else if (currentChar == '=') {
+                                metaName = "equalsDistance";
+                            }
+
+                            base.setTrainingMeta(metaName, distance);
                         }
                     }
 

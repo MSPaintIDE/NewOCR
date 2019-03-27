@@ -98,6 +98,8 @@ public class OCRTrain implements Train {
         var apostropheRatios = new DoubleArrayList();
         var distancesAbove = new DoubleArrayList();
         var distancesBelow = new DoubleArrayList();
+        var colonDistance = new DoubleArrayList();
+        var equalsDistance = new DoubleArrayList();
 
         var searchCharactersCopy = new ArrayList<>(searchCharacters);
         var customSpaces = new HashMap<Character, List<Double>>();
@@ -173,6 +175,8 @@ public class OCRTrain implements Train {
 
                     searchCharacter.getTrainingMeta("distanceAbove").ifPresent(distancesAbove::add);
                     searchCharacter.getTrainingMeta("distanceBelow").ifPresent(distancesBelow::add);
+                    searchCharacter.getTrainingMeta("colonDistance").ifPresent(colonDistance::add);
+                    searchCharacter.getTrainingMeta("equalsDistance").ifPresent(equalsDistance::add);
 
                     searchCharacter.setModifier(modifier);
                     var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, current, modifier);
@@ -317,6 +321,8 @@ public class OCRTrain implements Train {
         CompletableFuture.runAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios))
                 .thenRunAsync(() -> databaseManager.addAveragedData("distanceAbove", distancesAbove))
                 .thenRunAsync(() -> databaseManager.addAveragedData("distanceBelow", distancesBelow))
+                .thenRunAsync(() -> databaseManager.addAveragedData("colonDistance", colonDistance))
+                .thenRunAsync(() -> databaseManager.addAveragedData("equalsDistance", equalsDistance))
                 .thenRunAsync(() -> customSpaces.forEach((character, ratios) -> databaseManager.addCustomSpace(character, ratios.stream().mapToDouble(Double::doubleValue).average().orElse(0))));
 
         // Inserts all character data into the database after recalculating the

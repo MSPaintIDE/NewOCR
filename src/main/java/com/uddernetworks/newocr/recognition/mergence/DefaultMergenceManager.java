@@ -3,10 +3,7 @@ package com.uddernetworks.newocr.recognition.mergence;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
-import com.uddernetworks.newocr.recognition.mergence.rules.ApostropheMergeRule;
-import com.uddernetworks.newocr.recognition.mergence.rules.OverDotMergeRule;
-import com.uddernetworks.newocr.recognition.mergence.rules.PercentMergeRule;
-import com.uddernetworks.newocr.recognition.mergence.rules.UnderDotMergeRule;
+import com.uddernetworks.newocr.recognition.mergence.rules.*;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
@@ -35,6 +32,7 @@ public class DefaultMergenceManager implements MergenceManager {
         addRule(new UnderDotMergeRule(databaseManager, similarityManager));
         addRule(new ApostropheMergeRule(databaseManager, similarityManager));
         addRule(new PercentMergeRule(databaseManager, similarityManager));
+        addRule(new EqualVerticalMergeRule(databaseManager, similarityManager));
         return this;
     }
 

@@ -17,6 +17,9 @@ import java.util.concurrent.ExecutionException;
 
 import static com.uddernetworks.newocr.utils.OCRUtils.diff;
 
+/**
+ * Merges the dot under a character for ! and ?
+ */
 public class UnderDotMergeRule extends MergeRule {
 
     private static Logger LOGGER = LoggerFactory.getLogger(UnderDotMergeRule.class);
