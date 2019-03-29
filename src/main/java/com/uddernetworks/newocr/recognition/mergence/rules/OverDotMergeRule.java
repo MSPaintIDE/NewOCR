@@ -25,6 +25,7 @@ public class OverDotMergeRule extends MergeRule {
     private static Logger LOGGER = LoggerFactory.getLogger(OverDotMergeRule.class);
 
     private double distanceAbove;
+    private double semicolonDistance;
     private SimilarRule dotRule;
     private SimilarRule verticalLineRule;
 
@@ -41,6 +42,7 @@ public class OverDotMergeRule extends MergeRule {
 
         try {
             this.distanceAbove = this.databaseManager.getAveragedData("distanceAbove").get();
+            this.semicolonDistance = this.databaseManager.getAveragedData("semicolonDistance").get();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -69,8 +71,10 @@ public class OverDotMergeRule extends MergeRule {
 
         System.out.println("222");
 
+        var semicolon = target.getLetter() == ';' && target.getModifier() == 1;
+
         // Base
-        if (!this.verticalLineRule.matchesLetter(target)) {
+        if (!semicolon && !this.verticalLineRule.matchesLetter(target)) {
             System.out.println("Don't match: " + target);
             return Optional.empty();
         }
@@ -83,17 +87,21 @@ public class OverDotMergeRule extends MergeRule {
 
         System.out.println("444");
 
+        var distanceUsing = semicolon ? this.semicolonDistance : this.distanceAbove;
+
         var bottomOfCharacterY = above.getY() + above.getHeight();
         var difference = Math.abs(bottomOfCharacterY - target.getY());
         var isPartAbove = above.getHeight() < target.getHeight();
         double maxHeight = Math.max(above.getHeight(), target.getHeight());
-        double projectedDifference = this.distanceAbove * maxHeight;
+        double projectedDifference = distanceUsing * maxHeight;
         double delta = projectedDifference * 0.25;
         System.out.println("maxHeight = " + maxHeight);
-        System.out.println("distanceAbove = " + distanceAbove);
+        System.out.println("distanceUsing = " + distanceUsing);
         System.out.println("difference = " + difference);
         System.out.println("projectedDifference = " + projectedDifference);
         System.out.println("Delta = " + delta);
+
+        System.out.println(diff(difference, projectedDifference)  + " <= " + delta);
 
         // Definitely can be improved
         if (diff(difference, projectedDifference) <= delta) {
@@ -101,6 +109,7 @@ public class OverDotMergeRule extends MergeRule {
             var base = !isPartAbove ? above : target;
             var adding = !isPartAbove ? target : above;
             base.merge(adding);
+            base.setLetter(target.getLetter());
             return Optional.of(adding);
         }
 

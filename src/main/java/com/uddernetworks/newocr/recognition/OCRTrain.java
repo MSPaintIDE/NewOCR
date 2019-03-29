@@ -99,11 +99,20 @@ public class OCRTrain implements Train {
         var distancesAbove = new DoubleArrayList();
         var distancesBelow = new DoubleArrayList();
         var colonDistance = new DoubleArrayList();
+        var semicolonDistance = new DoubleArrayList();
         var equalsDistance = new DoubleArrayList();
 
         var searchCharactersCopy = new ArrayList<>(searchCharacters);
         var customSpaces = new HashMap<Character, List<Double>>();
         var first = true;
+
+        var metaMapping = Map.of(
+                "distanceAbove", distancesAbove,
+                "distanceBelow", distancesBelow,
+                "colonDistance", colonDistance,
+                "semicolonDistance", semicolonDistance,
+                "equalsDistance", equalsDistance
+        );
 
         // Goes through each line found
         for (var line : this.actions.getLettersDuringTraining(searchImage, options)) {
@@ -173,10 +182,7 @@ public class OCRTrain implements Train {
                         OCRUtils.makeImage(searchCharacter.getValues(), "ind\\" + ((int) current) + "_" + modifier + ".png");
                     }
 
-                    searchCharacter.getTrainingMeta("distanceAbove").ifPresent(distancesAbove::add);
-                    searchCharacter.getTrainingMeta("distanceBelow").ifPresent(distancesBelow::add);
-                    searchCharacter.getTrainingMeta("colonDistance").ifPresent(colonDistance::add);
-                    searchCharacter.getTrainingMeta("equalsDistance").ifPresent(equalsDistance::add);
+                    metaMapping.forEach((meta, list) -> searchCharacter.getTrainingMeta(meta).ifPresent(list::add));
 
                     searchCharacter.setModifier(modifier);
                     var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, current, modifier);
@@ -314,6 +320,7 @@ public class OCRTrain implements Train {
         System.out.println("distancesAbove = " + distancesAbove);
         System.out.println("distancesBelow = " + distancesBelow);
         System.out.println("colonDistance = " + colonDistance);
+        System.out.println("semicolonDistance = " + semicolonDistance);
         System.out.println("equalsDistance = " + equalsDistance);
 
         LOGGER.debug("Writing data to database...");
@@ -324,6 +331,7 @@ public class OCRTrain implements Train {
                 .thenRunAsync(() -> databaseManager.addAveragedData("distanceAbove", distancesAbove))
                 .thenRunAsync(() -> databaseManager.addAveragedData("distanceBelow", distancesBelow))
                 .thenRunAsync(() -> databaseManager.addAveragedData("colonDistance", colonDistance))
+                .thenRunAsync(() -> databaseManager.addAveragedData("semicolonDistance", semicolonDistance))
                 .thenRunAsync(() -> databaseManager.addAveragedData("equalsDistance", equalsDistance))
                 .thenRunAsync(() -> customSpaces.forEach((character, ratios) -> databaseManager.addCustomSpace(character, ratios.stream().mapToDouble(Double::doubleValue).average().orElse(0))));
 

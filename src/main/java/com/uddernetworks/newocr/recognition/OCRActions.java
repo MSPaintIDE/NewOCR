@@ -76,6 +76,32 @@ public class OCRActions implements Actions {
     public List<CharacterLine> getLettersDuringTraining(SearchImage searchImage, TrainOptions options) {
         var ret = new ArrayList<CharacterLine>();
 
+        var charMetaMap = Map.of(
+                ';', "semicolonDistance",
+                ':', "colonDistance",
+                '=', "equalsDistance"
+        );
+
+        // By default 0
+        var configurableBases = Map.of(
+                Set.of('i', 'j', '?', ':', ';', '='), 1
+        );
+
+        /*
+        Original logic, will be kept as a comment for now
+        if (currentChar == '!') { // part1 above
+                    tempBase = list.get(0);
+                } else if (currentChar == 'i' || currentChar == 'j' || currentChar == '?') { // part1 below
+                    tempBase = list.get(list.size() - 1);
+                } else if (currentChar == '%') {
+                    tempBase = list.get(0);
+                } else if (currentChar == ':' || currentChar == '=') {
+                    tempBase = list.get(1);
+                } else {
+                    tempBase = list.get(0);
+                }
+         */
+
         var lineBounds = getLineBoundsForTraining(searchImage, options);
         for (var coords : lineBounds) {
             var fromY = coords.getKey();
@@ -132,7 +158,6 @@ public class OCRActions implements Actions {
                 System.out.println("here: " + i1);
 
                 var increment = new AtomicInteger(0);
-                int finalI = i1;
                 AtomicBoolean first = new AtomicBoolean(true);
                 var list = found.stream()
 //                        .filter(Predicate.not(part1::equals))
@@ -141,25 +166,16 @@ public class OCRActions implements Actions {
                         .sorted(Comparator.reverseOrder())
                         .collect(Collectors.toList());
 
-                SearchCharacter tempBase;
+                var currentChar = OCRTrain.TRAIN_STRING.charAt(i1);
 
-                var currentChar = OCRTrain.TRAIN_STRING.charAt(finalI);
+                var base = list.get(configurableBases.entrySet()
+                        .stream()
+                        .filter(entry -> entry.getKey().contains(currentChar))
+                        .map(Map.Entry::getValue)
+                        .findFirst()
+                        .orElse(0));
 
-                if (currentChar == '!') { // part1 above
-                    tempBase = list.get(0);
-                } else if (currentChar == 'i' || currentChar == 'j' || currentChar == '?') { // part1 below
-                    tempBase = list.get(list.size() - 1);
-                } else if (currentChar == '%') {
-                    tempBase = list.get(0);
-                } else if (currentChar == ':' || currentChar == '=') {
-                    tempBase = list.get(1);
-                } else {
-                    tempBase = list.get(0);
-                }
-
-                var base = tempBase;
-
-                System.out.println("finalI = " + finalI);
+                System.out.println("finalI = " + i1);
 
                 System.out.println("INDEX OF I = " + index('i') + " AND " + index('j'));
 
@@ -187,7 +203,7 @@ public class OCRActions implements Actions {
                             base.setTrainingMeta("distanceBelow", distance);
                             System.out.println("--------> Other " + currentChar + " raw distance is " + diff + " (" + distance + ")");
 
-                        } else if (currentChar == 'i' || currentChar == 'j' || currentChar == ':' || currentChar == '=') { // i j   base below
+                        } else if (currentChar == 'i' || currentChar == 'j' || currentChar == ':' || currentChar == ';' || currentChar == '=') { // i j   base below
                             double diff = (double) (base.getY() - (part2.getY() + part2.getHeight()));
                             System.out.println(base.getY() + " - " + (part2.getY() + part2.getHeight()) + " - 1 = " + diff + " shit");
 //                            OCRUtils.makeImage(base.getValues(), "ind\\parts\\base.png");
@@ -195,19 +211,8 @@ public class OCRActions implements Actions {
 //                            System.out.println("diff = " + diff + "\t\tshit");
 //                                System.out.println("1 diff = " + diff);
                             var distance = diff / maxHeight;
-                            String metaName = "distanceAbove";
 
-                            if (currentChar == ':') {
-                                metaName = "colonDistance";
-                                System.out.println("--------> Colon raw distance is " + diff + " (" + distance + ")");
-                            } else if (currentChar == '=') {
-                                metaName = "equalsDistance";
-                                System.out.println("--------> Equals raw distance is " + diff + " (" + distance + ")");
-                            } else {
-                                System.out.println("--------> Other " + currentChar + " raw distance is " + diff + " (" + distance + ")");
-                            }
-
-                            base.setTrainingMeta(metaName, distance);
+                            base.setTrainingMeta(charMetaMap.getOrDefault(currentChar, "distanceAbove"), distance);
                         }
                     }
 
