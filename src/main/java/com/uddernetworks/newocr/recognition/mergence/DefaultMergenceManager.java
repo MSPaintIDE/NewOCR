@@ -43,7 +43,6 @@ public class DefaultMergenceManager implements MergenceManager {
 
     @Override
     public void beginMergence(Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines) {
-        System.out.println("111");
         this.mergeRules.sort(Comparator.comparingInt(rule -> rule.getPriority().getPriorityIndex()));
 
         flatKeys(sortedLines).forEach(letter -> {
@@ -58,11 +57,8 @@ public class DefaultMergenceManager implements MergenceManager {
         long start = System.currentTimeMillis();
         flatKeys(sortedLines).forEach(imageLetter -> verticalLetterRelations.put(imageLetter, getVerticalTo(imageLetter, sortedLines)));
 
-        System.out.println("222");
-
         sortedLines.forEach((y, line) -> line.forEach(imageLetter -> horizontalLetterRelations.put(imageLetter, line)));
         System.out.println("Finished first in " + (System.currentTimeMillis() - start) + "ms");
-        System.out.println("333");
 
         System.out.println("horizontalLetterRelations = " + horizontalLetterRelations);
         System.out.println("verticalLetterRelations = " + verticalLetterRelations);
@@ -130,9 +126,8 @@ public class DefaultMergenceManager implements MergenceManager {
      * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
      */
     public boolean isOverlappingX(ImageLetter letter1, ImageLetter letter2) {
-        if (isInXBounds(letter1, letter2.getX())) return true;
-        if (isInXBounds(letter1, letter2.getX() + letter2.getWidth())) return true;
-        return false;
+        // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
+        return letter1.getX() + letter1.getWidth() >= letter2.getX() && letter2.getX() + letter2.getWidth() >= letter1.getX();
     }
 
     /**

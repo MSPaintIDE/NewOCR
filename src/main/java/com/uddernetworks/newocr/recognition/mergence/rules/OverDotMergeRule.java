@@ -58,24 +58,39 @@ public class OverDotMergeRule extends MergeRule {
 
     @Override
     public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
+        System.out.println("----------------------------------------------------");
 
-        var index = letterData.indexOf(target) + 1;
+        var index = letterData.indexOf(target) - 1;
+        System.out.println("index = " + index + " of " + target + " " + letterData);
 
-        if (letterData.size() <= index) return Optional.empty();
+        System.out.println("111");
+
+        if (index < 0 || letterData.size() <= index) return Optional.empty();
+
+        System.out.println("222");
 
         // Base
-        if (!this.verticalLineRule.matchesLetter(target)) return Optional.empty();
+        if (!this.verticalLineRule.matchesLetter(target)) {
+            System.out.println("Don't match: " + target);
+            return Optional.empty();
+        }
+
+        System.out.println("333");
 
         // Dot
         var above = letterData.get(index);
         if (!this.dotRule.matchesLetter(above)) return Optional.empty();
 
+        System.out.println("444");
+
         var bottomOfCharacterY = above.getY() + above.getHeight();
         var difference = Math.abs(bottomOfCharacterY - target.getY());
         var isPartAbove = above.getHeight() < target.getHeight();
-        double minHeight = Math.min(above.getHeight(), target.getHeight());
-        double projectedDifference = this.distanceAbove * minHeight;
+        double maxHeight = Math.max(above.getHeight(), target.getHeight());
+        double projectedDifference = this.distanceAbove * maxHeight;
         double delta = projectedDifference * 0.25;
+        System.out.println("maxHeight = " + maxHeight);
+        System.out.println("distanceAbove = " + distanceAbove);
         System.out.println("difference = " + difference);
         System.out.println("projectedDifference = " + projectedDifference);
         System.out.println("Delta = " + delta);

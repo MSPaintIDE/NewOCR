@@ -41,8 +41,10 @@ public class OCRActions implements Actions {
     @Override
     public void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
         try {
-            if (this.distanceAbove == -1) this.distanceAbove = this.databaseManager.getAveragedData("distanceAbove").get();
-            if (this.distanceBelow == -1) this.distanceBelow = this.databaseManager.getAveragedData("distanceBelow").get();
+            if (this.distanceAbove == -1)
+                this.distanceAbove = this.databaseManager.getAveragedData("distanceAbove").get();
+            if (this.distanceBelow == -1)
+                this.distanceBelow = this.databaseManager.getAveragedData("distanceBelow").get();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -149,6 +151,8 @@ public class OCRActions implements Actions {
                     tempBase = list.get(list.size() - 1);
                 } else if (currentChar == '%') {
                     tempBase = list.get(0);
+                } else if (currentChar == ':' || currentChar == '=') {
+                    tempBase = list.get(1);
                 } else {
                     tempBase = list.get(0);
                 }
@@ -165,24 +169,27 @@ public class OCRActions implements Actions {
                     if (!base.equals(part2)) { // If part2 is NOT the base
                         if (currentChar == '!' || currentChar == '?') { // ! ?
                             System.out.println("Looking up " + currentChar + " with dot below");
-                            double diff = (double) (part2.getY() - (base.getY() + base.getHeight())) - 1;
+                            double diff = (double) (part2.getY() - (base.getY() + base.getHeight()));
                             System.out.println(part2.getY() + " - (" + base.getY() + " + " + base.getHeight() + ") - 1 = " + diff + "\t\tshit");
+
 //                            System.exit(0);
-                                System.out.println("2 diff = " + diff);
-                                if (diff < 0) {
-                                    OCRUtils.makeImage(base.getValues(), "ind\\parts\\err_base.png");
-                                    OCRUtils.makeImage(part2.getValues(), "ind\\parts\\err_part2.png");
-                                    System.out.println("=======] err " + diff);
-                                } else {
-                                    OCRUtils.makeImage(base.getValues(), "ind\\parts\\base.png");
-                                    OCRUtils.makeImage(part2.getValues(), "ind\\parts\\part2.png");
-                                    System.out.println("=====] good " + diff);
-                                }
+                            System.out.println("2 diff = " + diff);
+                            if (diff < 0) {
+                                OCRUtils.makeImage(base.getValues(), "ind\\parts\\err_base.png");
+                                OCRUtils.makeImage(part2.getValues(), "ind\\parts\\err_part2.png");
+                                System.out.println("=======] err " + diff);
+                            } else {
+                                OCRUtils.makeImage(base.getValues(), "ind\\parts\\base.png");
+                                OCRUtils.makeImage(part2.getValues(), "ind\\parts\\part2.png");
+                                System.out.println("=====] good " + diff);
+                            }
                             var distance = diff / maxHeight;
                             base.setTrainingMeta("distanceBelow", distance);
+                            System.out.println("--------> Other " + currentChar + " raw distance is " + diff + " (" + distance + ")");
+
                         } else if (currentChar == 'i' || currentChar == 'j' || currentChar == ':' || currentChar == '=') { // i j   base below
-                            double diff = (double) (part2.getY() - (base.getY() + base.getHeight())) - 1;
-//                            System.out.println(base.getY() + " - " + (part2.getY() + part2.getHeight()) + " - 1 = " + diff + " shit");
+                            double diff = (double) (base.getY() - (part2.getY() + part2.getHeight()));
+                            System.out.println(base.getY() + " - " + (part2.getY() + part2.getHeight()) + " - 1 = " + diff + " shit");
 //                            OCRUtils.makeImage(base.getValues(), "ind\\parts\\base.png");
 //                            OCRUtils.makeImage(part2.getValues(), "ind\\parts\\part2.png");
 //                            System.out.println("diff = " + diff + "\t\tshit");
@@ -192,8 +199,12 @@ public class OCRActions implements Actions {
 
                             if (currentChar == ':') {
                                 metaName = "colonDistance";
+                                System.out.println("--------> Colon raw distance is " + diff + " (" + distance + ")");
                             } else if (currentChar == '=') {
                                 metaName = "equalsDistance";
+                                System.out.println("--------> Equals raw distance is " + diff + " (" + distance + ")");
+                            } else {
+                                System.out.println("--------> Other " + currentChar + " raw distance is " + diff + " (" + distance + ")");
                             }
 
                             base.setTrainingMeta(metaName, distance);
@@ -290,10 +301,10 @@ public class OCRActions implements Actions {
 
         var ratioDifference = diff(ratio, searchRatio);
 
-        // TODO: Modulize this
         // This makes the secondEntry anything that can't be interchanged, so it won't try something else
         // if the top 2 options are % mod 0 and % mod 1 (The dots of a %) or a " mod 0 and " mod 2
 
+        System.out.println("====] Similarities");
         this.similarityManager.getSecondHighest(entries).ifPresentOrElse(secondEntry -> {
             // Skip everything if it has a very high confidence of the character (Much higher than the closest one OR is <= 0.01 in confidence),
             // and make sure that the difference in width/height is very low, or else it will continue and sort by width/height difference.
@@ -302,11 +313,27 @@ public class OCRActions implements Actions {
             var verySmallDifference = ratioDifference <= 0.01 || firstEntry.getDoubleValue() <= 0.01; // If true, skip sorting
             var ratioDiff = ratioDifference > 0.1; // If true, SORT
 
+            System.out.println("ratioDifference = " + ratioDifference);
             System.out.println("verySmallDifference = " + verySmallDifference);
             System.out.println("bigDifference = " + bigDifference);
             System.out.println("ratioDiff = " + ratioDiff);
 
-            if (!verySmallDifference && (bigDifference || ratioDiff)) {
+            // TODO: This should probably be in some options
+            // This is because characters - and | have *extremely* similar section data, but the ratios are very different,
+            // which in most characters high ratio differences means a very different character. This is just a check to compare
+            // ratios between the two if they are a - or | or _
+            var letter = firstEntry.getKey().getLetter();
+            var secondLetter = secondEntry.getKey().getLetter();
+            var sorting = !verySmallDifference && (bigDifference || ratioDiff);
+            System.out.println("letter = " + letter);
+            System.out.println("secondLetter = " + secondLetter);
+            if ((letter == '-' || letter == '|' || letter == '_')
+                    && (secondLetter == '-' || secondLetter == '|' || secondLetter == '_')) {
+//                entries.retainAll(Arrays.asList(firstEntry, secondEntry));
+                sorting = true;
+            }
+
+            if (sorting) {
                 System.out.println("Comparing sizes");
                 entries.sort(Comparator.comparingDouble(entry -> {
                     // Lower is more similar
@@ -322,68 +349,6 @@ public class OCRActions implements Actions {
         ImageLetter first = entries.get(0).getKey();
         first.setValues(searchCharacter.getValues());
         return Optional.of(first);
-    }
-
-    // TODO: Remove this
-    private Optional<Object2DoubleMap.Entry<ImageLetter>> getSecondHighest(ImageLetter first, List<Object2DoubleMap.Entry<ImageLetter>> data) {
-        var firstLetter = first.getLetter();
-        var firstMod = first.getModifier();
-
-        System.out.println("firstLetter = " + firstLetter);
-
-        // TODO: Java 12 update? This can also definitely be optimised/minified in the future, this is mainly for seeing if this will work
-        switch (firstLetter) {
-            case '%':
-                if (firstMod <= 1) {
-                    for (int i = 1; i < data.size(); i++) {
-                        var entry = data.get(i);
-                        var letter = entry.getKey();
-
-                        var cha = letter.getLetter();
-                        var mod = letter.getModifier();
-
-                        if ((cha == firstLetter && (mod == 0 || mod == 1))
-                                || (cha == 'o')) continue;
-                        return Optional.of(entry);
-                    }
-                }
-
-                return Optional.empty();
-            case '\'':
-            case '"':
-            case 'i':
-                if (firstLetter == 'i' && firstMod != 1) break;
-                for (int i = 1; i < data.size(); i++) {
-                    var entry = data.get(i);
-                    var letter = entry.getKey();
-
-                    var cha = letter.getLetter();
-                    var mod = letter.getModifier();
-
-                    if (cha == '\"' || cha == '\'' || (cha == 'i' && mod == 1)) continue;
-                    return Optional.of(entry);
-                }
-
-                return Optional.empty();
-            case '-':
-            case '=':
-            case '_':
-                for (int i = 1; i < data.size(); i++) {
-                    var entry = data.get(i);
-                    var letter = entry.getKey();
-
-                    var cha = letter.getLetter();
-
-                    if (cha == '-' || cha == '=' || cha == '_') continue;
-                    return Optional.of(entry);
-                }
-
-                return Optional.empty();
-        }
-
-        // TODO: Add dots too
-
-        return Optional.of(data.get(1));
     }
 
     @Override

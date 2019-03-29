@@ -68,8 +68,8 @@ public class UnderDotMergeRule extends MergeRule {
         }
 
         // Base, we want this to be a line
-        if ((target.getLetter() == '?' && target.getModifier() == 1)
-                || !this.verticalLineRule.matchesLetter(target)) {
+        if (!(target.getLetter() == '?' && target.getModifier() == 1)
+                && !this.verticalLineRule.matchesLetter(target)) {
             System.out.println("Target doesn't match! " + target);
             return Optional.empty();
         }

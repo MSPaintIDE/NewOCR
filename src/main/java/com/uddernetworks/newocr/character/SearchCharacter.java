@@ -351,9 +351,8 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
      */
     public boolean isOverlappingX(SearchCharacter searchCharacter) {
-        if (isInXBounds(searchCharacter.getX())) return true;
-        if (isInXBounds(searchCharacter.getX() + searchCharacter.getWidth())) return true;
-        return false;
+        // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
+        return getX() + getWidth() >= searchCharacter.getX() && searchCharacter.getX() + searchCharacter.getWidth() >= getX();
     }
 
     /**
@@ -363,9 +362,8 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
      */
     public boolean isOverlappingY(SearchCharacter searchCharacter) {
-        if (isInYBounds(searchCharacter.getY())) return true;
-        if (isInYBounds(searchCharacter.getY() + searchCharacter.getHeight())) return true;
-        return false;
+        // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
+        return getY() + getHeight() >= searchCharacter.getY() && searchCharacter.getY() + searchCharacter.getHeight() >= getY();
     }
 
     /**

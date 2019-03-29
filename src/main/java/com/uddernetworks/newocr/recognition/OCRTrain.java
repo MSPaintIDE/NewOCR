@@ -313,6 +313,8 @@ public class OCRTrain implements Train {
         System.out.println("apostropheRatios = " + apostropheRatios);
         System.out.println("distancesAbove = " + distancesAbove);
         System.out.println("distancesBelow = " + distancesBelow);
+        System.out.println("colonDistance = " + colonDistance);
+        System.out.println("equalsDistance = " + equalsDistance);
 
         LOGGER.debug("Writing data to database...");
         long start = System.currentTimeMillis();
