@@ -59,7 +59,7 @@ public class EqualVerticalMergeRule extends MergeRule {
     }
 
     @Override
-    public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
+    public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
 
         var index = letterData.indexOf(target) + 1;
 
@@ -104,7 +104,7 @@ public class EqualVerticalMergeRule extends MergeRule {
             var adding = !isPartAbove ? target : above;
             base.merge(adding);
             base.setLetter(colon ? ':' : '=');
-            return Optional.of(adding);
+            return Optional.of(List.of(adding));
         }
 
         return Optional.empty();

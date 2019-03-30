@@ -59,7 +59,7 @@ public class OverDotMergeRule extends MergeRule {
     }
 
     @Override
-    public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
+    public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
         System.out.println("----------------------------------------------------");
 
         var index = letterData.indexOf(target) - 1;
@@ -110,7 +110,7 @@ public class OverDotMergeRule extends MergeRule {
             var adding = !isPartAbove ? target : above;
             base.merge(adding);
             base.setLetter(target.getLetter());
-            return Optional.of(adding);
+            return Optional.of(List.of(adding));
         }
 
         return Optional.empty();

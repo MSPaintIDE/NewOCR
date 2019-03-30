@@ -49,7 +49,7 @@ public class ApostropheMergeRule extends MergeRule {
     }
 
     @Override
-    public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
+    public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
 //        System.out.println("=== Merging ===");
         if (!this.apostropheRule.matchesLetter(target)) {
 //            System.out.println("Base character does not match (" + target + ")");
@@ -88,7 +88,7 @@ public class ApostropheMergeRule extends MergeRule {
             // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
             before.setLetter('"');
             before.merge(target);
-            return Optional.of(target);
+            return Optional.of(List.of(target));
         }
 
         return Optional.empty();

@@ -57,7 +57,7 @@ public class UnderDotMergeRule extends MergeRule {
     }
 
     @Override
-    public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
+    public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
         System.out.println("\n\n====== Merging " + target + " ======");
         System.out.println("letterData = " + letterData);
         var index = letterData.indexOf(target) + 1;
@@ -102,7 +102,7 @@ public class UnderDotMergeRule extends MergeRule {
             var adding = !isBelowBase ? target : below;
             base.merge(adding);
             if (base.getLetter() != '?') base.setLetter('!');
-            return Optional.of(adding);
+            return Optional.of(List.of(adding));
         }
 
         return Optional.empty();

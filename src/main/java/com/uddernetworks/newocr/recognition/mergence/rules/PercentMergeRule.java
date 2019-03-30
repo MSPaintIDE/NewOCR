@@ -29,9 +29,23 @@ public class PercentMergeRule extends MergeRule {
     }
 
     @Override
-    public Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
-        // TODO: Implement method
+    public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
+        var baseIndex = letterData.indexOf(target);
 
-        return Optional.empty();
+        if (baseIndex - 1 < 0 || baseIndex + 1 >= letterData.size()) return Optional.empty();
+
+        var dot = letterData.get(baseIndex - 1);
+        var dot2 = letterData.get(baseIndex + 1);
+
+        if (target.getLetter() != '%') return Optional.empty();
+        if (dot.getLetter() != '%' || dot.getModifier() == 2) return Optional.empty();
+        if (dot2.getLetter() != '%' || dot2.getModifier() == 2) return Optional.empty();
+
+        if (!target.isOverlappingY(dot) || !target.isOverlappingY(dot2)) return Optional.empty();
+
+        target.merge(dot);
+        target.merge(dot2);
+
+        return Optional.of(List.of(dot, dot2));
     }
 }

@@ -41,5 +41,5 @@ public abstract class MergeRule {
      * @param letterData The letter data
      * @return The {@link ImageLetter} that should be removed if the merge was successful
      */
-    public abstract Optional<ImageLetter> mergeCharacters(ImageLetter target, List<ImageLetter> letterData);
+    public abstract Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData);
 }

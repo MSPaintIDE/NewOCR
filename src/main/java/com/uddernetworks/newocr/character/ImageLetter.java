@@ -382,4 +382,26 @@ public class ImageLetter {
     public int getAmountOfMerges() {
         return amountOfMerges;
     }
+
+    /**
+     * Gets if another {@link ImageLetter} is overlapping the current {@link ImageLetter} at all in the X axis.
+     *
+     * @param imageLetter The {@link ImageLetter} to check for overlapping
+     * @return If the given {@link ImageLetter} is overlapping the current {@link ImageLetter}
+     */
+    public boolean isOverlappingX(ImageLetter imageLetter) {
+        // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
+        return getX() + getWidth() >= imageLetter.getX() && imageLetter.getX() + imageLetter.getWidth() >= getX();
+    }
+
+    /**
+     * Gets if another {@link ImageLetter} is overlapping the current {@link ImageLetter} at all in the Y axis.
+     *
+     * @param imageLetter The {@link ImageLetter} to check for overlapping
+     * @return If the given {@link ImageLetter} is overlapping the current {@link ImageLetter}
+     */
+    public boolean isOverlappingY(ImageLetter imageLetter) {
+        // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
+        return getY() + getHeight() >= imageLetter.getY() && imageLetter.getY() + imageLetter.getHeight() >= getY();
+    }
 }
