@@ -70,6 +70,8 @@ public class EqualVerticalMergeRule extends MergeRule {
 
         var above = letterData.get(index);
 
+        if (target.getAmountOfMerges() > 0 || above.getAmountOfMerges() > 0) return Optional.empty();
+
         var bottomOfCharacterY = above.getY();
         var difference = bottomOfCharacterY - target.getY() - target.getHeight();
 
@@ -93,7 +95,7 @@ public class EqualVerticalMergeRule extends MergeRule {
             return Optional.empty();
         }
 
-        var delta = projectedDifference * 0.25D;
+        var delta = projectedDifference * 0.5D;
 
         System.out.println(diff(difference, projectedDifference) + " <= " + delta);
 

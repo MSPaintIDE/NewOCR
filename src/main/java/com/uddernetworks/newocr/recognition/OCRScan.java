@@ -8,6 +8,7 @@ import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.recognition.mergence.DefaultMergenceManager;
 import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
 import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
@@ -31,13 +32,14 @@ public class OCRScan implements Scan {
 
     private DatabaseManager databaseManager;
     private Actions actions;
+    private SimilarityManager similarityManager;
     private MergenceManager mergenceManager;
 
     public OCRScan(DatabaseManager databaseManager) {
         this.databaseManager = databaseManager;
         ImageIO.setUseCache(false);
 
-        var similarityManager = new DefaultSimilarityManager().loadDefaults();
+        this.similarityManager = new DefaultSimilarityManager().loadDefaults();
 
         this.actions = new OCRActions(databaseManager, similarityManager);
         this.mergenceManager = new DefaultMergenceManager().loadDefaults(this.databaseManager, similarityManager);
@@ -85,10 +87,10 @@ public class OCRScan implements Scan {
         this.actions.getLetters(searchImage, searchCharacters);
 
         var i2 = new AtomicInteger();
-
-        searchCharacters.stream()
-                .sorted(Comparator.comparingInt(SearchCharacter::getX))
-                .forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind2\\" + i2.getAndIncrement() + ".png"));
+//
+//        searchCharacters.stream()
+//                .sorted(Comparator.comparingInt(SearchCharacter::getX))
+//                .forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind2\\" + i2.getAndIncrement() + ".png"));
 //        this.actions.getLettersDuringTraining(searchImage, searchCharacters);
 
         System.out.println("DONE");
@@ -232,7 +234,7 @@ public class OCRScan implements Scan {
 
         System.out.println("sortedLines = " + sortedLines);
 
-        this.mergenceManager.beginMergence(sortedLines);
+        this.mergenceManager.beginMergence(sortedLines, this.similarityManager);
 
 //        sortedLines.values().stream().flatMap(List::stream).forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind\\2character_" + searchCharacter.getX() + ".png"));
 

@@ -55,7 +55,7 @@ public class OverDotMergeRule extends MergeRule {
 
     @Override
     public MergePriority getPriority() {
-        return MergePriority.LOW;
+        return MergePriority.HIGH;
     }
 
     @Override
@@ -67,14 +67,24 @@ public class OverDotMergeRule extends MergeRule {
 
         System.out.println("111");
 
-        if (index < 0 || letterData.size() <= index) return Optional.empty();
+        if (index < 0 || letterData.size() <= index) {
+            System.out.println("Badd");
+            return Optional.empty();
+        }
 
         System.out.println("222");
 
-        var semicolon = target.getLetter() == ';' && target.getModifier() == 1;
+        var targetLetter = target.getLetter();
+
+        var semicolon = (targetLetter == ';' && target.getModifier() == 1) || targetLetter == ',';
+        System.out.println("semicolon = " + semicolon);
+        System.out.println("targetLetter = " + targetLetter);
 
         // Base
-        if (!semicolon && !this.verticalLineRule.matchesLetter(target)) {
+        if (!semicolon &&
+                !this.verticalLineRule.matchesLetter(target) &&
+                !(targetLetter == 'j' && target.getModifier() == 1) &&
+                (targetLetter != 'J')) {
             System.out.println("Don't match: " + target);
             return Optional.empty();
         }
@@ -85,6 +95,8 @@ public class OverDotMergeRule extends MergeRule {
         var above = letterData.get(index);
         if (!this.dotRule.matchesLetter(above)) return Optional.empty();
 
+        if (target.getAmountOfMerges() > 0 || above.getAmountOfMerges() > 0) return Optional.empty();
+
         System.out.println("444");
 
         var distanceUsing = semicolon ? this.semicolonDistance : this.distanceAbove;
@@ -94,7 +106,7 @@ public class OverDotMergeRule extends MergeRule {
         var isPartAbove = above.getHeight() < target.getHeight();
         double maxHeight = Math.max(above.getHeight(), target.getHeight());
         double projectedDifference = distanceUsing * maxHeight;
-        double delta = projectedDifference * 0.25;
+        double delta = projectedDifference * 0.5D;
         System.out.println("maxHeight = " + maxHeight);
         System.out.println("distanceUsing = " + distanceUsing);
         System.out.println("difference = " + difference);
@@ -109,7 +121,14 @@ public class OverDotMergeRule extends MergeRule {
             var base = !isPartAbove ? above : target;
             var adding = !isPartAbove ? target : above;
             base.merge(adding);
-            base.setLetter(target.getLetter());
+            var usingChar = targetLetter;
+            if (usingChar == 'J') {
+                usingChar = 'j';
+            } else if (usingChar == ',') {
+                usingChar = ';';
+            }
+
+            base.setLetter(usingChar);
             return Optional.of(List.of(adding));
         }
 

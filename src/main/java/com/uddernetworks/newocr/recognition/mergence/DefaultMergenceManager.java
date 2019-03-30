@@ -4,6 +4,10 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.recognition.mergence.rules.*;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
+import com.uddernetworks.newocr.recognition.similarity.rules.DotSimilarityRule;
+import com.uddernetworks.newocr.recognition.similarity.rules.HorizontalLineSimilarityRule;
+import com.uddernetworks.newocr.recognition.similarity.rules.PercentDotSimilarityRule;
+import com.uddernetworks.newocr.recognition.similarity.rules.VerticalLineSimilarityRule;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 
 import java.util.*;
@@ -41,7 +45,7 @@ public class DefaultMergenceManager implements MergenceManager {
     }
 
     @Override
-    public void beginMergence(Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines) {
+    public void beginMergence(Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines, SimilarityManager similarityManager) {
         this.mergeRules.sort(Comparator.comparingInt(rule -> rule.getPriority().getPriorityIndex()));
 
         flatKeys(sortedLines).forEach(letter -> {
@@ -66,6 +70,32 @@ public class DefaultMergenceManager implements MergenceManager {
 
         start = System.currentTimeMillis();
         this.mergeRules.stream().map(this::processRule).flatMap(Set::stream).forEach(imageLetter -> removeFromSorted(imageLetter, sortedLines));
+
+
+        var dotSimilarity = similarityManager.getRule(DotSimilarityRule.class).orElseThrow();
+        var horizLineSimilarity = similarityManager.getRule(HorizontalLineSimilarityRule.class).orElseThrow();
+        var vertLineSimilarity = similarityManager.getRule(VerticalLineSimilarityRule.class).orElseThrow();
+        var percentDotLineSimilarity = similarityManager.getRule(PercentDotSimilarityRule.class).orElseThrow();
+
+        // Cleaning up
+        flatKeys(sortedLines).forEach(imageLetter -> {
+            if (imageLetter.getAmountOfMerges() > 0) return;
+            var letter = imageLetter.getLetter();
+            var mod = imageLetter.getModifier();
+            if (dotSimilarity.matchesLetter(imageLetter)) {
+                imageLetter.setLetter('.');
+            } else if (letter == '=') {
+                imageLetter.setLetter('-');
+            } else if (vertLineSimilarity.matchesLetter(imageLetter)) {
+                imageLetter.setLetter('|');
+            } else if (percentDotLineSimilarity.matchesLetter(imageLetter)) {
+                imageLetter.setLetter('o');
+            } else if (letter == ';' && mod == 1) {
+                imageLetter.setLetter(',');
+            } else if (letter == 'j') { // This can happen because it has no merges here
+                imageLetter.setLetter('J');
+            }
+        });
 
         System.out.println("Finished in " + (System.currentTimeMillis() - start));
     }

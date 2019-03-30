@@ -177,10 +177,10 @@ public class OCRTrain implements Train {
                         nextMeasuringSpace = searchCharacter;
                     }
 
-                    if (first) {
-                        System.out.println("Drawing " + current + "_" + modifier + " (" + ((int) current) + ")");
-                        OCRUtils.makeImage(searchCharacter.getValues(), "ind\\" + ((int) current) + "_" + modifier + ".png");
-                    }
+//                    if (first) {
+//                        System.out.println("Drawing " + current + "_" + modifier + " (" + ((int) current) + ")");
+//                        OCRUtils.makeImage(searchCharacter.getValues(), "ind\\" + ((int) current) + "_" + modifier + ".png");
+//                    }
 
                     metaMapping.forEach((meta, list) -> searchCharacter.getTrainingMeta(meta).ifPresent(list::add));
 

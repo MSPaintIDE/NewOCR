@@ -81,6 +81,8 @@ public class UnderDotMergeRule extends MergeRule {
             return Optional.empty();
         }
 
+        if (target.getAmountOfMerges() > 0 || below.getAmountOfMerges() > 0) return Optional.empty();
+
         System.out.println("Going on");
 
         var bottomOfCharacterY = below.getY();
@@ -89,7 +91,7 @@ public class UnderDotMergeRule extends MergeRule {
         var isBelowBase = below.getHeight() < target.getHeight();
         double minHeight = Math.max(below.getHeight(), target.getHeight());
         double projectedDifference = this.distanceBelow * minHeight;
-        double delta = projectedDifference * 0.25;
+        double delta = projectedDifference * 0.5D;
         System.out.println("distanceBelow = " + distanceBelow);
         System.out.println("difference = " + difference);
         System.out.println("projectedDifference = " + projectedDifference);

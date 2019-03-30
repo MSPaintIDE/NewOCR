@@ -37,9 +37,15 @@ public class PercentMergeRule extends MergeRule {
         var dot = letterData.get(baseIndex - 1);
         var dot2 = letterData.get(baseIndex + 1);
 
-        if (target.getLetter() != '%') return Optional.empty();
-        if (dot.getLetter() != '%' || dot.getModifier() == 2) return Optional.empty();
-        if (dot2.getLetter() != '%' || dot2.getModifier() == 2) return Optional.empty();
+        if (target.getAmountOfMerges() > 0 || dot.getAmountOfMerges() > 0 || dot2.getAmountOfMerges() > 0) return Optional.empty();
+
+        if (target.getLetter() != '%' && target.getLetter() != '/') return Optional.empty();
+
+        if (!(dot.getLetter() == '%' && dot.getModifier() != 2) &&
+                dot.getLetter() != 'o') return Optional.empty();
+
+        if (!(dot2.getLetter() == '%' && dot2.getModifier() != 2) &&
+                dot.getLetter() != 'o') return Optional.empty();
 
         if (!target.isOverlappingY(dot) || !target.isOverlappingY(dot2)) return Optional.empty();
 
