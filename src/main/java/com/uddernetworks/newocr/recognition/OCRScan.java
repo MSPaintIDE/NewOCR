@@ -272,6 +272,7 @@ public class OCRScan implements Scan {
 
             var space = spaceOptional.get();
             var spaceRatio = space.getAvgWidth() / space.getAvgHeight();
+            System.out.println("spaceRatio = " + spaceRatio);
 
             ImageLetter prev = null;
 
@@ -281,11 +282,15 @@ public class OCRScan implements Scan {
                 int rightX = searchCharacter.getX();
 
                 var gap = rightX - leftX; // The space between the current character and the last character
+                System.out.println(rightX + " - " + leftX + " = " + gap + " (gap)");
                 var ratio = spaceRatio; // The ratio of the space DatabaseCharacter
                 var usedWidth = ratio * fontSize; // The width of the space for this specific fot size
                 usedWidth += spaceRatioOverride * fontSize;
 
+                System.out.println("SPACES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
                 int spaces = '!' == searchCharacter.getLetter() ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
+                System.out.println("spaces = " + spaces);
 
                 for (int i = 0; i < spaces; i++) {
                     ret.add(new ImageLetter(' ', 0, (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, usedWidth, fontSize, ratio));
@@ -307,9 +312,14 @@ public class OCRScan implements Scan {
 
     @Override
     public int spaceRound(double input) {
+        System.out.println("OCRScan.spaceRound");
+        System.out.println("input = " + input);
         int known = (int) Math.floor(input);
+        System.out.println("known = " + known);
         double extra = input % 1;
-        known += OCRUtils.checkDifference(extra, 1, 0.2D) ? 1 : 0;
+        System.out.println("extra = " + extra);
+        known += OCRUtils.diff(extra, 1) < 0.2D ? 1 : 0;
+        System.out.println("known = " + known);
         return known;
     }
 }

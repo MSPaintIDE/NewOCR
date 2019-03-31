@@ -3,7 +3,6 @@ package com.uddernetworks.newocr;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
 import com.uddernetworks.newocr.recognition.OCRScan;
-import com.uddernetworks.newocr.recognition.OCRTrain;
 import com.uddernetworks.newocr.recognition.Scan;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.junit.BeforeClass;
@@ -21,6 +20,9 @@ public class OCRHandleTest {
 
     private static Logger LOGGER = LoggerFactory.getLogger(OCRHandleTest.class);
     private static final double MINIMUM_SUCCESS_RATE = 95; // Requires at least a 95% success rate
+
+    // This is the same as OCRTrain.TRAIN_STRING but without duplicates used in training
+    private static String COMPARING_STRING = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~W W";
 
     private static DatabaseManager databaseManager;
     private static Scan ocrHandle;
@@ -46,7 +48,7 @@ public class OCRHandleTest {
         for (String line : lines) {
 //            if (line.contains("         ")) continue;
 //            System.out.println(line);
-            var difference = diffMatchPath.diffMain(line, OCRTrain.TRAIN_STRING);
+            var difference = diffMatchPath.diffMain(line, COMPARING_STRING);
             final int[] insert = {0};
             final int[] delete = {0};
             difference.stream().filter(diff -> diff.operation != EQUAL)
@@ -60,7 +62,7 @@ public class OCRHandleTest {
             differences += Math.max(insert[0], delete[0]);
         }
 
-        var totalChars = lines.length * OCRTrain.TRAIN_STRING.length();
+        var totalChars = lines.length * COMPARING_STRING.length();
         var accuracy = (Math.round((1 - (double) differences / (double) totalChars) * 100_00D) / 100D);
         LOGGER.info(differences + " errors out of " + totalChars + " at a " + accuracy + "% success rate");
 

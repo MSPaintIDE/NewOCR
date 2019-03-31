@@ -159,7 +159,7 @@ public class OCRTrain implements Train {
                         // width of the space) and reset the line
                     } else if (letterIndex == TRAIN_STRING.length()) {
                         searchCharacter.setKnownChar('W');
-                        spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX, line.topY() - line.bottomY());
+                        spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX, line.bottomY() - line.topY());
                         letterIndex = 0;
                         continue;
                     } else {

@@ -86,14 +86,14 @@ public class DefaultMergenceManager implements MergenceManager {
                 imageLetter.setLetter('.');
             } else if (letter == '=') {
                 imageLetter.setLetter('-');
-            } else if (vertLineSimilarity.matchesLetter(imageLetter)) {
-                imageLetter.setLetter('|');
             } else if (percentDotLineSimilarity.matchesLetter(imageLetter)) {
                 imageLetter.setLetter('o');
             } else if (letter == ';' && mod == 1) {
                 imageLetter.setLetter(',');
             } else if (letter == 'j') { // This can happen because it has no merges here
                 imageLetter.setLetter('J');
+            } else if (letter == '"') { // This can happen because it has no merges here
+                imageLetter.setLetter('\'');
             }
         });
 
