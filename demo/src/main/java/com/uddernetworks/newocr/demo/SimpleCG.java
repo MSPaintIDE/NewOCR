@@ -60,7 +60,7 @@ public class SimpleCG {
         // TODO: Fully implement warming up
 //        ocrScan.scanImage(new File("src\\main\\resources\\warmup.png"));
 
-        var scannedImage = ocrScan.scanImage(new File("spaceTest.png"));
+        var scannedImage = ocrScan.scanImage(new File("training.png"));
 
         LOGGER.info("Got:\n" + scannedImage.getPrettyString());
 

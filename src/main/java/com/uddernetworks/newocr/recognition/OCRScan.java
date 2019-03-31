@@ -17,13 +17,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class OCRScan implements Scan {
@@ -54,19 +51,7 @@ public class OCRScan implements Scan {
         var values = OCRUtils.createGrid(input);
         var searchCharacters = new ArrayList<SearchCharacter>();
 
-        if (Boolean.getBoolean("newocr.rewrite")) {
-            var temp = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            OCRUtils.rewriteImage(temp, input);
-            input = temp;
-        }
-
         input = OCRUtils.filter(input).orElseThrow();
-
-        try {
-            ImageIO.write(input, "png", new File("E:\\NewOCR\\ind\\binz.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         OCRUtils.toGrid(input, values);
 
@@ -77,23 +62,8 @@ public class OCRScan implements Scan {
         // Key = Entry<MinCenter, MaxCenter>  centers are ABSOLUTE
         Map<IntPair, List<ImageLetter>> lines = new LinkedHashMap<>();
 
-        // TODO: This is EXPERIMENTAL
-
         this.actions.getLineBoundsForTraining(searchImage, new TrainOptions()).forEach(pair -> lines.put(pair, new LinkedList<>()));
-        System.out.println("lines = " + lines);
-
-        //
-
         this.actions.getLetters(searchImage, searchCharacters);
-
-        var i2 = new AtomicInteger();
-//
-//        searchCharacters.stream()
-//                .sorted(Comparator.comparingInt(SearchCharacter::getX))
-//                .forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind2\\" + i2.getAndIncrement() + ".png"));
-//        this.actions.getLettersDuringTraining(searchImage, searchCharacters);
-
-        System.out.println("DONE");
 
         // Gets all needed character data from the database based on the currently used font sizes
 
@@ -142,61 +112,7 @@ public class OCRScan implements Scan {
                         return OCRUtils.isWithin(topX, bottomX, center);
                     }).findFirst().ifPresentOrElse(matchingPair -> {
                         matchingPair.getValue().add(imageLetter);
-                    }, () -> {
-                        LOGGER.warn("Found a letter not conforming to any bounds at (" + imageLetter.getX() + ", " + imageLetter.getY() + ") with a center Y of " + center);
-                    });
-
-
-//                    double maxCenter = imageLetter.getMaxCenter();
-//                    double minCenter = imageLetter.getMinCenter();
-//                    boolean subtract = maxCenter < 0 && imageLetter.getMinCenter() < 0;
-//                    double centerDiff = subtract ?
-//                            maxCenter + minCenter :
-//                            maxCenter - minCenter;
-//                    // The tolerance of how far away a character can be from the line's center for it to be included
-//                    double tolerance = (int) Math.round(Math.max(Math.abs(centerDiff / 2 * 1.5), 2D));
-//
-//                    int exactMin = (int) Math.round(imageLetter.getY() + minCenter);
-//                    int exactMax = (int) Math.round(imageLetter.getY() + maxCenter);
-//
-//                    int exactTolerantMin = (int) Math.max(exactMin - tolerance, 0);
-//                    int exactTolerantMax = (int) (exactMax + tolerance);
-//
-//                    int potentialY = (int) Math.round(imageLetter.getY() + centerDiff);
-//
-//                    // Gets the nearest line and its Y value, if any
-//                    var possibleCenter = lines.keySet()
-//                            .stream()
-//                            .filter(centers -> {
-//                                int x1 = centers.getKey();
-//                                int y1 = centers.getValue();
-//                                int x2 = exactTolerantMin;
-//                                int y2 = exactTolerantMax;
-//                                return Math.max(y1, y2) - Math.min(x1, x2) < (y1 - x1) + (y2 - x2);
-//                            })
-//                            .min(Comparator.comparing(centers -> {
-//                                double min = centers.getKey();
-//                                double max = centers.getValue();
-//                                double centerBeginningY = ((max - min) / 2) + min;
-//                                return diff(centerBeginningY, potentialY);
-//                            }));
-//
-//                    var center = possibleCenter.orElseGet(() -> {
-//                        var pair = new IntPair(exactTolerantMin, exactTolerantMax); // Included tolerance
-//                        lines.put(pair, new LinkedList<>());
-//                        return pair;
-//                    });
-//
-//                    double ratio = imageLetter.getAverageWidth() / imageLetter.getAverageHeight();
-//                    double diff = Math.max(ratio, imageLetter.getRatio()) - Math.min(ratio, imageLetter.getRatio());
-//
-//                    // This is signaled when the difference of the ratios are a value that is probably incorrect.
-//                    // If the ratio is very different, it should be looked into, as it could be from faulty detection.
-//                    if (diff > 0.2D) {
-//                        LOGGER.warn("Questionable ratio diff of " + diff + " on letter: " + imageLetter.getLetter() + " at (" + imageLetter.getX() + ", " + imageLetter.getY() + ")");
-//                    }
-
-//                    lines.get(center).add(imageLetter);
+                    }, () -> LOGGER.warn("Found a letter not conforming to any bounds at (" + imageLetter.getX() + ", " + imageLetter.getY() + ") with a center Y of " + center));
                 });
 
         // End ordering
@@ -224,19 +140,7 @@ public class OCRScan implements Scan {
                     sortedLines.put(y, databaseCharacters);
                 });
 
-//        sortedLines.forEach((key, value) -> {
-//            var i = 0;
-//            for (ImageLetter imageLetter : value) {
-//                OCRUtils.makeImage(imageLetter.getValues(), "E:\\NewOCR\\ind\\" + (i++) + ".png");
-//            }
-//            System.exit(0);
-//        });
-
-        System.out.println("sortedLines = " + sortedLines);
-
         this.mergenceManager.beginMergence(sortedLines, this.similarityManager);
-
-//        sortedLines.values().stream().flatMap(List::stream).forEach(searchCharacter -> OCRUtils.makeImage(searchCharacter.getValues(), "ind\\2character_" + searchCharacter.getX() + ".png"));
 
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.
@@ -272,7 +176,6 @@ public class OCRScan implements Scan {
 
             var space = spaceOptional.get();
             var spaceRatio = space.getAvgWidth() / space.getAvgHeight();
-            System.out.println("spaceRatio = " + spaceRatio);
 
             ImageLetter prev = null;
 
@@ -282,15 +185,11 @@ public class OCRScan implements Scan {
                 int rightX = searchCharacter.getX();
 
                 var gap = rightX - leftX; // The space between the current character and the last character
-                System.out.println(rightX + " - " + leftX + " = " + gap + " (gap)");
                 var ratio = spaceRatio; // The ratio of the space DatabaseCharacter
                 var usedWidth = ratio * fontSize; // The width of the space for this specific fot size
                 usedWidth += spaceRatioOverride * fontSize;
 
-                System.out.println("SPACES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
                 int spaces = '!' == searchCharacter.getLetter() ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
-                System.out.println("spaces = " + spaces);
 
                 for (int i = 0; i < spaces; i++) {
                     ret.add(new ImageLetter(' ', 0, (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, usedWidth, fontSize, ratio));
@@ -312,14 +211,9 @@ public class OCRScan implements Scan {
 
     @Override
     public int spaceRound(double input) {
-        System.out.println("OCRScan.spaceRound");
-        System.out.println("input = " + input);
         int known = (int) Math.floor(input);
-        System.out.println("known = " + known);
         double extra = input % 1;
-        System.out.println("extra = " + extra);
         known += OCRUtils.diff(extra, 1) < 0.2D ? 1 : 0;
-        System.out.println("known = " + known);
         return known;
     }
 }

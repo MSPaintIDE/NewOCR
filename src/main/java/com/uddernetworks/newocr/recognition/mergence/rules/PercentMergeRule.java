@@ -6,8 +6,10 @@ import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Merges all pieces of a percent sign
@@ -34,24 +36,36 @@ public class PercentMergeRule extends MergeRule {
 
         if (baseIndex - 1 < 0 || baseIndex + 1 >= letterData.size()) return Optional.empty();
 
-        var dot = letterData.get(baseIndex - 1);
-        var dot2 = letterData.get(baseIndex + 1);
+        var part1 = letterData.get(baseIndex - 1);
+        var part2 = letterData.get(baseIndex + 1);
 
-        if (target.getAmountOfMerges() > 0 || dot.getAmountOfMerges() > 0 || dot2.getAmountOfMerges() > 0) return Optional.empty();
+        if (target.getAmountOfMerges() > 0 || part1.getAmountOfMerges() > 0 || part2.getAmountOfMerges() > 0) return Optional.empty();
 
-        if (target.getLetter() != '%' && target.getLetter() != '/') return Optional.empty();
+        var pieces = new ArrayList<>(List.of(target, part1, part2));
+        var dots = pieces.stream().filter(this::isDot).collect(Collectors.toList());
+        if (dots.size() != 2) return Optional.empty();
 
-        if (!(dot.getLetter() == '%' && dot.getModifier() != 2) &&
-                dot.getLetter() != 'o') return Optional.empty();
+        pieces.removeAll(dots);
+        var base = pieces.get(0);
+        if (!isBase(base)) return Optional.empty();
 
-        if (!(dot2.getLetter() == '%' && dot2.getModifier() != 2) &&
-                dot.getLetter() != 'o') return Optional.empty();
+        var dot1 = dots.get(0);
+        var dot2 = dots.get(1);
 
-        if (!target.isOverlappingY(dot) || !target.isOverlappingY(dot2)) return Optional.empty();
+        if (!base.isOverlappingY(dot1) || !base.isOverlappingY(dot2)) return Optional.empty();
 
-        target.merge(dot);
-        target.merge(dot2);
+        base.merge(dot1);
+        base.merge(dot2);
 
-        return Optional.of(List.of(dot, dot2));
+        return Optional.of(dots);
+    }
+
+    private boolean isDot(ImageLetter imageLetter) {
+        return (imageLetter.getLetter() == '%' && imageLetter.getModifier() != 2) ||
+                imageLetter.getLetter() == 'o';
+    }
+
+    private boolean isBase(ImageLetter imageLetter) {
+        return imageLetter.getLetter() == '%' || imageLetter.getLetter() == '/';
     }
 }

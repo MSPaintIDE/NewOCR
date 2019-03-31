@@ -63,10 +63,7 @@ public class EqualVerticalMergeRule extends MergeRule {
 
         var index = letterData.indexOf(target) + 1;
 
-        if (letterData.size() <= index) {
-            System.out.println("Can't have!!");
-            return Optional.empty();
-        }
+        if (letterData.size() <= index) return Optional.empty();
 
         var above = letterData.get(index);
 
@@ -75,9 +72,6 @@ public class EqualVerticalMergeRule extends MergeRule {
         var bottomOfCharacterY = above.getY();
         var difference = bottomOfCharacterY - target.getY() - target.getHeight();
 
-        System.out.println("(" + above.getY() + " + " + above.getHeight() + ") - " + target.getY());
-
-        System.out.println("difference = " + difference); // should be 18
         var isPartAbove = above.getHeight() < target.getHeight();
         double minHeight = Math.min(above.getHeight(), target.getHeight());
         double projectedDifference;
@@ -85,23 +79,16 @@ public class EqualVerticalMergeRule extends MergeRule {
 
         if (this.horizontalLineRule.matchesLetter(target) && this.horizontalLineRule.matchesLetter(above)) { //   =
             projectedDifference = this.equalsDistance * minHeight;
-            System.out.println("111 projectedDifference = " + projectedDifference);
             colon = false;
         } else if (this.dotRule.matchesLetter(target) && this.dotRule.matchesLetter(above)) { //   :
             projectedDifference = this.colonDistance * minHeight;
-            System.out.println("222 projectedDifference = " + projectedDifference);
         } else {
-            System.out.println("Else!");
             return Optional.empty();
         }
 
         var delta = projectedDifference * 0.5D;
 
-        System.out.println(diff(difference, projectedDifference) + " <= " + delta);
-
-        // Definitely can be improved
         if (diff(difference, projectedDifference) <= delta) {
-            System.out.println("Moving above");
             var base = !isPartAbove ? above : target;
             var adding = !isPartAbove ? target : above;
             base.merge(adding);

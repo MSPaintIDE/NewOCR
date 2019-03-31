@@ -66,7 +66,6 @@ public class ApostropheMergeRule extends MergeRule {
 
         var avgLength = (double) before.getHeight() * apostropheRatio;
         if (target.getX() - before.getX() <= avgLength) {
-//            System.out.println("Merging");
             // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
             before.setLetter('"');
             before.merge(target);

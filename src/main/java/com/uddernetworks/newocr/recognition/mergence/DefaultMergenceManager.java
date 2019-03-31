@@ -5,10 +5,9 @@ import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.recognition.mergence.rules.*;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.recognition.similarity.rules.DotSimilarityRule;
-import com.uddernetworks.newocr.recognition.similarity.rules.HorizontalLineSimilarityRule;
-import com.uddernetworks.newocr.recognition.similarity.rules.PercentDotSimilarityRule;
-import com.uddernetworks.newocr.recognition.similarity.rules.VerticalLineSimilarityRule;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,6 +16,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DefaultMergenceManager implements MergenceManager {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(DefaultMergenceManager.class);
 
     private List<MergeRule> mergeRules = new CopyOnWriteArrayList<>();
 
@@ -48,34 +49,14 @@ public class DefaultMergenceManager implements MergenceManager {
     public void beginMergence(Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines, SimilarityManager similarityManager) {
         this.mergeRules.sort(Comparator.comparingInt(rule -> rule.getPriority().getPriorityIndex()));
 
-        flatKeys(sortedLines).forEach(letter -> {
-            System.out.println(letter + " at (" + letter.getX() + ", " + letter.getY() + ") wh is (" + letter.getWidth() + " x " + letter.getHeight() + ")");
-        });
-
-        var tt = flatKeys(sortedLines).findFirst().get();
-
-        System.out.println("Vertical for first is " + tt);
-        System.out.println(getVerticalTo(tt, sortedLines));
-
         long start = System.currentTimeMillis();
         flatKeys(sortedLines).forEach(imageLetter -> verticalLetterRelations.put(imageLetter, getVerticalTo(imageLetter, sortedLines)));
 
         sortedLines.forEach((y, line) -> line.forEach(imageLetter -> horizontalLetterRelations.put(imageLetter, line)));
-        System.out.println("Finished first in " + (System.currentTimeMillis() - start) + "ms");
 
-        System.out.println("horizontalLetterRelations = " + horizontalLetterRelations);
-        System.out.println("verticalLetterRelations = " + verticalLetterRelations);
-
-        System.out.println("mergeRules = " + mergeRules);
-
-        start = System.currentTimeMillis();
         this.mergeRules.stream().map(this::processRule).flatMap(Set::stream).forEach(imageLetter -> removeFromSorted(imageLetter, sortedLines));
 
-
         var dotSimilarity = similarityManager.getRule(DotSimilarityRule.class).orElseThrow();
-        var horizLineSimilarity = similarityManager.getRule(HorizontalLineSimilarityRule.class).orElseThrow();
-        var vertLineSimilarity = similarityManager.getRule(VerticalLineSimilarityRule.class).orElseThrow();
-        var percentDotLineSimilarity = similarityManager.getRule(PercentDotSimilarityRule.class).orElseThrow();
 
         // Cleaning up
         flatKeys(sortedLines).forEach(imageLetter -> {
@@ -86,8 +67,6 @@ public class DefaultMergenceManager implements MergenceManager {
                 imageLetter.setLetter('.');
             } else if (letter == '=') {
                 imageLetter.setLetter('-');
-            } else if (percentDotLineSimilarity.matchesLetter(imageLetter)) {
-                imageLetter.setLetter('o');
             } else if (letter == ';' && mod == 1) {
                 imageLetter.setLetter(',');
             } else if (letter == 'j') { // This can happen because it has no merges here
@@ -97,7 +76,7 @@ public class DefaultMergenceManager implements MergenceManager {
             }
         });
 
-        System.out.println("Finished in " + (System.currentTimeMillis() - start));
+        LOGGER.debug("Finished merging in " + (System.currentTimeMillis() - start));
     }
 
     private Set<ImageLetter> processRule(MergeRule rule) {
@@ -110,8 +89,6 @@ public class DefaultMergenceManager implements MergenceManager {
                 iterating.forEach((key, list) -> list.removeAll(remove));
             });
         });
-
-        System.out.println("removing = " + removing);
 
         removing.forEach(horizontalLetterRelations::remove);
         removing.forEach(verticalLetterRelations::remove);
@@ -136,7 +113,6 @@ public class DefaultMergenceManager implements MergenceManager {
         return flatKeys(sortedLines)
                 .filter(filterChar -> filterChar.isOverlappingX(imageLetter))
                 .sorted(Comparator.comparingInt(ImageLetter::getY))
-//                .collect(Collectors.toCollection(LinkedList::new));
                 .collect(Collectors.toList());
     }
 

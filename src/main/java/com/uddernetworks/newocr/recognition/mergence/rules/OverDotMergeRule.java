@@ -60,44 +60,27 @@ public class OverDotMergeRule extends MergeRule {
 
     @Override
     public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
-        System.out.println("----------------------------------------------------");
-
         var index = letterData.indexOf(target) - 1;
-        System.out.println("index = " + index + " of " + target + " " + letterData);
 
-        System.out.println("111");
-
-        if (index < 0 || letterData.size() <= index) {
-            System.out.println("Badd");
-            return Optional.empty();
-        }
-
-        System.out.println("222");
+        if (index < 0 || letterData.size() <= index) return Optional.empty();
 
         var targetLetter = target.getLetter();
 
         var semicolon = (targetLetter == ';' && target.getModifier() == 1) || targetLetter == ',';
-        System.out.println("semicolon = " + semicolon);
-        System.out.println("targetLetter = " + targetLetter);
 
         // Base
         if (!semicolon &&
                 !this.verticalLineRule.matchesLetter(target) &&
                 !(targetLetter == 'j' && target.getModifier() == 1) &&
                 (targetLetter != 'J')) {
-            System.out.println("Don't match: " + target);
             return Optional.empty();
         }
-
-        System.out.println("333");
 
         // Dot
         var above = letterData.get(index);
         if (!this.dotRule.matchesLetter(above)) return Optional.empty();
 
         if (target.getAmountOfMerges() > 0 || above.getAmountOfMerges() > 0) return Optional.empty();
-
-        System.out.println("444");
 
         var distanceUsing = semicolon ? this.semicolonDistance : this.distanceAbove;
 
@@ -107,17 +90,8 @@ public class OverDotMergeRule extends MergeRule {
         double maxHeight = Math.max(above.getHeight(), target.getHeight());
         double projectedDifference = distanceUsing * maxHeight;
         double delta = projectedDifference * 0.5D;
-        System.out.println("maxHeight = " + maxHeight);
-        System.out.println("distanceUsing = " + distanceUsing);
-        System.out.println("difference = " + difference);
-        System.out.println("projectedDifference = " + projectedDifference);
-        System.out.println("Delta = " + delta);
 
-        System.out.println(diff(difference, projectedDifference)  + " <= " + delta);
-
-        // Definitely can be improved
         if (diff(difference, projectedDifference) <= delta) {
-            System.out.println("Moving above");
             var base = !isPartAbove ? above : target;
             var adding = !isPartAbove ? target : above;
             base.merge(adding);

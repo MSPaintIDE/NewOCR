@@ -58,32 +58,21 @@ public class UnderDotMergeRule extends MergeRule {
 
     @Override
     public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
-        System.out.println("\n\n====== Merging " + target + " ======");
-        System.out.println("letterData = " + letterData);
         var index = letterData.indexOf(target) + 1;
 
-        if (letterData.size() <= index) {
-            System.out.println("Can't have below! " + target);
-            return Optional.empty();
-        }
+        if (letterData.size() <= index) return Optional.empty();
 
         // Base, we want this to be a line
         if (!(target.getLetter() == '?' && target.getModifier() == 1)
                 && !this.verticalLineRule.matchesLetter(target)) {
-            System.out.println("Target doesn't match! " + target);
             return Optional.empty();
         }
 
         // Dot
         var below = letterData.get(index);
-        if (!this.dotRule.matchesLetter(below)) {
-            System.out.println("Below doesn't match " + below + " target is " + target);
-            return Optional.empty();
-        }
+        if (!this.dotRule.matchesLetter(below)) return Optional.empty();
 
         if (target.getAmountOfMerges() > 0 || below.getAmountOfMerges() > 0) return Optional.empty();
-
-        System.out.println("Going on");
 
         var bottomOfCharacterY = below.getY();
         var aboveY = target.getY() + target.getHeight();
@@ -92,14 +81,8 @@ public class UnderDotMergeRule extends MergeRule {
         double minHeight = Math.max(below.getHeight(), target.getHeight());
         double projectedDifference = this.distanceBelow * minHeight;
         double delta = projectedDifference * 0.5D;
-        System.out.println("distanceBelow = " + distanceBelow);
-        System.out.println("difference = " + difference);
-        System.out.println("projectedDifference = " + projectedDifference);
-        System.out.println("Delta = " + delta);
-        System.out.println("diff = " + diff(difference, projectedDifference) + " <= " + delta);
-// Definitely can be improved
+
         if (diff(difference, projectedDifference) <= delta) {
-            System.out.println("---------- Merging");
             var base = !isBelowBase ? below : target;
             var adding = !isBelowBase ? target : below;
             base.merge(adding);
