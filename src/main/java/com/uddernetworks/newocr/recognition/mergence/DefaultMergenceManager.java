@@ -73,6 +73,8 @@ public class DefaultMergenceManager implements MergenceManager {
                 imageLetter.setLetter('J');
             } else if (letter == '"') { // This can happen because it has no merges here
                 imageLetter.setLetter('\'');
+            } else if (letter == '%') {
+                imageLetter.setLetter('/');
             }
         });
 

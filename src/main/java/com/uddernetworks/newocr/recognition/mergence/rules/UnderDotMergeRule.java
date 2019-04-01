@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static com.uddernetworks.newocr.recognition.similarity.Letter.QUESTION_MARK_BOTTOM;
 import static com.uddernetworks.newocr.utils.OCRUtils.diff;
 
 /**
@@ -58,31 +59,51 @@ public class UnderDotMergeRule extends MergeRule {
 
     @Override
     public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
+        System.out.println("==================================================");
         var index = letterData.indexOf(target) + 1;
 
-        if (letterData.size() <= index) return Optional.empty();
+        if (letterData.size() <= index) {
+            System.out.println("Can't have below");
+            return Optional.empty();
+        }
 
         // Base, we want this to be a line
-        if (!(target.getLetter() == '?' && target.getModifier() == 1)
+//        System.out.println("target = " + target);
+//        System.out.println("nyc = " + letterData.get(index));
+//        OCRUtils.makeImage(target.getValues(), "ind\\target.png");
+        if (QUESTION_MARK_BOTTOM.matches(target)
                 && !this.verticalLineRule.matchesLetter(target)) {
+            System.out.println("Doesn't match here");
             return Optional.empty();
         }
 
         // Dot
         var below = letterData.get(index);
-        if (!this.dotRule.matchesLetter(below)) return Optional.empty();
+        if (!this.dotRule.matchesLetter(below)) {
+            System.out.println("Dot is bad " + below);
+            return Optional.empty();
+        }
 
-        if (target.getAmountOfMerges() > 0 || below.getAmountOfMerges() > 0) return Optional.empty();
+        if (target.getAmountOfMerges() > 0 || below.getAmountOfMerges() > 0) {
+            System.out.println("Already merged");
+            return Optional.empty();
+        }
 
         var bottomOfCharacterY = below.getY();
         var aboveY = target.getY() + target.getHeight();
         var difference = Math.abs(bottomOfCharacterY - aboveY);
         var isBelowBase = below.getHeight() < target.getHeight();
-        double minHeight = Math.max(below.getHeight(), target.getHeight());
+        double minHeight = target.getHeight();
         double projectedDifference = this.distanceBelow * minHeight;
         double delta = projectedDifference * 0.5D;
 
+        System.out.println("difference = " + difference);
+        System.out.println("projectedDifference = " + projectedDifference);
+        System.out.println("distanceBelow = " + distanceBelow);
+        System.out.println(diff(difference, projectedDifference) + " <= " + delta);
+
         if (diff(difference, projectedDifference) <= delta) {
+            System.out.println("Merging now");
             var base = !isBelowBase ? below : target;
             var adding = !isBelowBase ? target : below;
             base.merge(adding);

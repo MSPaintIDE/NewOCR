@@ -4,8 +4,9 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
+import com.uddernetworks.newocr.recognition.similarity.Letter;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
-import com.uddernetworks.newocr.train.TrainOptions;
+import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
@@ -27,14 +28,15 @@ public class OCRActions implements Actions {
 
     private DatabaseManager databaseManager;
     private SimilarityManager similarityManager;
+    private OCROptions options;
 
     private double distanceAbove = -1;
     private double distanceBelow = -1;
-    private int index = 0;
 
-    public OCRActions(DatabaseManager databaseManager, SimilarityManager similarityManager) {
+    public OCRActions(DatabaseManager databaseManager, SimilarityManager similarityManager, OCROptions options) {
         this.databaseManager = databaseManager;
         this.similarityManager = similarityManager;
+        this.options = options;
     }
 
     @Override
@@ -69,7 +71,7 @@ public class OCRActions implements Actions {
     }
 
     @Override
-    public List<CharacterLine> getLettersDuringTraining(SearchImage searchImage, TrainOptions options) {
+    public List<CharacterLine> getLettersDuringTraining(SearchImage searchImage) {
         var ret = new ArrayList<CharacterLine>();
 
         var charMetaMap = Map.of(
@@ -80,10 +82,12 @@ public class OCRActions implements Actions {
 
         // By default 0
         var configurableBases = Map.of(
-                Set.of('i', 'j', '?', ':', ';', '='), 1
+                Set.of('i', 'j', ':', ';', '='), 1 // The base is the second character (Bottom part)
         );
 
-        var lineBounds = getLineBoundsForTraining(searchImage, options);
+        var first = true;
+
+        var lineBounds = getLineBoundsForTraining(searchImage);
         for (var coords : lineBounds) {
             var fromY = coords.getKey();
             var toY = coords.getValue();
@@ -128,29 +132,45 @@ public class OCRActions implements Actions {
                 var list = found.stream()
                         .filter(part1::isOverlappingX)
                         .sorted(Comparator.comparingInt(SearchCharacter::getY))
-                        .sorted(Comparator.reverseOrder())
-                        .collect(Collectors.toList());
+//                        .sorted(Comparator.reverseOrder())
+                        .collect(Collectors.toCollection(LinkedList::new));
+//                Collections.reverse(list);
+
+                list.forEach(searchCharacter -> {
+                    System.out.println("SearchCharacter in list at (" + searchCharacter.getX() + ", " + searchCharacter.getY() + ")");
+                });
 
                 var currentChar = OCRTrain.TRAIN_STRING.charAt(i1);
 
-                var base = list.get(configurableBases.entrySet()
+                // If this is 1, it gets the second character
+                var index = configurableBases.entrySet()
                         .stream()
                         .filter(entry -> entry.getKey().contains(currentChar))
                         .map(Map.Entry::getValue)
                         .findFirst()
-                        .orElse(0));
+                        .orElse(0);
 
+                System.out.println("Index of using is " + index);
+
+                var base = list.get(index);
+
+                boolean finalFirst = first;
                 list.forEach(part2 -> {
-                    double maxHeight = Math.max(base.getHeight(), part2.getHeight());
+//                    double maxHeight = Math.max(base.getHeight(), part2.getHeight());
 
                     if (!base.equals(part2)) { // If part2 is NOT the base
                         if (currentChar == '!' || currentChar == '?') { // ! ?
                             double diff = (double) (part2.getY() - (base.getY() + base.getHeight()));
-                            var distance = diff / maxHeight;
+                            var distance = diff / (double) base.getHeight();
                             base.setTrainingMeta("distanceBelow", distance);
                         } else if (currentChar == 'i' || currentChar == 'j' || currentChar == ':' || currentChar == ';' || currentChar == '=') { // i j   base below
                             double diff = (double) (base.getY() - (part2.getY() + part2.getHeight()));
-                            var distance = diff / maxHeight;
+                            var distance = diff / (double) base.getHeight();
+
+                            if (currentChar == ':') {
+                                System.out.println(base.getY() + " - (" + part2.getY() + " + " + part2.getHeight() + ") = " + diff);
+                                System.out.println("Colon distance = " + distance);
+                            }
 
                             base.setTrainingMeta(charMetaMap.getOrDefault(currentChar, "distanceAbove"), distance);
                         }
@@ -159,10 +179,16 @@ public class OCRActions implements Actions {
                     var i = increment.getAndIncrement();
                     part2.setModifier(i);
                     ignored.add(part2);
+
+                    if (finalFirst) {
+                        var lett = Letter.getLetter(currentChar, i);
+//                        OCRUtils.makeImage(part2.getValues(), "ind\\" + lett.name() + ".png");
+                    }
                 });
             }
 
             ret.add(new TrainLine(found, fromY, toY));
+            first = false;
         }
 
         return ret;
@@ -252,8 +278,17 @@ public class OCRActions implements Actions {
             var letter = firstEntry.getKey().getLetter();
             var secondLetter = secondEntry.getKey().getLetter();
             var sorting = !verySmallDifference && (bigDifference || ratioDiff);
-            if ((letter == '-' || letter == '|' || letter == '_')
-                    && (secondLetter == '-' || secondLetter == '|' || secondLetter == '_')) {
+            var sizeCheck = this.options.getRequireSizeCheck();
+
+            var firstLetterEnum = Letter.getLetter(firstEntry.getKey());
+            var secondLetterEnum = Letter.getLetter(secondEntry.getKey());
+
+            System.out.println("sizeCheck = " + sizeCheck);
+            System.out.println("letter = " + firstLetterEnum.name());
+            System.out.println("secondLetter = " + secondLetterEnum.name());
+            if (sizeCheck.contains(firstLetterEnum) && sizeCheck.contains(secondLetterEnum)) {
+//            if ((letter == '-' || letter == '|' || letter == '_' || letter == '=' || letter == '.')
+//                    && (secondLetter == '-' || secondLetter == '|' || secondLetter == '_' || secondLetter == '=' || secondLetter == '.')) {
                 sorting = true;
             }
 
@@ -262,6 +297,8 @@ public class OCRActions implements Actions {
                     // Lower is more similar
                     return compareSizes(searchCharacter.getWidth(), searchCharacter.getHeight(), entry.getKey().getAverageWidth(), entry.getKey().getAverageHeight());
                 }));
+
+                System.out.println("entries = " + entries);
             }
         });
 
@@ -291,7 +328,7 @@ public class OCRActions implements Actions {
     }
 
     @Override
-    public List<IntPair> getLineBoundsForTraining(SearchImage image, TrainOptions options) {
+    public List<IntPair> getLineBoundsForTraining(SearchImage image) {
         // Pair<topY, bottomY>
         List<IntPair> lines = new ArrayList<>();
         var values = image.getValues();
@@ -355,8 +392,8 @@ public class OCRActions implements Actions {
             if (!onLast) {
                 var below = lines.get(i + 1);
                 double belowHeight = below.getValue() - below.getKey();
-                if (belowHeight / currentHeight <= options.getMaxPercentDiffToMerge()
-                        && ((double) current.getKey() - below.getKey()) / currentHeight <= options.getMaxPercentDiffToMerge()) {
+                if (belowHeight / currentHeight <= this.options.getMaxPercentDiffToMerge()
+                        && ((double) current.getKey() - below.getKey()) / currentHeight <= this.options.getMaxPercentDiffToMerge()) {
                     remove.add(++i);
                     current.setValue(below.getValue());
                 }
@@ -381,6 +418,5 @@ public class OCRActions implements Actions {
     private int index(char character) {
         return OCRTrain.TRAIN_STRING.indexOf(character);
     }
-
 
 }

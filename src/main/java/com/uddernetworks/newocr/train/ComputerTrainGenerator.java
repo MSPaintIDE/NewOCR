@@ -1,6 +1,6 @@
 package com.uddernetworks.newocr.train;
 
-import com.uddernetworks.newocr.recognition.OCRTrain;
+import com.uddernetworks.newocr.recognition.OCRScan;
 import com.uddernetworks.newocr.utils.ConversionUtils;
 
 import javax.imageio.ImageIO;
@@ -35,7 +35,7 @@ public class ComputerTrainGenerator implements TrainGenerator {
             size2--;
         }
 
-        image = new BufferedImage(graphics.getFontMetrics().stringWidth(OCRTrain.TRAIN_STRING) + 50, newHeight, BufferedImage.TYPE_INT_ARGB);
+        image = new BufferedImage(graphics.getFontMetrics().stringWidth(OCRScan.RAW_STRING) + 50, newHeight, BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = 0; x < image.getWidth(); x++) {
                 image.setRGB(x, y, Color.WHITE.getRGB());
@@ -50,7 +50,7 @@ public class ComputerTrainGenerator implements TrainGenerator {
         int size = options.getMaxFontSize();
         int offset = options.getMaxFontSize();
         for (int i = 0; i < options.getMaxFontSize() - options.getMinFontSize(); i++) {
-            drawLine(graphics, OCRTrain.TRAIN_STRING, options.getFontFamily(), offset, size);
+            drawLine(graphics, OCRScan.RAW_STRING, options.getFontFamily(), offset, size);
             offset += ConversionUtils.pointToPixel(size) + 15;
             size--;
         }

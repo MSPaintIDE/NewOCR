@@ -4,7 +4,6 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseCharacter;
 import com.uddernetworks.newocr.detection.SearchImage;
-import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.IntPair;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
@@ -31,7 +30,7 @@ public interface Actions {
      * @param searchImage The training image to scan
      * @return A collection of a list contianing the characters in a line
      */
-    List<CharacterLine> getLettersDuringTraining(SearchImage searchImage, TrainOptions options);
+    List<CharacterLine> getLettersDuringTraining(SearchImage searchImage);
 
     /**
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
@@ -45,6 +44,7 @@ public interface Actions {
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
+     * @param data The potential trained {@link TrainedCharacterData} to use
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, List<TrainedCharacterData> data);
@@ -53,6 +53,7 @@ public interface Actions {
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
+     * @param diffs The potential {@link ImageLetter}s
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs);
@@ -73,9 +74,8 @@ public interface Actions {
      * training data.
      *
      * @param image The image to get the line bounds from
-     * @param options The options for training, primarily used to merge near lines
      * @return A list of the absolute top and bottom line values
      */
-    List<IntPair> getLineBoundsForTraining(SearchImage image, TrainOptions options);
+    List<IntPair> getLineBoundsForTraining(SearchImage image);
 
 }

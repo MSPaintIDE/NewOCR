@@ -2,7 +2,6 @@ package com.uddernetworks.newocr.recognition;
 
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.train.ComputerTrainGenerator;
-import com.uddernetworks.newocr.train.TrainOptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 
 import java.io.File;
@@ -14,18 +13,9 @@ public interface Train {
      * Scans the input image and creates training data based off of it. It must be an input image created from
      * {@link ComputerTrainGenerator} or something of a similar format.
      *
-     * @param file The input image to be trained from
+     * @param file    The input image to be trained from
      */
     void trainImage(File file);
-
-    /**
-     * Scans the input image and creates training data based off of it. It must be an input image created from
-     * {@link ComputerTrainGenerator} or something of a similar format.
-     *
-     * @param file    The input image to be trained from
-     * @param options The options used by the system
-     */
-    void trainImage(File file, TrainOptions options);
 
     /**
      * Gets the amount of false detections for a given character using the given training data.

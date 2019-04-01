@@ -9,7 +9,7 @@ import com.uddernetworks.newocr.recognition.mergence.DefaultMergenceManager;
 import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
 import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
-import com.uddernetworks.newocr.train.TrainOptions;
+import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
@@ -27,18 +27,20 @@ public class OCRScan implements Scan {
 
     private static Logger LOGGER = LoggerFactory.getLogger(OCRScan.class);
 
+    // This is the same as OCRTrain.TRAIN_STRING but without duplicates used in training
+    public static final String RAW_STRING = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~W W";
     private DatabaseManager databaseManager;
     private Actions actions;
     private SimilarityManager similarityManager;
     private MergenceManager mergenceManager;
 
-    public OCRScan(DatabaseManager databaseManager) {
+    public OCRScan(DatabaseManager databaseManager, OCROptions options) {
         this.databaseManager = databaseManager;
         ImageIO.setUseCache(false);
 
         this.similarityManager = new DefaultSimilarityManager().loadDefaults();
 
-        this.actions = new OCRActions(databaseManager, similarityManager);
+        this.actions = new OCRActions(databaseManager, similarityManager, options);
         this.mergenceManager = new DefaultMergenceManager().loadDefaults(this.databaseManager, similarityManager);
     }
 
@@ -62,7 +64,7 @@ public class OCRScan implements Scan {
         // Key = Entry<MinCenter, MaxCenter>  centers are ABSOLUTE
         Map<IntPair, List<ImageLetter>> lines = new LinkedHashMap<>();
 
-        this.actions.getLineBoundsForTraining(searchImage, new TrainOptions()).forEach(pair -> lines.put(pair, new LinkedList<>()));
+        this.actions.getLineBoundsForTraining(searchImage).forEach(pair -> lines.put(pair, new LinkedList<>()));
         this.actions.getLetters(searchImage, searchCharacters);
 
         // Gets all needed character data from the database based on the currently used font sizes

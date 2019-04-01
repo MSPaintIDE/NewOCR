@@ -4,7 +4,7 @@ import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
-import com.uddernetworks.newocr.train.TrainOptions;
+import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
@@ -23,22 +23,19 @@ public class OCRTrain implements Train {
 
     public static final String TRAIN_STRING = "!!\"#$%%%&'()*+,-./0123456789::;;<==>??@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghiijjklmnopqrstuvwxyz{|}~W W";
     private DatabaseManager databaseManager;
+    private OCROptions options;
     private Actions actions;
 
-    public OCRTrain(DatabaseManager databaseManager) {
+    public OCRTrain(DatabaseManager databaseManager, OCROptions options) {
         this.databaseManager = databaseManager;
+        this.options = options;
         ImageIO.setUseCache(false);
 
-        this.actions = new OCRActions(databaseManager, new DefaultSimilarityManager().loadDefaults());
+        this.actions = new OCRActions(databaseManager, new DefaultSimilarityManager().loadDefaults(), options);
     }
 
     @Override
     public void trainImage(File file) {
-        trainImage(file, new TrainOptions());
-    }
-
-    @Override
-    public void trainImage(File file, TrainOptions options) {
 
         // First clear the database
         databaseManager.clearData();
@@ -82,7 +79,7 @@ public class OCRTrain implements Train {
         );
 
         // Goes through each line found
-        for (var line : this.actions.getLettersDuringTraining(searchImage, options)) {
+        for (var line : this.actions.getLettersDuringTraining(searchImage)) {
 
             // Gets all characters found at the line bounds from the searchCharacters (Collected from the double for loops)
             SearchCharacter nextMeasuringSpace = null;
@@ -140,7 +137,7 @@ public class OCRTrain implements Train {
                         nextMeasuringSpace = null;
                     }
 
-                    if (options.getSpecialSpaces().contains(current)) {
+                    if (this.options.getSpecialSpaces().contains(current)) {
                         nextMeasuringSpace = searchCharacter;
                     }
 
@@ -181,6 +178,13 @@ public class OCRTrain implements Train {
 
         LOGGER.debug("Writing data to database...");
         long start = System.currentTimeMillis();
+
+        System.out.println("apostropheRatio = " + apostropheRatios);
+        System.out.println("distanceAbove = " + distancesAbove);
+        System.out.println("distanceBelow = " + distancesBelow);
+        System.out.println("colonDistance = " + colonDistance);
+        System.out.println("semicolonDistance = " + semicolonDistance);
+        System.out.println("equalsDistance = " + equalsDistance);
 
         // Add the apostropheRatios data into the database
         CompletableFuture.runAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios))

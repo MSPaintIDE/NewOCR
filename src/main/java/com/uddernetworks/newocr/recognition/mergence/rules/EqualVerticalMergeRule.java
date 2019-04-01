@@ -60,14 +60,20 @@ public class EqualVerticalMergeRule extends MergeRule {
 
     @Override
     public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
-
+        System.out.println("======================================================");
         var index = letterData.indexOf(target) + 1;
 
-        if (letterData.size() <= index) return Optional.empty();
+        if (letterData.size() <= index) {
+            System.out.println("Can't have above");
+            return Optional.empty();
+        }
 
         var above = letterData.get(index);
 
-        if (target.getAmountOfMerges() > 0 || above.getAmountOfMerges() > 0) return Optional.empty();
+        if (target.getAmountOfMerges() > 0 || above.getAmountOfMerges() > 0) {
+            System.out.println("Already merged!");
+            return Optional.empty();
+        }
 
         var bottomOfCharacterY = above.getY();
         var difference = bottomOfCharacterY - target.getY() - target.getHeight();
@@ -78,17 +84,26 @@ public class EqualVerticalMergeRule extends MergeRule {
         var colon = true;
 
         if (this.horizontalLineRule.matchesLetter(target) && this.horizontalLineRule.matchesLetter(above)) { //   =
+            System.out.println("equals");
             projectedDifference = this.equalsDistance * minHeight;
+            System.out.println("equalsDistance = " + equalsDistance);
             colon = false;
         } else if (this.dotRule.matchesLetter(target) && this.dotRule.matchesLetter(above)) { //   :
+            System.out.println("Colon");
             projectedDifference = this.colonDistance * minHeight;
+            System.out.println("colonDistance = " + colonDistance);
         } else {
+            System.out.println("ELSE!");
             return Optional.empty();
         }
 
         var delta = projectedDifference * 0.5D;
+        System.out.println("difference = " + difference);
+        System.out.println("projectedDifference = " + projectedDifference);
+        System.out.println(diff(difference, projectedDifference) + " <= " + delta);
 
         if (diff(difference, projectedDifference) <= delta) {
+            System.out.println("Merging");
             var base = !isPartAbove ? above : target;
             var adding = !isPartAbove ? target : above;
             base.merge(adding);

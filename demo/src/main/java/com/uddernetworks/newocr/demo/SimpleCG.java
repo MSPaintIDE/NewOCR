@@ -4,8 +4,8 @@ import com.uddernetworks.newocr.database.OCRDatabaseManager;
 import com.uddernetworks.newocr.recognition.OCRScan;
 import com.uddernetworks.newocr.recognition.OCRTrain;
 import com.uddernetworks.newocr.train.ComputerTrainGenerator;
+import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.train.TrainGeneratorOptions;
-import com.uddernetworks.newocr.train.TrainOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import static com.uddernetworks.newocr.recognition.similarity.Letter.*;
 
 public class SimpleCG {
 
@@ -24,10 +26,21 @@ public class SimpleCG {
     }
 
     private void mainInstance(String[] args) throws IOException, InterruptedException, ExecutionException {
-        var databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db"));
+        boolean mono = args.length >= 1 && args[0].equalsIgnoreCase("mono");
+
+        var databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db_" + (mono ? "mono" : "cms")));
         var scanner = new Scanner(System.in);
-        var ocrScan = new OCRScan(databaseManager);
-        var ocrTrain = new OCRTrain(databaseManager);
+        var options = new OCROptions();
+        if (mono) {
+            System.out.println("Mono!");
+            options.setSpecialSpaces('`', '\'')
+                    .addRequireSizeCheck(PERIOD, EXCLAMATION_DOT, j_DOT, i_DOT); // Added by this
+        } else {
+            options.setSpecialSpaces('`');
+        }
+
+        var ocrScan = new OCRScan(databaseManager, options);
+        var ocrTrain = new OCRTrain(databaseManager, options);
 
         LOGGER.info("Do you want to train? (y)es/no");
 
@@ -45,7 +58,7 @@ public class SimpleCG {
             LOGGER.info("Starting training...");
 
             var start = System.currentTimeMillis();
-            ocrTrain.trainImage(new File("training.png"), new TrainOptions().setSpecialSpaces('`'));
+            ocrTrain.trainImage(new File("training_" + (mono ? "mono" : "cms") + ".png"));
 
             LOGGER.info("Finished training in " + (System.currentTimeMillis() - start) + "ms");
 
@@ -60,7 +73,8 @@ public class SimpleCG {
         // TODO: Fully implement warming up
 //        ocrScan.scanImage(new File("src\\main\\resources\\warmup.png"));
 
-        var scannedImage = ocrScan.scanImage(new File("training.png"));
+//        var scannedImage = ocrScan.scanImage(new File("test_" + (mono ? "mono" : "cms") + ".png"));
+        var scannedImage = ocrScan.scanImage(new File("training_" + (mono ? "mono" : "cms") + ".png"));
 
         LOGGER.info("Got:\n" + scannedImage.getPrettyString());
 
