@@ -4,6 +4,7 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
+import com.uddernetworks.newocr.recognition.similarity.Letter;
 import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.recognition.similarity.rules.DotSimilarityRule;
@@ -74,6 +75,8 @@ public class EqualVerticalMergeRule extends MergeRule {
             System.out.println("Already merged!");
             return Optional.empty();
         }
+
+        System.out.println("Past " + Letter.getLetter(target).name() + " and " + Letter.getLetter(above).name());
 
         var bottomOfCharacterY = above.getY();
         var difference = bottomOfCharacterY - target.getY() - target.getHeight();

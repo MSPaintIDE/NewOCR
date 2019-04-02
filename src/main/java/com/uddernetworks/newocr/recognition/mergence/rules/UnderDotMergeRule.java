@@ -59,11 +59,11 @@ public class UnderDotMergeRule extends MergeRule {
 
     @Override
     public Optional<List<ImageLetter>> mergeCharacters(ImageLetter target, List<ImageLetter> letterData) {
-        System.out.println("==================================================");
+//        System.out.println("==================================================");
         var index = letterData.indexOf(target) + 1;
 
         if (letterData.size() <= index) {
-            System.out.println("Can't have below");
+//            System.out.println("Can't have below");
             return Optional.empty();
         }
 
@@ -73,19 +73,19 @@ public class UnderDotMergeRule extends MergeRule {
 //        OCRUtils.makeImage(target.getValues(), "ind\\target.png");
         if (QUESTION_MARK_BOTTOM.matches(target)
                 && !this.verticalLineRule.matchesLetter(target)) {
-            System.out.println("Doesn't match here");
+//            System.out.println("Doesn't match here");
             return Optional.empty();
         }
 
         // Dot
         var below = letterData.get(index);
         if (!this.dotRule.matchesLetter(below)) {
-            System.out.println("Dot is bad " + below);
+//            System.out.println("Dot is bad " + below);
             return Optional.empty();
         }
 
         if (target.getAmountOfMerges() > 0 || below.getAmountOfMerges() > 0) {
-            System.out.println("Already merged");
+//            System.out.println("Already merged");
             return Optional.empty();
         }
 
@@ -97,10 +97,10 @@ public class UnderDotMergeRule extends MergeRule {
         double projectedDifference = this.distanceBelow * minHeight;
         double delta = projectedDifference * 0.5D;
 
-        System.out.println("difference = " + difference);
-        System.out.println("projectedDifference = " + projectedDifference);
-        System.out.println("distanceBelow = " + distanceBelow);
-        System.out.println(diff(difference, projectedDifference) + " <= " + delta);
+//        System.out.println("difference = " + difference);
+//        System.out.println("projectedDifference = " + projectedDifference);
+//        System.out.println("distanceBelow = " + distanceBelow);
+//        System.out.println(diff(difference, projectedDifference) + " <= " + delta);
 
         if (diff(difference, projectedDifference) <= delta) {
             System.out.println("Merging now");

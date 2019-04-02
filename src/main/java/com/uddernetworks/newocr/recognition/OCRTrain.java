@@ -143,6 +143,10 @@ public class OCRTrain implements Train {
 
                     metaMapping.forEach((meta, list) -> searchCharacter.getTrainingMeta(meta).ifPresent(list::add));
 
+//                    if (current == ';') {
+//                        OCRUtils.makeImage(searchCharacter.getValues(), "ind\\" + Letter.getLetter(current, modifier).name() + "_" + ThreadLocalRandom.current().nextInt(100000) + ".png");
+//                    }
+
                     searchCharacter.setModifier(modifier);
                     var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, current, modifier);
 

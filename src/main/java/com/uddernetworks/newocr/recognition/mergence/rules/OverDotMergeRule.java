@@ -68,9 +68,11 @@ public class OverDotMergeRule extends MergeRule {
 
         var semicolon = (targetLetter == ';' && target.getModifier() == 1) || targetLetter == ',';
 
+        var verticalTarget = this.verticalLineRule.matchesLetter(target);
+
         // Base
         if (!semicolon &&
-                !this.verticalLineRule.matchesLetter(target) &&
+                !verticalTarget &&
                 !(targetLetter == 'j' && target.getModifier() == 1) &&
                 (targetLetter != 'J')) {
             return Optional.empty();
@@ -100,6 +102,8 @@ public class OverDotMergeRule extends MergeRule {
                 usingChar = 'j';
             } else if (usingChar == ',') {
                 usingChar = ';';
+            } else if (verticalTarget) {
+                usingChar = 'i';
             }
 
             base.setLetter(usingChar);

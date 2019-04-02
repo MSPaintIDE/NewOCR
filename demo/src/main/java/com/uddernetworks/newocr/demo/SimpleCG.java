@@ -34,7 +34,7 @@ public class SimpleCG {
         if (mono) {
             System.out.println("Mono!");
             options.setSpecialSpaces('`', '\'')
-                    .addRequireSizeCheck(PERIOD, EXCLAMATION_DOT, j_DOT, i_DOT); // Added by this
+                    .addRequireSizeCheck(PERIOD, EXCLAMATION_DOT, j_DOT, i_DOT, ONE, l); // Added by this
         } else {
             options.setSpecialSpaces('`');
         }

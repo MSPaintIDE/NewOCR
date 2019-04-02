@@ -13,7 +13,7 @@ public class DotSimilarityRule implements SimilarRule {
             case COLON_TOP:
             case COLON_BOTTOM:
             case EXCLAMATION_DOT:
-            case SEMICOLON_BOTTOM:
+            case SEMICOLON_TOP:
             case i_DOT:
             case j_DOT:
             case QUESTION_MARK_BOTTOM:
