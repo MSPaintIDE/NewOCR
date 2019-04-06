@@ -1,6 +1,5 @@
 package com.uddernetworks.newocr.train;
 
-import com.uddernetworks.newocr.character.LetterMeta;
 import com.uddernetworks.newocr.character.SearchCharacter;
 
 import java.util.LinkedList;
@@ -13,7 +12,6 @@ public class TrainedCharacterData {
 
     private char value;
     private int modifier = 0;
-    private boolean hasDot;
     private double widthAverage;
     private double heightAverage;
     private double[] segmentPercentages;
@@ -21,7 +19,6 @@ public class TrainedCharacterData {
     private double maxCenter = -1;
     private double sizeRatio = -1; //        Width / Height
     private boolean empty = true;
-    private LetterMeta letterMeta = LetterMeta.NONE;
     private LinkedList<double[]> recalculatingList = new LinkedList<>();
     private LinkedList<Double> recalculatingWidths = new LinkedList<>();
     private LinkedList<Double> recalculatingHeights = new LinkedList<>();
@@ -81,24 +78,6 @@ public class TrainedCharacterData {
      */
     public double[] getSegmentPercentages() {
         return segmentPercentages;
-    }
-
-    /**
-     * Gets if the trained character has a dot.
-     *
-     * @return If the trained character has a dot
-     */
-    public boolean hasDot() {
-        return hasDot;
-    }
-
-    /**
-     * Sets if the trained character has a dot.
-     *
-     * @param hasDot If the trained character has a dot
-     */
-    public void setHasDot(boolean hasDot) {
-        this.hasDot |= hasDot;
     }
 
     /**
@@ -256,24 +235,6 @@ public class TrainedCharacterData {
      */
     public boolean isEmpty() {
         return empty;
-    }
-
-    /**
-     * Gets the letter meta of the character.
-     *
-     * @return The letter meta of the character
-     */
-    public LetterMeta getLetterMeta() {
-        return letterMeta;
-    }
-
-    /**
-     * Sets the letter meta of the character.
-     *
-     * @param letterMeta The letter meta of the character
-     */
-    public void setLetterMeta(LetterMeta letterMeta) {
-        this.letterMeta = letterMeta;
     }
 
     @Override

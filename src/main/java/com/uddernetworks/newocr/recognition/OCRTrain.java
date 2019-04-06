@@ -159,8 +159,6 @@ public class OCRTrain implements Train {
 
                     // Sets the current center to be calculated, along with any meta it may have
                     trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
-                    trainedSearchCharacter.setHasDot(searchCharacter.hasDot());
-                    trainedSearchCharacter.setLetterMeta(searchCharacter.getLetterMeta());
 
                     if (revertIndex) letterIndex--;
 
@@ -206,7 +204,7 @@ public class OCRTrain implements Train {
 
                 char letter = databaseTrainedCharacter.getValue();
 
-                CompletableFuture.runAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getModifier(), databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), databaseTrainedCharacter.hasDot(), databaseTrainedCharacter.getLetterMeta(), letter == ' '))
+                CompletableFuture.runAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getModifier(), databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), letter == ' '))
                         .thenRunAsync(() -> {
                             if (letter != ' ') {
                                 databaseManager.addLetterSegments(letter, databaseTrainedCharacter.getModifier(), databaseTrainedCharacter.getSegmentPercentages());

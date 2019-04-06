@@ -1,7 +1,5 @@
 package com.uddernetworks.newocr.database;
 
-import com.uddernetworks.newocr.character.LetterMeta;
-
 /**
  * Used for storage of data to go into our from the database.
  */
@@ -14,8 +12,6 @@ public class DatabaseCharacter {
     private double avgHeight;
     private double minCenter; // Pixels from the top
     private double maxCenter; // Pixels from the top
-    private boolean hasDot;
-    private LetterMeta letterMeta;
 
     /**
      * Creates a DatabaseCharacter from the given character with a modifier of 0.
@@ -122,40 +118,6 @@ public class DatabaseCharacter {
      */
     public double getMaxCenter() {
         return maxCenter;
-    }
-
-    /**
-     * Sets if the current character has a dot at all in it.
-     *
-     * @param hasDot If the current character has a dot at all in it
-     */
-    public void setHasDot(boolean hasDot) {
-        this.hasDot = hasDot;
-    }
-
-    /**
-     * Gets if the current character has a dot at all in it.
-     *
-     * @return If the current character has a dot at all in it
-     */
-    public boolean hasDot() {
-        return this.hasDot;
-    }
-
-    /**
-     * Gets the {@link LetterMeta} of the current character.
-     *
-     * @return The {@link LetterMeta} of the current character
-     */
-    public LetterMeta getLetterMeta() {
-        return letterMeta;
-    }
-
-    /**
-     * Sets the {@link LetterMeta} of the current character.
-     */
-    public void setLetterMeta(LetterMeta letterMeta) {
-        this.letterMeta = letterMeta;
     }
 
     @Override

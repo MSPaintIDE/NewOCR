@@ -1,6 +1,5 @@
 package com.uddernetworks.newocr.database;
 
-import com.uddernetworks.newocr.character.LetterMeta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
@@ -154,12 +153,12 @@ public class OCRDatabaseManager implements DatabaseManager {
     }
 
     @Override
-    public void createLetterEntry(char letter, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
-        createLetterEntry(letter, 0, averageWidth, averageHeight, minCenter, maxCenter, hasDot, letterMeta, isLetter);
+    public void createLetterEntry(char letter, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean isLetter) {
+        createLetterEntry(letter, 0, averageWidth, averageHeight, minCenter, maxCenter, isLetter);
     }
 
     @Override
-    public void createLetterEntry(char letter, int modifier, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter) {
+    public void createLetterEntry(char letter, int modifier, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean isLetter) {
         try (var connection = dataSource.getConnection(); var createLetterEntry = connection.prepareStatement(this.createLetterEntry)) {
             createLetterEntry.setInt(1, letter);
             createLetterEntry.setInt(2, modifier);
@@ -167,9 +166,7 @@ public class OCRDatabaseManager implements DatabaseManager {
             createLetterEntry.setDouble(4, averageHeight);
             createLetterEntry.setDouble(5, minCenter);
             createLetterEntry.setDouble(6, maxCenter);
-            createLetterEntry.setBoolean(7, hasDot);
-            createLetterEntry.setInt(8, letterMeta.getID());
-            createLetterEntry.setBoolean(9, isLetter);
+            createLetterEntry.setBoolean(7, isLetter);
             createLetterEntry.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -247,12 +244,8 @@ public class OCRDatabaseManager implements DatabaseManager {
                             var avgHeight = resultSet1.getDouble("avgHeight");
                             var minCenter = resultSet1.getDouble("minCenter");
                             var maxCenter = resultSet1.getDouble("maxCenter");
-                            var hasDot = resultSet1.getBoolean("hasDot");
-                            var letterMetaID = resultSet1.getInt("letterMeta");
 
                             newDatabaseCharacter.setData(avgWidth, avgHeight, minCenter, maxCenter);
-                            newDatabaseCharacter.setHasDot(hasDot);
-                            LetterMeta.fromID(letterMetaID).ifPresent(newDatabaseCharacter::setLetterMeta);
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }

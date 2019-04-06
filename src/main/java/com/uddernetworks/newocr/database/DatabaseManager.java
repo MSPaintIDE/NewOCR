@@ -1,6 +1,5 @@
 package com.uddernetworks.newocr.database;
 
-import com.uddernetworks.newocr.character.LetterMeta;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 import javax.sql.DataSource;
@@ -24,11 +23,9 @@ public interface DatabaseManager {
      * @param averageHeight The average height of the character
      * @param minCenter The minimum relative center from the top found in the training ste for the font size
      * @param maxCenter The maximum relative center from the top found in the training ste for the font size
-     * @param hasDot If the character has a dot in it
-     * @param letterMeta The {@link LetterMeta} of the character
-     * @param isLetter If the charcater is a letter (true) or if it is a space (false)
+     * @param isLetter If the character is a letter (true) or if it is a space (false)
      */
-    void createLetterEntry(char letter, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter);
+    void createLetterEntry(char letter, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean isLetter);
 
     /**
      * Inserts into the `letters` table.
@@ -39,11 +36,9 @@ public interface DatabaseManager {
      * @param averageHeight The average height of the character
      * @param minCenter The minimum relative center from the top found in the training ste for the font size
      * @param maxCenter The maximum relative center from the top found in the training ste for the font size
-     * @param hasDot If the character has a dot in it
-     * @param letterMeta The {@link LetterMeta} of the character
-     * @param isLetter If the charcater is a letter (true) or if it is a space (false)
+     * @param isLetter If the character is a letter (true) or if it is a space (false)
      */
-    void createLetterEntry(char letter, int modifier, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean hasDot, LetterMeta letterMeta, boolean isLetter);
+    void createLetterEntry(char letter, int modifier, double averageWidth, double averageHeight, double minCenter, double maxCenter, boolean isLetter);
 
     /**
      * Clears all data revolving around a character from both the `letters` and `sectionData` table.

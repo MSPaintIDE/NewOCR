@@ -5,8 +5,6 @@ CREATE TABLE IF NOT EXISTS letters (
   avgHeight DOUBLE, -- The average height of all tested character images of this letter
   minCenter DOUBLE,
   maxCenter DOUBLE,
-  hasDot BOOLEAN,
-  letterMeta INTEGER,
   isSpace BOOLEAN,
   UNIQUE(letter, modifier)
 );

@@ -1,1 +1,1 @@
-SELECT avgWidth, avgHeight, minCenter, maxCenter, hasDot, letterMeta FROM letters WHERE letter = ? AND modifier = ? ORDER BY letter;
+SELECT avgWidth, avgHeight, minCenter, maxCenter FROM letters WHERE letter = ? AND modifier = ? ORDER BY letter;

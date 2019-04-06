@@ -19,8 +19,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int y;
     private int width;
     private int height;
-    private boolean hasDot;
-    private LetterMeta letterMeta = LetterMeta.NONE;
     private List<IntPair> segments = new LinkedList<>();
     private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
     private Map<String, Double> trainingMeta = new HashMap<>();
@@ -119,100 +117,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         }
 
         coordinates.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
-    }
-
-    /**
-     * Gets if the character is probably a dot.
-     *
-     * @return If the character is probably a dot
-     */
-    public boolean isProbablyDot() {
-        int diff = Math.max(width, height) - Math.min(width, height);
-        return diff <= 3;
-    }
-
-    /**
-     * Gets if the character is probably a circle of a percent.
-     *
-     * @return If the character is probably a circle of a percent
-     */
-    public boolean isProbablyCircleOfPercent() {
-        double ratio = (double) width + 1 / (double) height + 1;
-        return ratio <= 0.9 && ratio >= 0.7;
-    }
-
-    /**
-     * Gets if the character is probably an apostrophe.
-     *
-     * @return If the character is probably an apostrophe
-     */
-    public boolean isProbablyApostraphe() {
-        double ratio = (double) width / (double) height;
-        return (ratio <= 0.375 && ratio >= 0.166) || (width == 1 && (height == 4 || height == 5));
-    }
-
-    /**
-     * Gets if the character is probably a colon.
-     *
-     * @return If the character is probably a colon
-     */
-    public boolean isProbablyColon() {
-        double ratio = (Math.min(this.width, this.height) + 1D) / (Math.max(this.width, this.height) + 1D);
-        return (ratio <= 1D && ratio >= 0.7D)
-                || (height * 4 < width)
-                || ((width == 3 && height == 3)
-                    || (width == 2 && height == 3)
-                    || (width == 2 && height == 2)
-                    || (width == 1 || height == 2));
-    }
-
-    /**
-     * Adds coordinates to the character.
-     *
-     * @param dotCoordinates The coordinates to add
-     */
-    public void addDot(List<IntPair> dotCoordinates) {
-        boolean[][] values = new boolean[this.height + 1][];
-
-        for (int i = 0; i < values.length; i++) {
-            values[i] = new boolean[width + 1];
-        }
-
-        int yOffset = this.height - this.values.length + 1;
-
-        for (int y = 0; y < this.values.length; y++) {
-            System.arraycopy(this.values[y], 0, values[y + yOffset], 0, this.values[0].length);
-        }
-
-        dotCoordinates.forEach(entry -> values[entry.getValue() - this.y][entry.getKey() - this.x] = true);
-        coordinates.addAll(dotCoordinates);
-
-        this.values = values;
-        this.hasDot = true;
-    }
-
-    /**
-     * Adds a set of coordinates to the character to the current character (Assuming the current character is a percent).
-     *
-     * @param dotCoordinates The coordinates to add from the circle of the percent
-     * @param left If the percentage circle is on the left or right
-     */
-    public void addPercentageCircle(List<IntPair> dotCoordinates, boolean left) {
-        boolean[][] values = new boolean[this.height + 1][];
-        for (int i = 0; i < values.length; i++) values[i] = new boolean[width + 1];
-
-        int yOffset = this.height - this.values.length + 1;
-
-        int offset = left ? Math.abs(width + 1 - this.values[0].length) : 0;
-
-        for (int y = 0; y < this.values.length; y++) {
-            System.arraycopy(this.values[y], 0, values[y + yOffset], offset, this.values[0].length);
-        }
-
-        dotCoordinates.forEach(entry -> values[entry.getValue() - this.y][entry.getKey() - this.x] = true);
-
-        this.values = values;
-        this.hasDot = true;
     }
 
     /**
@@ -483,24 +387,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         return modifier;
     }
 
-    /**
-     * Gets If this character has a dot.
-     *
-     * @return If this character has a dot
-     */
-    public boolean hasDot() {
-        return this.hasDot;
-    }
-
-    /**
-     * Sets if this character has a dot in it.
-     *
-     * @param hasDot If this character has a dot
-     */
-    public void setHasDot(boolean hasDot) {
-        this.hasDot = hasDot;
-    }
-
     @Override
     public int compareTo(SearchCharacter searchCharacter) {
         return x - searchCharacter.x;
@@ -513,7 +399,7 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.knownChar, this.letterMeta, this.x, this.y, this.width, this.height);
+        return Objects.hash(this.knownChar, this.x, this.y, this.width, this.height);
     }
 
     @Override
@@ -521,7 +407,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         if (!(obj instanceof SearchCharacter)) return false;
         var character = (SearchCharacter) obj;
         return character.knownChar == this.knownChar
-                && character.letterMeta == this.letterMeta
                 && character.x == this.x
                 && character.y == this.y
                 && character.width == this.width
@@ -535,24 +420,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      */
     public boolean[][] getData() {
         return values;
-    }
-
-    /**
-     * Gets the {@link LetterMeta} of the current character.
-     *
-     * @return The {@link LetterMeta} of the current character
-     */
-    public LetterMeta getLetterMeta() {
-        return letterMeta;
-    }
-
-    /**
-     * Sets the {@link LetterMeta} for the current character.
-     *
-     * @param letterMeta The {@link LetterMeta} for the current character
-     */
-    public void setLetterMeta(LetterMeta letterMeta) {
-        this.letterMeta = letterMeta;
     }
 
     /**

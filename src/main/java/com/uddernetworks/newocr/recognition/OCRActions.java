@@ -197,22 +197,18 @@ public class OCRActions implements Actions {
     @Override
     public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter) {
         try {
-            System.out.println("Character values = " + Arrays.toString(searchCharacter.getSegmentPercentages()));
             var diffs = new Object2DoubleOpenHashMap<ImageLetter>(); // The lower value the better
 
             var data = new ArrayList<>(databaseManager.getAllCharacterSegments().get());
 
-            data.stream()
-                    .filter(character -> character.hasDot() == searchCharacter.hasDot())
-                    .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
-                    .forEach(character ->
-                            OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
-                                // Gets the difference of the database character and searchCharacter (Lower is better)
-                                var imageLetter = new ImageLetter(character.getLetter(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getAvgWidth(), character.getAvgHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates());
-                                imageLetter.setMaxCenter(character.getMaxCenter());
-                                imageLetter.setMinCenter(character.getMinCenter());
-                                diffs.put(imageLetter, charDifference);
-                            }));
+            data.forEach(character ->
+                    OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
+                        // Gets the difference of the database character and searchCharacter (Lower is better)
+                        var imageLetter = new ImageLetter(character.getLetter(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getAvgWidth(), character.getAvgHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates());
+                        imageLetter.setMaxCenter(character.getMaxCenter());
+                        imageLetter.setMinCenter(character.getMinCenter());
+                        diffs.put(imageLetter, charDifference);
+                    }));
 
             return getCharacterFor(searchCharacter, diffs);
 
@@ -227,99 +223,34 @@ public class OCRActions implements Actions {
     public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, List<TrainedCharacterData> data) {
         Object2DoubleMap<ImageLetter> diffs = new Object2DoubleOpenHashMap<>(); // The lower value the better
 
-        data.stream()
-                .filter(character -> character.hasDot() == searchCharacter.hasDot())
-                .filter(character -> character.getLetterMeta() == searchCharacter.getLetterMeta())
-                .forEach(character -> {
-                    character.finishRecalculations();
-                    OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getSegmentPercentages()).ifPresent(charDifference -> {
-                        // Gets the difference of the database character and searchCharacter (Lower is better)
-                        diffs.put(new ImageLetter(character.getValue(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getWidthAverage(), character.getHeightAverage(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates()), charDifference);
-                    });
-                });
+        data.forEach(character -> {
+            character.finishRecalculations();
+            OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getSegmentPercentages()).ifPresent(charDifference -> {
+                // Gets the difference of the database character and searchCharacter (Lower is better)
+                diffs.put(new ImageLetter(character.getValue(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getWidthAverage(), character.getHeightAverage(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates()), charDifference);
+            });
+        });
 
         return getCharacterFor(searchCharacter, diffs);
     }
 
     @Override
     public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs) {
-        System.out.println("===========================================================");
-        // TODO: The following code can definitely be improved
-        var entries = diffs.object2DoubleEntrySet()
+        return diffs.object2DoubleEntrySet()
                 .stream()
-                .sorted(Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue))
-                .limit(10)
-                .collect(Collectors.toList());
+                .min(Comparator.comparingDouble(entry -> {
+                    var imageLetter = entry.getKey();
 
-        // If there's no characters found, don't continue
-        if (entries.isEmpty()) {
-            return Optional.empty();
-        }
+                    double ratio = imageLetter.getAverageWidth() / imageLetter.getAverageHeight();
+                    double searchRatio = (double) searchCharacter.getWidth() / searchCharacter.getHeight();
 
-        var firstEntry = entries.get(0);
-
-        double ratio = firstEntry.getKey().getAverageWidth() / firstEntry.getKey().getAverageHeight();
-        double searchRatio = (double) searchCharacter.getWidth() / (double) searchCharacter.getHeight();
-
-        var ratioDifference = diff(ratio, searchRatio);
-
-//        System.out.println("entries = " + entries);
-
-        OCRUtils.makeImage(searchCharacter.getValues(), "ind\\pot.png");
-
-        // This makes the secondEntry anything that can't be interchanged, so it won't try something else
-        // if the top 2 options are % mod 0 and % mod 1 (The dots of a %) or a " mod 0 and " mod 2
-
-        this.similarityManager.getSecondHighest(entries).ifPresent(secondEntry -> {
-            // Skip everything if it has a very high confidence of the character (Much higher than the closest one OR is <= 0.01 in confidence),
-            // and make sure that the difference in width/height is very low, or else it will continue and sort by width/height difference.
-            // TODO: Make 1.5 an option
-            var bigDifference = firstEntry.getDoubleValue() * 1.5 > secondEntry.getDoubleValue(); // If true, SORT
-            var verySmallDifference = ratioDifference <= 0.01 || (firstEntry.getDoubleValue() <= 0.01 && secondEntry.getDoubleValue() > 0.1); // If true, skip sorting
-            var ratioDiff = ratioDifference > 0.1; // If true, SORT
-
-            // TODO: This should probably be in some options
-            // This is because characters - and | have *extremely* similar section data, but the ratios are very different,
-            // which in most characters high ratio differences means a very different character. This is just a check to compare
-            // ratios between the two if they are a - or | or _
-            var letter = firstEntry.getKey().getLetter();
-            var secondLetter = secondEntry.getKey().getLetter();
-            var sorting = !verySmallDifference && (bigDifference || ratioDiff);
-            var sizeCheck = this.options.getRequireSizeCheck();
-
-            var firstLetterEnum = Letter.getLetter(firstEntry.getKey());
-            var secondLetterEnum = Letter.getLetter(secondEntry.getKey());
-
-            System.out.println("First " + firstEntry.getDoubleValue() + " * 2 >  " + secondEntry.getDoubleValue());
-            System.out.println("ratioDifference = " + ratioDifference);
-
-            System.out.println("sorting = " + sorting + "\t\t\t!" + verySmallDifference + " && (" + bigDifference + " || " + ratioDiff + ")");
-            System.out.println("sizeCheck = " + sizeCheck);
-            System.out.println("letter = " + firstLetterEnum.name());
-            System.out.println("secondLetter = " + secondLetterEnum.name());
-            System.out.println("firstEntry = " + firstEntry);
-
-            if (sizeCheck.contains(firstLetterEnum) && sizeCheck.contains(secondLetterEnum)) {
-                System.out.println("Contains here!");
-//            if ((letter == '-' || letter == '|' || letter == '_' || letter == '=' || letter == '.')
-//                    && (secondLetter == '-' || secondLetter == '|' || secondLetter == '_' || secondLetter == '=' || secondLetter == '.')) {
-                sorting = true;
-                entries.removeIf(entry -> !sizeCheck.contains(Letter.getLetter(entry.getKey())));
-            }
-
-            if (sorting) {
-                entries.sort(Comparator.comparingDouble(entry -> {
-                    // Lower is more similar
-                    return compareSizes(searchCharacter.getWidth(), searchCharacter.getHeight(), entry.getKey().getAverageWidth(), entry.getKey().getAverageHeight());
-                }));
-
-                System.out.println("entries = " + entries);
-            }
-        });
-
-        ImageLetter first = entries.get(0).getKey();
-        first.setValues(searchCharacter.getValues());
-        return Optional.of(first);
+                    return Math.pow(ratio - searchRatio, 2) + entry.getDoubleValue();
+                }))
+                .map(entry -> {
+                    var imageLetter = entry.getKey();
+                    imageLetter.setValues(searchCharacter.getValues());
+                    return imageLetter;
+                });
     }
 
     @Override
