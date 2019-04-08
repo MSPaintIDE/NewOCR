@@ -1,19 +1,11 @@
 package com.uddernetworks.newocr.recognition.similarity.rules;
 
-import com.uddernetworks.newocr.character.ImageLetter;
-import com.uddernetworks.newocr.recognition.similarity.Letter;
-import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
+import static com.uddernetworks.newocr.recognition.similarity.Letter.PERCENT_LDOT;
+import static com.uddernetworks.newocr.recognition.similarity.Letter.PERCENT_RDOT;
 
-public class PercentDotSimilarityRule implements SimilarRule {
+public class PercentDotSimilarityRule extends BasicSimilarityRule {
 
-    @Override
-    public boolean matchesLetter(ImageLetter first) {
-        switch (Letter.getLetter(first)) {
-            case PERCENT_LDOT:
-            case PERCENT_RDOT:
-                return true;
-            default:
-                return false;
-        }
+    public PercentDotSimilarityRule() {
+        super(PERCENT_LDOT, PERCENT_RDOT);
     }
 }

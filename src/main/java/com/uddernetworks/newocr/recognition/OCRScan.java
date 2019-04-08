@@ -35,13 +35,20 @@ public class OCRScan implements Scan {
     private MergenceManager mergenceManager;
 
     public OCRScan(DatabaseManager databaseManager, OCROptions options) {
+        this(databaseManager, options, new DefaultSimilarityManager().loadDefaults());
+    }
+
+    public OCRScan(DatabaseManager databaseManager, OCROptions options, SimilarityManager similarityManager) {
+        this(databaseManager, options, similarityManager, new DefaultMergenceManager(databaseManager, similarityManager).loadDefaults());
+    }
+
+    public OCRScan(DatabaseManager databaseManager, OCROptions options, SimilarityManager similarityManager, MergenceManager mergenceManager) {
         this.databaseManager = databaseManager;
+        this.mergenceManager = mergenceManager;
+        this.similarityManager = similarityManager;
         ImageIO.setUseCache(false);
 
-        this.similarityManager = new DefaultSimilarityManager().loadDefaults();
-
         this.actions = new OCRActions(databaseManager, similarityManager, options);
-        this.mergenceManager = new DefaultMergenceManager().loadDefaults(this.databaseManager, similarityManager);
     }
 
     @Override

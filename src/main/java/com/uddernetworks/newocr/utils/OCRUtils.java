@@ -3,9 +3,6 @@ package com.uddernetworks.newocr.utils;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.sourceforge.lept4j.Leptonica;
-import net.sourceforge.lept4j.Pix;
-import net.sourceforge.lept4j.util.LeptUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -24,14 +21,10 @@ import java.util.stream.Stream;
 /**
  * Some various utility methods used by the OCR that may assist others using the library.
  */
+// TODO: This class is a shitshow
 public class OCRUtils {
 
     public static final IntPair ZERO_PLACEHOLDER = new IntPair(0, 0);
-    private static final Leptonica instance = Leptonica.INSTANCE;
-
-    static {
-        instance.setLeptDebugOK(1);
-    }
 
     /**
      * An ImageIO.read() replacement, which in tests can be up to 15x faster. This has shown to significantly improve
@@ -52,12 +45,6 @@ public class OCRUtils {
         }
 
         return bufferedImage;
-    }
-
-    public static void dispose(Pix... pixs) {
-        for (Pix pix : pixs) {
-            LeptUtils.disposePix(pix);
-        }
     }
 
     /*
@@ -274,24 +261,7 @@ public class OCRUtils {
      * @return The filtered image
      */
     public static Optional<BufferedImage> filter(BufferedImage bufferedImage) {
-        try {
-            Pix pixs, pixn, pixg, pixb;
-
-            pixs = LeptUtils.convertImageToPix(bufferedImage);
-
-            /* Normalize for varying background and binarize */
-            pixn = instance.pixBackgroundNormSimple(pixs, null, null);
-            pixg = instance.pixConvertRGBToGray(pixn, 0.5f, 0.3f, 0.2f);
-            pixb = instance.pixThresholdToBinary(pixg, 130);
-
-            var ret = Optional.of(LeptUtils.convertPixToImage(pixb));
-
-            dispose(pixs, pixn, pixg, pixb);
-
-            return ret;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // TODO: Re-implement binizaration without lept4j
 
         return Optional.empty();
     }

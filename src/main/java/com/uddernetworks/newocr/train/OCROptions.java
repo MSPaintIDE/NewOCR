@@ -3,6 +3,7 @@ package com.uddernetworks.newocr.train;
 import com.uddernetworks.newocr.recognition.similarity.Letter;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,13 +13,18 @@ import static com.uddernetworks.newocr.recognition.similarity.Letter.*;
 
 public class OCROptions {
     private Set<Character> specialSpaces = new HashSet<>();
-    private Set<Letter> requireSizeCheck = new HashSet<>(Set.of(MINUS, PIPE, UNDERSCORE, EQUALS_TOP, EQUALS_BOTTOM));
+    private Set<Letter> requireSizeCheck = EnumSet.of(MINUS, PIPE, UNDERSCORE, EQUALS_TOP, EQUALS_BOTTOM);
     private int maxCorrectionIterations = 10;
     private double maxPercentDiffToMerge = 0.5;
     private double maxPercentDistanceToMerge = 0.25;
 
     public Set<Character> getSpecialSpaces() {
         return this.specialSpaces;
+    }
+
+    public OCROptions setSpecialSpaces(Set<Character> specialSpaces) {
+        this.specialSpaces = new HashSet<>(specialSpaces);
+        return this;
     }
 
     public OCROptions setSpecialSpaces(char... specialSpaces) {
@@ -32,6 +38,11 @@ public class OCROptions {
         return this.requireSizeCheck;
     }
 
+    public OCROptions setRequireSizeCheck(EnumSet<Letter> requireSizeCheck) {
+        this.requireSizeCheck = EnumSet.copyOf(requireSizeCheck);
+        return this;
+    }
+
     /**
      * Defines an array of {@link Letter}s that require the size to be checked if the closest and second-closest match
      * to a character are in this list. The closest width/height ratio is then selected as the correct character.
@@ -43,11 +54,11 @@ public class OCROptions {
      * - {@link Letter#EQUALS_TOP}
      * - {@link Letter#EQUALS_BOTTOM}
      *
-     * @param sizeChecks The {@link Letter}s to set
+     * @param requireSizeCheck The {@link Letter}s to set
      * @return The current {@link OCROptions} object
      */
-    public OCROptions setRequireSizeCheck(Letter... sizeChecks) {
-        this.requireSizeCheck = Arrays.stream(sizeChecks, 0, sizeChecks.length)
+    public OCROptions setRequireSizeCheck(Letter... requireSizeCheck) {
+        this.requireSizeCheck = Arrays.stream(requireSizeCheck, 0, requireSizeCheck.length)
                 .collect(Collectors.toSet());
         return this;
     }
@@ -63,11 +74,11 @@ public class OCROptions {
      *      * - {@link Letter#EQUALS_TOP}
      *      * - {@link Letter#EQUALS_BOTTOM}
      *
-     * @param sizeChecks The {@link Letter}s to add
+     * @param requireSizeChecks The {@link Letter}s to add
      * @return The current {@link OCROptions} object
      */
-    public OCROptions addRequireSizeCheck(Letter... sizeChecks) {
-        this.requireSizeCheck.addAll(Arrays.asList(sizeChecks));
+    public OCROptions addRequireSizeCheck(Letter... requireSizeChecks) {
+        this.requireSizeCheck.addAll(Arrays.asList(requireSizeChecks));
         return this;
     }
 

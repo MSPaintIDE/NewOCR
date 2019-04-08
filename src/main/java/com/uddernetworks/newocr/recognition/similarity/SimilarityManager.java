@@ -12,8 +12,16 @@ public interface SimilarityManager {
      * Adds a {@link SimilarRule} to the internal list.
      *
      * @param rule The {@link SimilarRule} to add
+     * @return The current {@link SimilarityManager}
      */
-    void addSimilarity(SimilarRule rule);
+    SimilarityManager addSimilarity(SimilarRule rule);
+
+    /**
+     * Removes a {@link SimilarRule} from the internal list if found.
+     *
+     * @param ruleClass The {@link SimilarRule} to add if found
+     */
+    SimilarityManager removeSimilarity(Class<? extends SimilarRule> ruleClass);
 
     /**
      * Finds any matching {@link SimilarRule}s for the first {@link ImageLetter}, and then checks if the second

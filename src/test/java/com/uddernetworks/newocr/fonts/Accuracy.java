@@ -4,6 +4,8 @@ import com.uddernetworks.newocr.ScannedImage;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
 import com.uddernetworks.newocr.recognition.OCRScan;
 import com.uddernetworks.newocr.recognition.OCRTrain;
+import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.train.ComputerTrainGenerator;
 import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.train.TrainGeneratorOptions;
@@ -25,17 +27,22 @@ public class Accuracy {
     private static final double MINIMUM_SUCCESS_RATE = 95; // Requires at least a 95% success rate
 
     public static ScannedImage generate(String fontFamily) throws IOException, ExecutionException, InterruptedException {
-        return generate(fontFamily, new OCROptions());
+        return generate(fontFamily, new OCROptions(), new DefaultSimilarityManager().loadDefaults());
     }
 
     public static ScannedImage generate(String fontFamily, OCROptions options) throws IOException, ExecutionException, InterruptedException {
+        return generate(fontFamily, options, new DefaultSimilarityManager().loadDefaults());
+    }
+
+    public static ScannedImage generate(String fontFamily, OCROptions options, SimilarityManager similarityManager) throws IOException, ExecutionException, InterruptedException {
         LOGGER.info("Setting up database...");
 
         var strippedName = fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_");
         var readingImage = new File("src\\test\\resources\\training_" + strippedName + ".png");
         var databaseManager = new OCRDatabaseManager(new File("src\\test\\resources\\database\\ocr_db_" + strippedName));
-        var ocrHandle = new OCRScan(databaseManager, options);
-        var ocrTrain = new OCRTrain(databaseManager, options);
+
+        var ocrHandle = new OCRScan(databaseManager, options, similarityManager);
+        var ocrTrain = new OCRTrain(databaseManager, options, similarityManager);
 
         LOGGER.info("Generating image for {}", fontFamily);
         new ComputerTrainGenerator().generateTrainingImage(readingImage, new TrainGeneratorOptions()

@@ -12,12 +12,15 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DefaultMergenceManager implements MergenceManager {
 
     private static Logger LOGGER = LoggerFactory.getLogger(DefaultMergenceManager.class);
+    private DatabaseManager databaseManager;
+    private SimilarityManager similarityManager;
 
     private List<MergeRule> mergeRules = new CopyOnWriteArrayList<>();
 
@@ -25,24 +28,29 @@ public class DefaultMergenceManager implements MergenceManager {
     private Map<ImageLetter, List<ImageLetter>> horizontalLetterRelations = new ConcurrentHashMap<>();
     private Map<ImageLetter, List<ImageLetter>> verticalLetterRelations = new ConcurrentHashMap<>();
 
+    public DefaultMergenceManager(DatabaseManager databaseManager, SimilarityManager similarityManager) {
+        this.databaseManager = databaseManager;
+        this.similarityManager = similarityManager;
+    }
+
     /**
      * Adds the default {@link MergeRule}s, otherwise all rules will need to be added manually via
-     * {@link MergenceManager#addRule(MergeRule)}.
+     * {@link MergenceManager#addRule(BiFunction)}
      *
      * @return The current {@link MergenceManager}
      */
-    public MergenceManager loadDefaults(DatabaseManager databaseManager, SimilarityManager similarityManager) {
-        addRule(new OverDotMergeRule(databaseManager, similarityManager));
-        addRule(new UnderDotMergeRule(databaseManager, similarityManager));
-        addRule(new ApostropheMergeRule(databaseManager, similarityManager));
-        addRule(new PercentMergeRule(databaseManager, similarityManager));
-        addRule(new EqualVerticalMergeRule(databaseManager, similarityManager));
-        return this;
+    public MergenceManager loadDefaults() {
+        return addRule(OverDotMergeRule::new)
+                .addRule(UnderDotMergeRule::new)
+                .addRule(ApostropheMergeRule::new)
+                .addRule(PercentMergeRule::new)
+                .addRule(EqualVerticalMergeRule::new);
     }
 
     @Override
-    public void addRule(MergeRule rule) {
-        this.mergeRules.add(rule);
+    public MergenceManager addRule(BiFunction<DatabaseManager, SimilarityManager, MergeRule> rule) {
+        this.mergeRules.add(rule.apply(this.databaseManager, this.similarityManager));
+        return this;
     }
 
     @Override
@@ -59,6 +67,7 @@ public class DefaultMergenceManager implements MergenceManager {
         var dotSimilarity = similarityManager.getRule(DotSimilarityRule.class).orElseThrow();
 
         // Cleaning up
+        // TODO: Make these options
         flatKeys(sortedLines).forEach(imageLetter -> {
             if (imageLetter.getAmountOfMerges() > 0) return;
             var letter = imageLetter.getLetter();

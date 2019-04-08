@@ -13,7 +13,7 @@ public class FontMonospaced extends Accuracy {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        trainImage = generate("Monospaced.plain", new OCROptions().setSpecialSpaces('`', '\'')
+        trainImage = generate("Monospaced.plain", new OCROptions().setSpecialSpaces('`', '\'', '|', '{', '}')
                 .addRequireSizeCheck(PERIOD, EXCLAMATION_DOT, j_DOT, i_DOT));
     }
 

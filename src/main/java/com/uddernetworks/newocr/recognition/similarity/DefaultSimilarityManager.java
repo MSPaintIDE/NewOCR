@@ -22,16 +22,22 @@ public class DefaultSimilarityManager implements SimilarityManager {
      * @return The current {@link SimilarityManager}
      */
     public SimilarityManager loadDefaults() {
-        addSimilarity(new DotSimilarityRule());
-        addSimilarity(new VerticalLineSimilarityRule());
-        addSimilarity(new HorizontalLineSimilarityRule());
-        addSimilarity(new PercentDotSimilarityRule());
+        return addSimilarity(new DotSimilarityRule())
+                .addSimilarity(new VerticalLineSimilarityRule())
+                .addSimilarity(new HorizontalLineSimilarityRule())
+                .addSimilarity(new PercentDotSimilarityRule());
+    }
+
+    @Override
+    public SimilarityManager addSimilarity(SimilarRule rule) {
+        this.similarRules.add(rule);
         return this;
     }
 
     @Override
-    public void addSimilarity(SimilarRule rule) {
-        this.similarRules.add(rule);
+    public SimilarityManager removeSimilarity(Class<? extends SimilarRule> ruleClass) {
+        this.similarRules.removeIf(rule -> rule.getClass().equals(ruleClass));
+        return this;
     }
 
     @Override

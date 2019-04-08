@@ -4,6 +4,7 @@ import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.OCRUtils;
@@ -27,11 +28,15 @@ public class OCRTrain implements Train {
     private Actions actions;
 
     public OCRTrain(DatabaseManager databaseManager, OCROptions options) {
+        this(databaseManager, options, new DefaultSimilarityManager().loadDefaults());
+    }
+
+    public OCRTrain(DatabaseManager databaseManager, OCROptions options, SimilarityManager similarityManager) {
         this.databaseManager = databaseManager;
         this.options = options;
         ImageIO.setUseCache(false);
 
-        this.actions = new OCRActions(databaseManager, new DefaultSimilarityManager().loadDefaults(), options);
+        this.actions = new OCRActions(databaseManager, similarityManager, options);
     }
 
     @Override
@@ -189,12 +194,8 @@ public class OCRTrain implements Train {
         System.out.println("equalsDistance = " + equalsDistance);
 
         // Add the apostropheRatios data into the database
-        CompletableFuture.runAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios))
-                .thenRunAsync(() -> databaseManager.addAveragedData("distanceAbove", distancesAbove))
-                .thenRunAsync(() -> databaseManager.addAveragedData("distanceBelow", distancesBelow))
-                .thenRunAsync(() -> databaseManager.addAveragedData("colonDistance", colonDistance))
-                .thenRunAsync(() -> databaseManager.addAveragedData("semicolonDistance", semicolonDistance))
-                .thenRunAsync(() -> databaseManager.addAveragedData("equalsDistance", equalsDistance))
+        CompletableFuture.runAsync(() -> metaMapping.forEach(databaseManager::addAveragedData))
+                .thenRunAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios))
                 .thenRunAsync(() -> customSpaces.forEach((character, ratios) -> databaseManager.addCustomSpace(character, ratios.stream().mapToDouble(Double::doubleValue).average().orElse(0))));
 
         // Inserts all character data into the database after recalculating the

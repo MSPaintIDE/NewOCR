@@ -1,25 +1,10 @@
 package com.uddernetworks.newocr.recognition.similarity.rules;
 
-import com.uddernetworks.newocr.character.ImageLetter;
-import com.uddernetworks.newocr.recognition.similarity.Letter;
-import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
+import static com.uddernetworks.newocr.recognition.similarity.Letter.*;
 
-public class DotSimilarityRule implements SimilarRule {
+public class DotSimilarityRule extends BasicSimilarityRule {
 
-    @Override
-    public boolean matchesLetter(ImageLetter first) {
-        switch (Letter.getLetter(first)) {
-            case PERIOD:
-            case COLON_TOP:
-            case COLON_BOTTOM:
-            case EXCLAMATION_DOT:
-            case SEMICOLON_TOP:
-            case i_DOT:
-            case j_DOT:
-            case QUESTION_MARK_BOTTOM:
-                return true;
-            default:
-                return false;
-        }
+    public DotSimilarityRule() {
+        super(PERIOD, COLON_TOP, COLON_BOTTOM, EXCLAMATION_DOT, SEMICOLON_TOP, i_DOT, j_DOT, QUESTION_MARK_BOTTOM);
     }
 }

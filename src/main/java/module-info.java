@@ -4,8 +4,8 @@ module NewOCR {
 
     requires com.zaxxer.hikari;
     requires it.unimi.dsi.fastutil;
-    requires lept4j;
     requires slf4j.api;
+    requires typesafe.config;
 
     exports com.uddernetworks.newocr;
     exports com.uddernetworks.newocr.character;
