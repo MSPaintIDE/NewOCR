@@ -83,6 +83,10 @@ public class DefaultMergenceManager implements MergenceManager {
                 imageLetter.setLetter('\'');
             } else if (letter == '%') {
                 imageLetter.setLetter('/');
+            } else if (letter == 'i') {
+                imageLetter.setNextClosest();
+            } else if (letter == '!') { // Can't be dot from rule above
+                imageLetter.setNextClosest();
             }
         });
 

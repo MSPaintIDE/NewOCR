@@ -17,6 +17,7 @@ public class OCROptions {
     private int maxCorrectionIterations = 10;
     private double maxPercentDiffToMerge = 0.5;
     private double maxPercentDistanceToMerge = 0.25;
+    private double sizeRatioWeight = 4;
 
     public Set<Character> getSpecialSpaces() {
         return this.specialSpaces;
@@ -148,6 +149,28 @@ public class OCROptions {
      */
     public OCROptions setMaxPercentDistanceToMerge(double maxPercentDistanceToMerge) {
         this.maxPercentDistanceToMerge = maxPercentDistanceToMerge;
+        return this;
+    }
+
+    /**
+     * Gets the amount the width/height radio should be multiplied across all a character's potential matches, to
+     * increase its effects compared to the actual section similarity.
+     *
+     * @return The weight of the width/height ratio
+     */
+    public double getSizeRatioWeight() {
+        return sizeRatioWeight;
+    }
+
+    /**
+     * Sets the amount the width/height radio should be multiplied across all a character's potential matches, to
+     * increase its effects compared to the actual section similarity.
+     *
+     * @param sizeRatioWeight The weight of the width/height ratio
+     * @return The current {@link OCROptions} object
+     */
+    public OCROptions setSizeRatioWeight(double sizeRatioWeight) {
+        this.sizeRatioWeight = sizeRatioWeight;
         return this;
     }
 }

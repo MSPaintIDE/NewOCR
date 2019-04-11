@@ -54,6 +54,7 @@ public class HOCONFontConfiguration implements FontConfiguration {
         ocrOptions.setMaxCorrectionIterations(options.getInt("max-correction-iterations"));
         ocrOptions.setMaxPercentDiffToMerge(options.getDouble("max-percent-diff-to-merge"));
         ocrOptions.setMaxPercentDistanceToMerge(options.getDouble("max-percent-distance-to-merge"));
+        ocrOptions.setSizeRatioWeight(options.getDouble("size-ratio-weight"));
 
         LOGGER.info("[{}] Generated OCROptions", this.friendlyName);
 
@@ -73,7 +74,7 @@ public class HOCONFontConfiguration implements FontConfiguration {
                   .map(entry -> new AbstractMap.SimpleEntry<>(getNthPath(entry.getKey(), 1), entry.getValue()))
                   .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            ConfigList configList = (ConfigList) children.get("letters");
+            var configList = (ConfigList) children.get("letters");
 
             var letters = configList.stream().map(value -> getEnumValue(Letter.class, value))
                     .filter(Optional::isPresent)

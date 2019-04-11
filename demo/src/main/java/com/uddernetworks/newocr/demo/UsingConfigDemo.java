@@ -83,8 +83,8 @@ public class UsingConfigDemo {
         // TODO: Fully implement warming up
 //        ocrScan.scanImage(new File("src\\main\\resources\\warmup.png"));
 
-//        var scannedImage = ocrScan.scanImage(new File("test_" + (mono ? "mono" : "cms") + ".png"));
-        var scannedImage = ocrScan.scanImage(new File("training_" + (mono ? "mono" : "cms") + ".png"));
+        var scannedImage = ocrScan.scanImage(new File("test_" + (mono ? "mono" : "cms") + ".png"));
+//        var scannedImage = ocrScan.scanImage(new File("training_" + (mono ? "mono" : "cms") + ".png"));
 
         LOGGER.info("Got:\n" + scannedImage.getPrettyString());
 

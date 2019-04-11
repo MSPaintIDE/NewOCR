@@ -236,21 +236,28 @@ public class OCRActions implements Actions {
 
     @Override
     public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs) {
-        return diffs.object2DoubleEntrySet()
-                .stream()
-                .min(Comparator.comparingDouble(entry -> {
+        double searchRatio = (double) searchCharacter.getWidth() / searchCharacter.getHeight();
+        var orderedDifferences = diffs.object2DoubleEntrySet().stream()
+                .peek(entry -> {
                     var imageLetter = entry.getKey();
 
                     double ratio = imageLetter.getAverageWidth() / imageLetter.getAverageHeight();
-                    double searchRatio = (double) searchCharacter.getWidth() / searchCharacter.getHeight();
+                    double ratioDiff = Math.pow(ratio - searchRatio, 2);
+                    ratioDiff *= this.options.getSizeRatioWeight();
 
-                    return Math.pow(ratio - searchRatio, 2) + entry.getDoubleValue();
-                }))
-                .map(entry -> {
-                    var imageLetter = entry.getKey();
-                    imageLetter.setValues(searchCharacter.getValues());
-                    return imageLetter;
-                });
+                    entry.setValue(ratioDiff + entry.getDoubleValue());
+                })
+                .sorted(Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue))
+                .collect(Collectors.toList());
+
+        System.out.println("orderedDifferences = " + orderedDifferences);
+
+        if (orderedDifferences.isEmpty()) return Optional.empty();
+
+        var imageLetter = orderedDifferences.remove(0).getKey();
+        imageLetter.setClosestMatches(orderedDifferences);
+        imageLetter.setValues(searchCharacter.getValues());
+        return Optional.of(imageLetter);
     }
 
     @Override

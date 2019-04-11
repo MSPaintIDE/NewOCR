@@ -257,13 +257,19 @@ public class OCRUtils {
     /**
      * Binarizes the input image, making all pixels wither black or white with an alpha of 255
      *
-     * @param bufferedImage The input image to be filtered
+     * @param input The input image to be filtered
      * @return The filtered image
      */
-    public static Optional<BufferedImage> filter(BufferedImage bufferedImage) {
-        // TODO: Re-implement binizaration without lept4j
+    public static Optional<BufferedImage> filter(BufferedImage input) {
+        var result = new BufferedImage(input.getWidth(), input.getHeight(), BufferedImage.TYPE_INT_ARGB);
 
-        return Optional.empty();
+        for (int y = 0; y < input.getHeight(); y++) {
+            for (int x = 0; x < input.getWidth(); x++) {
+                result.setRGB(x, y, isBlack(input, x, y) ? Color.BLACK.getRGB() : Color.WHITE.getRGB());
+            }
+        }
+
+        return Optional.of(result);
     }
 
     /**

@@ -1,7 +1,9 @@
 package com.uddernetworks.newocr.character;
 
 import com.uddernetworks.newocr.utils.IntPair;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,6 +29,8 @@ public class ImageLetter {
     private double maxCenter;
     private double minCenter;
     private int amountOfMerges = 0;
+
+    private List<Object2DoubleMap.Entry<ImageLetter>> closestMatches = new ArrayList<>();
 
     /**
      * Creates an ImageLetter from collected data.
@@ -381,6 +385,41 @@ public class ImageLetter {
      */
     public int getAmountOfMerges() {
         return amountOfMerges;
+    }
+
+    public List<Object2DoubleMap.Entry<ImageLetter>> getClosestMatches() {
+        return closestMatches;
+    }
+
+    public void setClosestMatches(List<Object2DoubleMap.Entry<ImageLetter>> closestMatches) {
+        this.closestMatches = closestMatches;
+    }
+
+    public void setNextClosest() {
+        copyProperties(this.closestMatches.remove(0).getKey());
+    }
+
+    /**
+     * Copies all properties of the given {@link ImageLetter} to the current {@link ImageLetter}.
+     *
+     * @param imageLetter The {@link ImageLetter} to copy
+     */
+    public void copyProperties(ImageLetter imageLetter) {
+        this.letter = imageLetter.letter;
+        this.modifier = imageLetter.modifier;
+        this.x = imageLetter.x;
+        this.y = imageLetter.y;
+        this.width = imageLetter.width;
+        this.height = imageLetter.height;
+        this.averageWidth = imageLetter.averageWidth;
+        this.averageHeight = imageLetter.averageHeight;
+        this.ratio = imageLetter.ratio;
+        this.values = imageLetter.values;
+        this.coordinates = imageLetter.coordinates;
+        this.data = imageLetter.data;
+        this.maxCenter = imageLetter.maxCenter;
+        this.minCenter = imageLetter.minCenter;
+        this.amountOfMerges = imageLetter.amountOfMerges;
     }
 
     /**
