@@ -13,12 +13,15 @@ import java.util.Set;
 public class BasicSimilarityRule implements SimilarRule {
 
     private Set<Letter> characters;
+    private String name;
 
-    public BasicSimilarityRule(Set<Letter> characters) {
+    public BasicSimilarityRule(String name, Set<Letter> characters) {
+        this.name = name;
         this.characters = EnumSet.copyOf(characters);
     }
 
-    public BasicSimilarityRule(Letter... characters) {
+    public BasicSimilarityRule(String name, Letter... characters) {
+        this.name = name;
         this.characters = characters.length > 0 ?
                 EnumSet.of(characters[0], characters) :
                 EnumSet.noneOf(Letter.class);
@@ -31,6 +34,11 @@ public class BasicSimilarityRule implements SimilarRule {
 
     public void removeLetter(Letter letter) {
         this.characters.remove(letter);
+    }
+
+    @Override
+    public String getName() {
+        return this.name;
     }
 
     @Override

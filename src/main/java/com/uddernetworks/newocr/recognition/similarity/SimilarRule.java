@@ -18,6 +18,13 @@ public interface SimilarRule {
     boolean matchesLetter(ImageLetter first);
 
     /**
+     * Gets the name of the rule.
+     *
+     * @return The name of the rule
+     */
+    String getName();
+
+    /**
      * When given a list of the potential results of a character (Irrelevant what character it is), this will find the
      * character lowest in the list that does not match the first character's letter and modifier to the current
      * rule.

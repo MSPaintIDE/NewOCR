@@ -6,7 +6,6 @@ import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
-import com.uddernetworks.newocr.recognition.similarity.rules.VerticalLineSimilarityRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +26,7 @@ public class ApostropheMergeRule extends MergeRule {
     public ApostropheMergeRule(DatabaseManager databaseManager, SimilarityManager similarityManager) {
         super(databaseManager, similarityManager);
 
-        similarityManager.getRule(VerticalLineSimilarityRule.class).ifPresentOrElse(rule ->
+        similarityManager.getRule("vertical-line").ifPresentOrElse(rule ->
                 this.apostropheRule = rule, () ->
                 LOGGER.error("Tried to use uninitialized rule from " + similarityManager.getClass().getCanonicalName()));
 

@@ -34,12 +34,12 @@ public interface SimilarityManager {
     boolean isSimilar(ImageLetter first, ImageLetter second);
 
     /**
-     * Gets the instance of {@link SimilarRule} with the given class.
+     * Gets the instance of {@link SimilarRule} with the given name.
      *
-     * @param similarityRuleClass The class to get the instance of
-     * @return A {@link SimilarRule} with the given class
+     * @param similarityRuleName The name of the {@link SimilarRule} to get, if present
+     * @return A {@link SimilarRule} with the given name
      */
-    Optional<SimilarRule> getRule(Class<? extends SimilarRule> similarityRuleClass);
+    Optional<SimilarRule> getRule(String similarityRuleName);
 
     /**
      * When given a list of the potential results of a character (Irrelevant what character it is), this will find the

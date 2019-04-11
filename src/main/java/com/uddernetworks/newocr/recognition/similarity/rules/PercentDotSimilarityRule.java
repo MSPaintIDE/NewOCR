@@ -6,6 +6,6 @@ import static com.uddernetworks.newocr.recognition.similarity.Letter.PERCENT_RDO
 public class PercentDotSimilarityRule extends BasicSimilarityRule {
 
     public PercentDotSimilarityRule() {
-        super(PERCENT_LDOT, PERCENT_RDOT);
+        super("percent-dot", PERCENT_LDOT, PERCENT_RDOT);
     }
 }

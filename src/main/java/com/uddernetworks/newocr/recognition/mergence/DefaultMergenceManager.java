@@ -4,7 +4,6 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.recognition.mergence.rules.*;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
-import com.uddernetworks.newocr.recognition.similarity.rules.DotSimilarityRule;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +63,7 @@ public class DefaultMergenceManager implements MergenceManager {
 
         this.mergeRules.stream().map(this::processRule).flatMap(Set::stream).forEach(imageLetter -> removeFromSorted(imageLetter, sortedLines));
 
-        var dotSimilarity = similarityManager.getRule(DotSimilarityRule.class).orElseThrow();
+        var dotSimilarity = similarityManager.getRule("dot").orElseThrow();
 
         // Cleaning up
         // TODO: Make these options

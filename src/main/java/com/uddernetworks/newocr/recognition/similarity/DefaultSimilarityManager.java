@@ -48,9 +48,9 @@ public class DefaultSimilarityManager implements SimilarityManager {
     }
 
     @Override
-    public Optional<SimilarRule> getRule(Class<? extends SimilarRule> similarityRuleClass) {
+    public Optional<SimilarRule> getRule(String similarityRuleName) {
         return this.similarRules.stream()
-                .filter(rule -> rule.getClass().equals(similarityRuleClass))
+                .filter(rule -> rule.getName().equals(similarityRuleName))
                 .findFirst();
     }
 
