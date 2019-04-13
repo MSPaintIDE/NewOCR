@@ -6,7 +6,6 @@ import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
 
 import java.io.File;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public interface Scan {
 
@@ -16,7 +15,7 @@ public interface Scan {
      * @param file The input image to be scanned
      * @return A {@link ScannedImage} containing all scanned character data
      */
-    ScannedImage scanImage(File file) throws ExecutionException, InterruptedException;
+    ScannedImage scanImage(File file);
 
     /**
      * Gets and inserts all the spaces of the current line based on the font size given (The first character of the line

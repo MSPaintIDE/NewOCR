@@ -1,12 +1,12 @@
 package com.uddernetworks.newocr.recognition;
 
 import com.uddernetworks.newocr.character.SearchCharacter;
+import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.train.OCROptions;
-import com.uddernetworks.newocr.train.TrainedCharacterData;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import org.slf4j.Logger;
@@ -36,7 +36,7 @@ public class OCRTrain implements Train {
         this.options = options;
         ImageIO.setUseCache(false);
 
-        this.actions = new OCRActions(databaseManager, similarityManager, options);
+        this.actions = new OCRActions(databaseManager, options);
     }
 
     @Override
@@ -96,13 +96,13 @@ public class OCRTrain implements Train {
 
                 for (SearchCharacter searchCharacter : line.getLetters()) {
                     // Gets the next character it knows it will be
-                    char current = searchCharacter.getKnownChar() == ' ' ? ' ' : TRAIN_STRING.charAt(letterIndex++);
+                    char current = searchCharacter.getLetter() == ' ' ? ' ' : TRAIN_STRING.charAt(letterIndex++);
                     var modifier = searchCharacter.getModifier();
                     var revertIndex = false;
 
                     // If the index is on the quote
                     if (letterIndex == 3) {
-                        searchCharacter.setKnownChar('"');
+                        searchCharacter.setLetter('"');
                         if (firstQuote == null) {
                             firstQuote = searchCharacter;
 
@@ -119,7 +119,7 @@ public class OCRTrain implements Train {
                         // If the current character is the FIRST `W`, sets beforeSpaceX to the current far right coordinate
                         // of the space (X + width), and go up another character (Skipping the space in TRAIN_STRING)
                     } else if (letterIndex == TRAIN_STRING.length() - 2) {
-                        searchCharacter.setKnownChar('W');
+                        searchCharacter.setLetter('W');
                         beforeSpaceX = searchCharacter.getX() + searchCharacter.getWidth();
                         letterIndex++;
                         continue;
@@ -127,18 +127,18 @@ public class OCRTrain implements Train {
                         // If it's the last character, add the space based on beforeSpaceX and the current X, (Getting the
                         // width of the space) and reset the line
                     } else if (letterIndex == TRAIN_STRING.length()) {
-                        searchCharacter.setKnownChar('W');
+                        searchCharacter.setLetter('W');
                         spaceTrainedCharacter.recalculateTo(searchCharacter.getX() - beforeSpaceX, line.bottomY() - line.topY());
                         letterIndex = 0;
                         continue;
                     } else {
-                        searchCharacter.setKnownChar(current);
+                        searchCharacter.setLetter(current);
                     }
 
                     if (nextMeasuringSpace != null) {
                         double width = searchCharacter.getX() - (nextMeasuringSpace.getX() + nextMeasuringSpace.getWidth());
                         double ratio = width / (double) nextMeasuringSpace.getHeight();
-                        customSpaces.computeIfAbsent(nextMeasuringSpace.getKnownChar(), x -> new ArrayList<>()).add(ratio);
+                        customSpaces.computeIfAbsent(nextMeasuringSpace.getLetter(), x -> new ArrayList<>()).add(ratio);
                         nextMeasuringSpace = null;
                     }
 
@@ -186,13 +186,6 @@ public class OCRTrain implements Train {
         LOGGER.debug("Writing data to database...");
         long start = System.currentTimeMillis();
 
-        System.out.println("apostropheRatio = " + apostropheRatios);
-        System.out.println("distanceAbove = " + distancesAbove);
-        System.out.println("distanceBelow = " + distancesBelow);
-        System.out.println("colonDistance = " + colonDistance);
-        System.out.println("semicolonDistance = " + semicolonDistance);
-        System.out.println("equalsDistance = " + equalsDistance);
-
         // Add the apostropheRatios data into the database
         CompletableFuture.runAsync(() -> metaMapping.forEach(databaseManager::addAveragedData))
                 .thenRunAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios))
@@ -203,7 +196,7 @@ public class OCRTrain implements Train {
             try {
                 databaseTrainedCharacter.finishRecalculations();
 
-                char letter = databaseTrainedCharacter.getValue();
+                char letter = databaseTrainedCharacter.getLetter();
 
                 CompletableFuture.runAsync(() -> databaseManager.createLetterEntry(letter, databaseTrainedCharacter.getModifier(), databaseTrainedCharacter.getWidthAverage(), databaseTrainedCharacter.getHeightAverage(), databaseTrainedCharacter.getMinCenter(), databaseTrainedCharacter.getMaxCenter(), letter == ' '))
                         .thenRunAsync(() -> {
@@ -224,7 +217,7 @@ public class OCRTrain implements Train {
         var errors = new AtomicInteger(0);
         charData.parallelStream().forEach(line -> line.parallelStream()
                 .forEach(searchCharacter -> this.actions.getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresent(imageLetter -> {
-                    var correct = searchCharacter.getKnownChar();
+                    var correct = searchCharacter.getLetter();
                     var calculatedChar = imageLetter.getLetter();
                     if (correct == checking && calculatedChar != correct) errors.incrementAndGet();
                 })));
@@ -236,7 +229,7 @@ public class OCRTrain implements Train {
     public TrainedCharacterData getTrainedCharacter(List<TrainedCharacterData> trainedCharacterDataList, char current, int finalModifier) {
         return trainedCharacterDataList
                 .stream()
-                .filter(trainedCharacterData -> trainedCharacterData.getValue() == current
+                .filter(trainedCharacterData -> trainedCharacterData.getLetter() == current
                         && trainedCharacterData.getModifier() == finalModifier)
                 .findFirst()
                 .orElseGet(() -> {

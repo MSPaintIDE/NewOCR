@@ -1,12 +1,10 @@
-package com.uddernetworks.newocr.database;
+package com.uddernetworks.newocr.character;
 
 /**
  * Used for storage of data to go into our from the database.
  */
-public class DatabaseCharacter {
+public class DatabaseCharacter extends Character {
 
-    private char letter;
-    private int modifier;
     private double[] data = new double[17];
     private double avgWidth;
     private double avgHeight;
@@ -19,7 +17,7 @@ public class DatabaseCharacter {
      * @param letter The letter of the object
      */
     public DatabaseCharacter(char letter) {
-        this(letter, 0);
+        super(letter);
     }
 
     /**
@@ -28,26 +26,7 @@ public class DatabaseCharacter {
      * @param letter The letter of the object
      */
     public DatabaseCharacter(char letter, int modifier) {
-        this.letter = letter;
-        this.modifier = modifier;
-    }
-
-    /**
-     * Gets the letter for the current DatabaseCharacter.
-     *
-     * @return The current letter
-     */
-    public char getLetter() {
-        return letter;
-    }
-
-    /**
-     * Gets the modifier of the letter.
-     *
-     * @return The modifier
-     */
-    public int getModifier() {
-        return modifier;
+        super(letter, modifier);
     }
 
     /**
@@ -118,11 +97,6 @@ public class DatabaseCharacter {
      */
     public double getMaxCenter() {
         return maxCenter;
-    }
-
-    @Override
-    public String toString() {
-        return String.valueOf(this.letter);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.uddernetworks.newocr.database;
 
+import com.uddernetworks.newocr.character.DatabaseCharacter;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 import javax.sql.DataSource;

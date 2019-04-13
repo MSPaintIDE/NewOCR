@@ -15,6 +15,7 @@ public class ConfigReflectionCacher implements ReflectionCacher {
     private Map<Class<?>, Constructor<?>> constructors = new HashMap<>();
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> Optional<Constructor<T>> getOrLookupConstructor(Class<T> clazz, ReflexiveSupplier<Constructor<T>> constructorGenerator) {
         return Optional.ofNullable((Constructor<T>) constructors.computeIfAbsent(clazz, x -> {
             try {

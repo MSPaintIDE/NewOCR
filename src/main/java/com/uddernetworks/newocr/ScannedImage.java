@@ -48,10 +48,12 @@ public class ScannedImage {
      * newlines are not returned.
      *
      * @param index The character index
-     * @return The ImageLetter at the given position
+     * @return The ImageLetter at the given position, if found
      */
-    public ImageLetter letterAt(int index) {
-        List<ImageLetter> last = getGridLineAtIndex(0).get();
+    public Optional<ImageLetter> letterAt(int index) {
+        var firstLineOptional = getGridLineAtIndex(0);
+        if (firstLineOptional.isEmpty()) return Optional.empty();
+        List<ImageLetter> last = firstLineOptional.get();
 
         var i = 0;
         while (last.size() + 1 <= index) {
@@ -61,7 +63,7 @@ public class ScannedImage {
             last = nextLine.get();
         }
 
-        return last.get(index);
+        return Optional.ofNullable(last.size() <= index ? null : last.get(index));
     }
 
     /**

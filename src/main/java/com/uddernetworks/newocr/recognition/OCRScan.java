@@ -48,11 +48,11 @@ public class OCRScan implements Scan {
         this.similarityManager = similarityManager;
         ImageIO.setUseCache(false);
 
-        this.actions = new OCRActions(databaseManager, similarityManager, options);
+        this.actions = new OCRActions(databaseManager, options);
     }
 
     @Override
-    public ScannedImage scanImage(File file) throws ExecutionException, InterruptedException {
+    public ScannedImage scanImage(File file) {
         var start = System.currentTimeMillis();
 
         // Preparing image
@@ -117,61 +117,18 @@ public class OCRScan implements Scan {
                     sortedLines.put(y, databaseCharacters);
                 });
 
-//        searchCharacters
-//                .stream()
-////                .filter(Optional::isPresent)
-////                .map(Optional::get)
-//                .sorted(Comparator.comparingInt(SearchCharacter::getX))
-//                .sorted((o1, o2) -> {
-//                    char cha = o1.getLetter();
-//                    char cha2 = o2.getLetter();
-//
-//                    if (cha == cha2) return 0;
-//                    if (cha == ',' ^ cha2 == ',') return cha2 == ',' ? 1 : -1;
-//                    if (cha == '.' ^ cha2 == '.') return cha2 == '.' ? 1 : -1;
-//                    if (cha == '_' ^ cha2 == '_') return cha2 == '_' ? 1 : -1;
-//                    if (cha == '`' ^ cha2 == '`') return cha2 == '`' ? 1 : -1;
-//                    if (cha == '\'' ^ cha2 == '\'') return cha2 == '\'' ? 1 : -1;
-//                    if (cha == '"' ^ cha2 == '"') return cha2 == '"' ? 1 : -1;
-//                    if (cha == '*' ^ cha2 == '*') return cha2 == '*' ? 1 : -1;
-//                    return -1;
-//                })
-//                .forEach(imageLetter -> {
-//
-//                    var center = imageLetter.getY() + ((double) imageLetter.getHeight() / 2);
-//
-//                    // Get the place where it fits
-//                    lines.entrySet().stream().filter(entry -> {
-//                        var pair = entry.getKey();
-//                        var topX = pair.getKey(); // Less than bottom
-//                        var bottomX = pair.getValue();
-//
-//                        return OCRUtils.isWithin(topX, bottomX, center);
-//                    }).findFirst().ifPresentOrElse(matchingPair -> {
-//                        matchingPair.getValue().add(imageLetter);
-//                    }, () -> LOGGER.warn("Found a letter not conforming to any bounds at (" + imageLetter.getX() + ", " + imageLetter.getY() + ") with a center Y of " + center));
-//                });
-
-        // End ordering
-
-        // Sorts the characters again based on their X value in their respective lines. This must be done again because
-        // the two different lists (firstList and secondList) will have caused a mixup of X positions from normal
-        // characters, and the ones in secondList
-
-
-
         this.mergenceManager.beginMergence(sortedLines, this.similarityManager);
 
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be
         // derived from that font size.
-        sortedLines.values().forEach(line -> line.addAll(getSpacesFor(line, line.stream().mapToInt(ImageLetter::getHeight).max().getAsInt())));
+        sortedLines.values().forEach(line -> line.stream().mapToInt(ImageLetter::getHeight).max().ifPresent(max -> line.addAll(getSpacesFor(line, max))));
 
         // Sorts the lines again based on X values, to move spaces from the back to their proper locations in the line.
 
         ScannedImage scannedImage = new ScannedImage(file, input);
 
         sortedLines.keySet().stream().sorted().forEach(y -> {
-            List<ImageLetter> line = sortedLines.get(y);
+            List<ImageLetter> line = sortedLines.get(y.intValue());
             scannedImage.addLine(y, line.stream().sorted(Comparator.comparingInt(ImageLetter::getX)).collect(Collectors.toList()));
         });
 
@@ -205,14 +162,13 @@ public class OCRScan implements Scan {
                 int rightX = searchCharacter.getX();
 
                 var gap = rightX - leftX; // The space between the current character and the last character
-                var ratio = spaceRatio; // The ratio of the space DatabaseCharacter
-                var usedWidth = ratio * fontSize; // The width of the space for this specific fot size
+                var usedWidth = spaceRatio * fontSize; // The width of the space for this specific fot size
                 usedWidth += spaceRatioOverride * fontSize;
 
                 int spaces = '!' == searchCharacter.getLetter() ? (int) Math.floor(gap / usedWidth) : spaceRound(gap / usedWidth);
 
                 for (int i = 0; i < spaces; i++) {
-                    ret.add(new ImageLetter(' ', 0, (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, usedWidth, fontSize, ratio));
+                    ret.add(new ImageLetter(' ', 0, (int) (leftX + (usedWidth * i)), searchCharacter.getY(), (int) usedWidth, fontSize, usedWidth, fontSize, spaceRatio));
                 }
 
                 prev = searchCharacter;

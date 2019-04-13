@@ -6,7 +6,6 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import java.util.List;
 import java.util.Optional;
 
-// TODO: Add tests!!!
 public interface SimilarRule {
 
     /**

@@ -26,7 +26,7 @@ public class SimpleCG {
         new SimpleCG().mainInstance(args);
     }
 
-    private void mainInstance(String[] args) throws IOException, InterruptedException, ExecutionException {
+    private void mainInstance(String[] args) throws IOException, InterruptedException {
         boolean mono = args.length >= 1 && args[0].equalsIgnoreCase("mono");
 
         var databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db_" + (mono ? "mono" : "cms")));
@@ -34,7 +34,6 @@ public class SimpleCG {
         var options = new OCROptions();
         var similarityManager = new DefaultSimilarityManager().loadDefaults();
         if (mono) {
-            System.out.println("Mono!");
             options.setSpecialSpaces('`', '\'')
                     .addRequireSizeCheck(PERIOD, EXCLAMATION_DOT, j_DOT, i_DOT, ONE, l); // Added by this
         } else {
@@ -85,8 +84,6 @@ public class SimpleCG {
         }
 
 //         Warm up and load classes for everything, which can add over 1400ms to the first scan
-        // TODO: Fully implement warming up
-//        ocrScan.scanImage(new File("src\\main\\resources\\warmup.png"));
 
         var scannedImage = ocrScan.scanImage(new File("test_" + (mono ? "mono" : "cms") + ".png"));
 //        var scannedImage = ocrScan.scanImage(new File("training_" + (mono ? "mono" : "cms") + ".png"));

@@ -26,7 +26,7 @@ public class UsingConfigDemo {
         new UsingConfigDemo().mainInstance(args);
     }
 
-    private void mainInstance(String[] args) throws IOException, InterruptedException, ExecutionException {
+    private void mainInstance(String[] args) throws IOException, InterruptedException {
         boolean mono = args.length >= 1 && args[0].equalsIgnoreCase("mono");
         var configFileName = "fonts/" + (mono ? "Monospaced.plain" : "ComicSans");
 
@@ -80,8 +80,6 @@ public class UsingConfigDemo {
         }
 
 //         Warm up and load classes for everything, which can add over 1400ms to the first scan
-        // TODO: Fully implement warming up
-//        ocrScan.scanImage(new File("src\\main\\resources\\warmup.png"));
 
 //        var scannedImage = ocrScan.scanImage(new File("test_" + (mono ? "mono" : "cms") + ".png"));
         var scannedImage = ocrScan.scanImage(new File("training_" + (mono ? "mono" : "cms") + ".png"));

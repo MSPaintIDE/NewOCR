@@ -9,16 +9,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * An object meant to store characters directly scanned from an image and that is being searched for/mutated.
  */
-public class SearchCharacter implements Comparable<SearchCharacter> {
+public class SearchCharacter extends CoordinateCharacter {
 
-    private char knownChar = '?';
-    private int modifier = 0;
-    private boolean[][] values;
-    private List<IntPair> coordinates;
-    private int x;
-    private int y;
-    private int width;
-    private int height;
     private List<IntPair> segments = new LinkedList<>();
     private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // First 8 are the normal ones, last 9 are for the grid created
     private Map<String, Double> trainingMeta = new HashMap<>();
@@ -78,219 +70,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
         }
 
         coordinates.forEach(pair -> values[pair.getValue() - this.y + yOffset][pair.getKey() - this.x + xOffset] = true);
-    }
-
-    public void merge(SearchCharacter searchCharacter) {
-        this.coordinates.addAll(searchCharacter.coordinates);
-        int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
-        int maxY = Integer.MIN_VALUE, minY = Integer.MAX_VALUE;
-
-        for (var pair : this.coordinates) {
-            int key = pair.getKey(), value = pair.getValue();
-
-            if (key > maxX) {
-                maxX = key;
-            }
-
-            if (key < minX) {
-                minX = key;
-            }
-
-            if (value > maxY) {
-                maxY = value;
-            }
-
-            if (value < minY) {
-                minY = value;
-            }
-        }
-
-        this.x = minX;
-        this.y = minY;
-
-        this.width = maxX - minX;
-        this.height = maxY - minY;
-
-        values = new boolean[this.height + 1][];
-
-        for (int i = 0; i < values.length; i++) {
-            values[i] = new boolean[width + 1];
-        }
-
-        coordinates.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
-    }
-
-    /**
-     * Gets the raw grid of boolean values from the image of this character.
-     *
-     * @return The raw grid of boolean values from the image of this character
-     */
-    public boolean[][] getValues() {
-        return values;
-    }
-
-    /**
-     * Gets the coordinates of the character.
-     *
-     * @return The coordinates
-     */
-    public List<IntPair> getCoordinates() {
-        return coordinates;
-    }
-
-    /**
-     * Gets the X position of the character.
-     *
-     * @return The X position of ths character
-     */
-    public int getX() {
-        return x;
-    }
-
-    /**
-     * Gets the Y position of the character.
-     *
-     * @return The Y position of ths character
-     */
-    public int getY() {
-        return y;
-    }
-
-    /**
-     * Gets the width of the character.
-     *
-     * @return The width of ths character
-     */
-    public int getWidth() {
-        return width;
-    }
-
-    /**
-     * Gets the height of the character.
-     *
-     * @return The height of ths character
-     */
-    public int getHeight() {
-        return height;
-    }
-
-    /**
-     * Sets the X position of the character.
-     *
-     * @param x the X position to set
-     */
-    public void setX(int x) {
-        this.x = x;
-    }
-
-    /**
-     * Sets the Y position of the character.
-     *
-     * @param y the Y position to set
-     */
-    public void setY(int y) {
-        this.y = y;
-    }
-
-    /**
-     * Sets the width of the character.
-     *
-     * @param width The width of the character
-     */
-    public void setWidth(int width) {
-        this.width = width;
-    }
-
-    /**
-     * Sets the height of the character.
-     *
-     * @param height The height of the character
-     */
-    public void setHeight(int height) {
-        this.height = height;
-    }
-
-    /**
-     * Gets if the given coordinate is within the bounds of this character.
-     *
-     * @param x The X coordinate to check
-     * @param y The Y coordinate to check
-     * @return If the coordinate is within this character
-     */
-    public boolean isInBounds(int x, int y) {
-        return x <= this.x + this.width
-                && x >= this.x
-                && y <= this.y + this.height
-                && y >= this.y;
-    }
-
-    /**
-     * Gets if another {@link SearchCharacter} is overlapping the current {@link SearchCharacter} at all.
-     *
-     * @param searchCharacter The {@link SearchCharacter} to check for overlapping
-     * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
-     */
-    public boolean isOverlaping(SearchCharacter searchCharacter) {
-        if (isInBounds(searchCharacter.getX(), searchCharacter.getY())) return true;
-        if (isInBounds(searchCharacter.getX(), searchCharacter.getY() + searchCharacter.getHeight())) return true;
-        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), searchCharacter.getY())) return true;
-        if (isInBounds(searchCharacter.getX() + searchCharacter.getWidth(), searchCharacter.getY() + searchCharacter.getHeight())) return true;
-        return false;
-    }
-
-    /**
-     * Gets if another {@link SearchCharacter}'s black pixels overlap the current {@link SearchCharacter} at all.
-     *
-     * @param searchCharacter The {@link SearchCharacter} to check for overlapping
-     * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
-     */
-    public boolean isOverlappingPixels(SearchCharacter searchCharacter) {
-        return searchCharacter.coordinates.parallelStream().anyMatch(coordinate -> this.coordinates.contains(coordinate));
-//        return !Collections.disjoint(searchCharacter.coordinates, this.coordinates);
-    }
-
-    /**
-     * Gets if another {@link SearchCharacter} is overlapping the current {@link SearchCharacter} at all in the X axis.
-     *
-     * @param searchCharacter The {@link SearchCharacter} to check for overlapping
-     * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
-     */
-    public boolean isOverlappingX(SearchCharacter searchCharacter) {
-        // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
-        return getX() + getWidth() >= searchCharacter.getX() && searchCharacter.getX() + searchCharacter.getWidth() >= getX();
-    }
-
-    /**
-     * Gets if another {@link SearchCharacter} is overlapping the current {@link SearchCharacter} at all in the X axis.
-     *
-     * @param searchCharacter The {@link SearchCharacter} to check for overlapping
-     * @return If the given {@link SearchCharacter} is overlapping the current {@link SearchCharacter}
-     */
-    public boolean isOverlappingY(SearchCharacter searchCharacter) {
-        // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
-        return getY() + getHeight() >= searchCharacter.getY() && searchCharacter.getY() + searchCharacter.getHeight() >= getY();
-    }
-
-    /**
-     * Gets if the given Y position is within the Y bounds of the current character.
-     *
-     * @param y The Y position to check
-     * @return If the given Y position is within the Y bounds of the current character
-     */
-    public boolean isInYBounds(int y) {
-        return y <= this.y + this.height
-                && y >= this.y;
-    }
-
-    /**
-     * Gets if the given Y position is within the X bounds of the current character.
-     *
-     * @param x The Y position to check
-     * @return If the given Y position is within the X bounds of the current character
-     */
-    public boolean isInXBounds(int x) {
-        return x <= this.x + this.width
-                && x >= this.x;
     }
 
     /**
@@ -353,77 +132,6 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     }
 
     /**
-     * Gets the known character of this object. If it has not been fount yet, it will return `?`.
-     *
-     * @return The known character
-     */
-    public char getKnownChar() {
-        return knownChar;
-    }
-
-    /**
-     * Sets the known character.
-     *
-     * @param knownChar The know character
-     */
-    public void setKnownChar(char knownChar) {
-        this.knownChar = knownChar;
-    }
-
-    /**
-     * Sets the modifier for the current character.
-     *
-     * @param modifier The modifier of the character
-     */
-    public void setModifier(int modifier) {
-        this.modifier = modifier;
-    }
-
-    /**
-     * Gets the modifier for the current character.
-     *
-     * @return The modifier for the current character
-     */
-    public int getModifier() {
-        return modifier;
-    }
-
-    @Override
-    public int compareTo(SearchCharacter searchCharacter) {
-        return x - searchCharacter.x;
-    }
-
-    @Override
-    public String toString() {
-        return String.valueOf(knownChar);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.knownChar, this.x, this.y, this.width, this.height);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof SearchCharacter)) return false;
-        var character = (SearchCharacter) obj;
-        return character.knownChar == this.knownChar
-                && character.x == this.x
-                && character.y == this.y
-                && character.width == this.width
-                && character.height == this.height;
-    }
-
-    /**
-     * Gets the raw 2D array of values of the character.
-     *
-     * @return The raw 2D array of values of the character
-     */
-    public boolean[][] getData() {
-        return values;
-    }
-
-    /**
      * Gets the training meta with the given name. This contains data such as separation of the dots of an i, data on
      * the holes of a %, etc.
      *
@@ -460,8 +168,27 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      *
      * @param centerOffset The offset of the character to set
      */
-    public SearchCharacter setCenterOffset(double centerOffset) {
+    public void setCenterOffset(double centerOffset) {
         this.centerOffset = centerOffset;
-        return this;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.letter, this.x, this.y, this.width, this.height, this.segments, this.segmentPercentages, this.trainingMeta, this.centerOffset);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SearchCharacter)) return false;
+        var character = (SearchCharacter) obj;
+        return character.letter == this.letter
+                && character.x == this.x
+                && character.y == this.y
+                && character.width == this.width
+                && character.height == this.height
+                && character.segments == this.segments
+                && character.segmentPercentages == this.segmentPercentages
+                && character.trainingMeta == this.trainingMeta
+                && character.centerOffset == this.centerOffset;
     }
 }

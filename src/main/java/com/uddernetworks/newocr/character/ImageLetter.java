@@ -5,30 +5,20 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * An object to contain data from characters directly scanned from an image.
  */
-public class ImageLetter {
+public class ImageLetter extends CoordinateCharacter {
 
-    private char letter;
-    private int modifier;
-    private int x;
-    private int y;
-    private int width;
-    private int height;
     private double averageWidth;
     private double averageHeight;
     private double ratio;
-    private boolean[][] values;
-    private List<IntPair> coordinates;
     private Object data;
     private double maxCenter;
     private double minCenter;
-    private int amountOfMerges = 0;
 
     private List<Object2DoubleMap.Entry<ImageLetter>> closestMatches = new ArrayList<>();
 
@@ -65,144 +55,6 @@ public class ImageLetter {
         this.averageHeight = averageHeight;
         this.ratio = ratio;
         this.coordinates = coordinates;
-    }
-
-    /**
-     * Merges the given {@link ImageLetter} with the current one, possibly changing width, height, X and Y values, along with
-     * combining the current and given {@link ImageLetter}'s coordinates and values (Accessible via {@link ImageLetter#getCoordinates()} and {@link ImageLetter#getValues()} respectively)
-     *
-     * @param imageLetter The {@link ImageLetter} to merge into the current one
-     */
-    public void merge(ImageLetter imageLetter) {
-        this.amountOfMerges++;
-        this.coordinates = Stream.of(this.coordinates, imageLetter.coordinates).flatMap(List::stream).collect(Collectors.toList());
-        int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
-        int maxY = Integer.MIN_VALUE, minY = Integer.MAX_VALUE;
-
-        for (var pair : this.coordinates) {
-            int key = pair.getKey(), value = pair.getValue();
-
-            if (key > maxX) {
-                maxX = key;
-            }
-
-            if (key < minX) {
-                minX = key;
-            }
-
-            if (value > maxY) {
-                maxY = value;
-            }
-
-            if (value < minY) {
-                minY = value;
-            }
-        }
-
-        this.x = minX;
-        this.y = minY;
-
-        this.width = maxX - minX;
-        this.height = maxY - minY;
-
-        values = new boolean[this.height + 1][];
-
-        for (int i = 0; i < values.length; i++) {
-            values[i] = new boolean[width + 1];
-        }
-
-        this.coordinates.forEach(pair -> values[pair.getValue() - this.y][pair.getKey() - this.x] = true);
-    }
-
-    /**
-     * Sets the modifier of the character.
-     *
-     * @return The modifier of the character
-     */
-    public int getModifier() {
-        return modifier;
-    }
-
-    /**
-     * Sets the modifier of the character.
-     *
-     * @param modifier The modifier to set
-     */
-    public void setModifier(int modifier) {
-        this.modifier = modifier;
-    }
-
-    /**
-     * Gets the X coordinate of this character.
-     *
-     * @return The X coordinate of this character
-     */
-    public int getX() {
-        return x;
-    }
-
-    /**
-     * Sets the X coordinate of this character.
-     *
-     * @param x The X coordinate of this character
-     */
-    public void setX(int x) {
-        this.x = x;
-    }
-
-
-    /**
-     * Gets the Y coordinate of this character.
-     *
-     * @return The Y coordinate of this character
-     */
-    public int getY() {
-        return y;
-    }
-
-    /**
-     * Sets the Y coordinate of this character.
-     *
-     * @param y The Y coordinate of this character
-     */
-    public void setY(int y) {
-        this.y = y;
-    }
-
-    /**
-     * Gets the width of this character.
-     *
-     * @return The width of this character
-     */
-    public int getWidth() {
-        return width;
-    }
-
-    /**
-     * Sets the width of this character
-     *
-     * @param width The width of this character
-     */
-    public void setWidth(int width) {
-        this.width = width;
-    }
-
-    /**
-     * Gets the height of this character.
-     *
-     * @return The height of this character
-     */
-    public int getHeight() {
-        return height;
-    }
-
-    /**
-     * Sets the height of this character.
-     *
-     * @param height The height of this character
-     */
-    public void setHeight(int height) {
-        this.height = height;
     }
 
     /**
@@ -260,33 +112,6 @@ public class ImageLetter {
     }
 
     /**
-     * Gets the data coordinates of this character in form of [Black, Total]
-     *
-     * @return The data coordinates of this character
-     */
-    public List<IntPair> getCoordinates() {
-        return coordinates;
-    }
-
-    /**
-     * Gets the character value found for this character.
-     *
-     * @return The character value found for this character
-     */
-    public char getLetter() {
-        return this.letter;
-    }
-
-    /**
-     * Sets the letter value for this character.
-     *
-     * @param letter The character value for this character.
-     */
-    public void setLetter(char letter) {
-        this.letter = letter;
-    }
-
-    /**
      * Gets any data set to the {@link ImageLetter} object, useful for storing any needed data about the character to be
      * used in the future.
      *
@@ -314,29 +139,6 @@ public class ImageLetter {
      */
     public void setData(Object data) {
         this.data = data;
-    }
-
-    /**
-     * Gets the black (true) and white (false) pixels of the scanned character.
-     *
-     * @return The grid of black or white values
-     */
-    public boolean[][] getValues() {
-        return values;
-    }
-
-    /**
-     * Sets the black (true) and white (false) pixels of the scanned character.
-     *
-     * @param values The grid of black or white values. Will return `null` for spaces
-     */
-    public void setValues(boolean[][] values) {
-        this.values = values;
-    }
-
-    @Override
-    public String toString() {
-        return getLetter() + "_" + getModifier();
     }
 
     /**
@@ -375,18 +177,6 @@ public class ImageLetter {
         this.maxCenter = maxCenter;
     }
 
-    /**
-     * Gets how many times the current {@link ImageLetter} has been merged via {@link ImageLetter#merge(ImageLetter)}
-     * with another {@link ImageLetter}. This value is added every time {@link ImageLetter#merge(ImageLetter)} is
-     * invoked, and adds the amount of merges the argument of that method to the current merge value, as well as
-     * incrementing normally.
-     *
-     * @return The amount of merge operations affecting the current {@link ImageLetter}
-     */
-    public int getAmountOfMerges() {
-        return amountOfMerges;
-    }
-
     public List<Object2DoubleMap.Entry<ImageLetter>> getClosestMatches() {
         return closestMatches;
     }
@@ -399,11 +189,6 @@ public class ImageLetter {
         copyProperties(this.closestMatches.remove(0).getKey());
     }
 
-    /**
-     * Copies all properties of the given {@link ImageLetter} to the current {@link ImageLetter}.
-     *
-     * @param imageLetter The {@link ImageLetter} to copy
-     */
     public void copyProperties(ImageLetter imageLetter) {
         this.letter = imageLetter.letter;
         this.modifier = imageLetter.modifier;
@@ -422,25 +207,30 @@ public class ImageLetter {
         this.amountOfMerges = imageLetter.amountOfMerges;
     }
 
-    /**
-     * Gets if another {@link ImageLetter} is overlapping the current {@link ImageLetter} at all in the X axis.
-     *
-     * @param imageLetter The {@link ImageLetter} to check for overlapping
-     * @return If the given {@link ImageLetter} is overlapping the current {@link ImageLetter}
-     */
-    public boolean isOverlappingX(ImageLetter imageLetter) {
-        // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
-        return getX() + getWidth() >= imageLetter.getX() && imageLetter.getX() + imageLetter.getWidth() >= getX();
+    @Override
+    public String toString() {
+        return getLetter() + "_" + getModifier();
     }
 
-    /**
-     * Gets if another {@link ImageLetter} is overlapping the current {@link ImageLetter} at all in the Y axis.
-     *
-     * @param imageLetter The {@link ImageLetter} to check for overlapping
-     * @return If the given {@link ImageLetter} is overlapping the current {@link ImageLetter}
-     */
-    public boolean isOverlappingY(ImageLetter imageLetter) {
-        // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
-        return getY() + getHeight() >= imageLetter.getY() && imageLetter.getY() + imageLetter.getHeight() >= getY();
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.letter, this.x, this.y, this.width, this.height, this.averageWidth, this.averageHeight, this.ratio, this.data, this.maxCenter, this.minCenter);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ImageLetter)) return false;
+        var character = (ImageLetter) obj;
+        return character.letter == this.letter
+                && character.x == this.x
+                && character.y == this.y
+                && character.width == this.width
+                && character.height == this.height
+                && character.averageWidth == this.averageWidth
+                && character.averageHeight == this.averageHeight
+                && character.ratio == this.ratio
+                && character.data == this.data
+                && character.maxCenter == this.maxCenter
+                && character.minCenter == this.minCenter;
     }
 }

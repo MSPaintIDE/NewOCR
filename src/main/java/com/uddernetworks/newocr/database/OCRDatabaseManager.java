@@ -1,5 +1,6 @@
 package com.uddernetworks.newocr.database;
 
+import com.uddernetworks.newocr.character.DatabaseCharacter;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
@@ -44,7 +45,7 @@ public class OCRDatabaseManager implements DatabaseManager {
      * @param databaseURL The URL to the database
      * @param username    The username of the connecting account
      * @param password    The password of the connecting account
-     * @throws IOException
+     * @throws IOException If there are issues when creating/accessing the pool
      */
     public OCRDatabaseManager(String databaseURL, String username, String password) throws IOException {
         this(false, null, databaseURL, username, password);
@@ -55,7 +56,7 @@ public class OCRDatabaseManager implements DatabaseManager {
      * letters.sql and sectionData.sql. This option can be over 12x faster than the MySQL variant.
      *
      * @param filePath The file without an extension of the database. If this doesn't exist, it will be created
-     * @throws IOException
+     * @throws IOException If there are issues when creating/accessing the pool
      */
     public OCRDatabaseManager(File filePath) throws IOException {
         this(true, filePath, null, null, null);
@@ -117,7 +118,7 @@ public class OCRDatabaseManager implements DatabaseManager {
      * Ran internally after the DatabaseManager has been created to read the *.sql files in the /resources/ directory
      * for future queries.
      *
-     * @throws IOException
+     * @throws IOException If there are issues when creating/accessing the pool
      */
     private void initializeStatements() throws IOException {
         this.createLetterEntry = getQuery("createLetterEntry");
@@ -137,7 +138,7 @@ public class OCRDatabaseManager implements DatabaseManager {
      *
      * @param name The resource file to read
      * @return The string contents of it
-     * @throws IOException
+     * @throws IOException If there are issues when creating/accessing the pool
      */
     private String getQuery(String name) throws IOException {
         var resource = Objects.requireNonNull(getClass().getClassLoader().getResource(name + ".sql"));

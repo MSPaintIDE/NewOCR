@@ -50,7 +50,7 @@ public class ComputerTrainGenerator implements TrainGenerator {
         int size = options.getMaxFontSize();
         int offset = options.getMaxFontSize();
         for (int i = 0; i < options.getMaxFontSize() - options.getMinFontSize(); i++) {
-            drawLine(graphics, OCRScan.RAW_STRING, options.getFontFamily(), offset, size);
+            drawLine(graphics, options.getFontFamily(), offset, size);
             offset += ConversionUtils.pointToPixel(size) + 15;
             size--;
         }
@@ -62,12 +62,12 @@ public class ComputerTrainGenerator implements TrainGenerator {
         }
     }
 
-    private void drawLine(Graphics2D drawTo, String line, String fontName, int yOffset, int size) {
+    private void drawLine(Graphics2D drawTo, String fontName, int yOffset, int size) {
         Font font = new Font(fontName, Font.PLAIN, size);
         drawTo.setFont(font);
         drawTo.setPaint(Color.BLACK);
 
-        drawTo.drawString(line, 10, yOffset);
+        drawTo.drawString(OCRScan.RAW_STRING, 10, yOffset);
     }
 
 }

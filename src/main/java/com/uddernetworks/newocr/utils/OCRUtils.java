@@ -73,20 +73,6 @@ public class OCRUtils {
         return Math.abs(one - two);
     }
 
-    // TODO: Rename method
-//    /**
-//     * Gets if two ints are within a given double.
-//     *
-//     * @param one    Bound 1
-//     * @param two    Bound 2
-//     * @param within The number
-//     * @return If one and two are within `within`
-//     */
-//    public static boolean isWithin(int one, int two, double within) {
-//        double diff = Math.max((double) one, (double) two) - Math.min((double) one, (double) two);
-//        return diff <= within;
-//    }
-
     /**
      * Gets if the difference of the two given ints are between both of the two doubles given.
      *
@@ -151,7 +137,7 @@ public class OCRUtils {
     }
 
     /**
-     * Gets if a given number is within two bounds. The same as {@link #isWithin(int, int, double)} but with doubles.
+     * Gets if a given number is within two bounds.
      *
      * @param lowerBound The lower bound to check
      * @param upperBound The upper bound to check
@@ -283,7 +269,7 @@ public class OCRUtils {
     public static boolean isBlack(BufferedImage image, int x, int y) {
         try {
             Color pixel = new Color(image.getRGB(x, y));
-            return (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3 < 255 * 0.75;
+            return (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3D < 255 * 0.75;
         } catch (ArrayIndexOutOfBoundsException e) {
             return true;
         }
@@ -326,11 +312,10 @@ public class OCRUtils {
     public static Stream<boolean[][]> getHorizontalThird(boolean[][] values) {
         int topHeight = values.length / 3;
         int middleHeight = values.length - topHeight * 2;
-        int bottomHeight = topHeight;
 
         boolean[][] topThird = new boolean[topHeight][];
         boolean[][] middleThird = new boolean[middleHeight][];
-        boolean[][] bottomThird = new boolean[bottomHeight][];
+        boolean[][] bottomThird = new boolean[topHeight][];
 
         for (int y = 0; y < values.length; y++) {
             if (y < topHeight) {
@@ -545,7 +530,7 @@ public class OCRUtils {
                 System.out.print(bool ? "＃" : "　");
             }
 
-             System.out.println("");
+             System.out.println();
         }
     }
 }

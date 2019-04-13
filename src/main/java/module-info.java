@@ -9,7 +9,14 @@ module NewOCR {
 
     exports com.uddernetworks.newocr;
     exports com.uddernetworks.newocr.character;
+    exports com.uddernetworks.newocr.configuration;
     exports com.uddernetworks.newocr.database;
+    exports com.uddernetworks.newocr.detection;
+    exports com.uddernetworks.newocr.recognition;
+    exports com.uddernetworks.newocr.recognition.mergence;
+    exports com.uddernetworks.newocr.recognition.mergence.rules;
+    exports com.uddernetworks.newocr.recognition.similarity;
+    exports com.uddernetworks.newocr.recognition.similarity.rules;
     exports com.uddernetworks.newocr.train;
     exports com.uddernetworks.newocr.utils;
 }

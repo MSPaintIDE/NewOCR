@@ -1,8 +1,8 @@
 package com.uddernetworks.newocr.recognition;
 
 import com.uddernetworks.newocr.character.SearchCharacter;
+import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.train.ComputerTrainGenerator;
-import com.uddernetworks.newocr.train.TrainedCharacterData;
 
 import java.io.File;
 import java.util.List;

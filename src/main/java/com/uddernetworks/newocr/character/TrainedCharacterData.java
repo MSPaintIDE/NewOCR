@@ -1,17 +1,14 @@
-package com.uddernetworks.newocr.train;
-
-import com.uddernetworks.newocr.character.SearchCharacter;
+package com.uddernetworks.newocr.character;
 
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.OptionalDouble;
 
 /**
  * This is an object meant for storing the data for characters in the training stage.
  */
-public class TrainedCharacterData {
+public class TrainedCharacterData extends Character {
 
-    private char value;
-    private int modifier = 0;
     private double widthAverage;
     private double heightAverage;
     private double[] segmentPercentages;
@@ -24,50 +21,22 @@ public class TrainedCharacterData {
     private LinkedList<Double> recalculatingHeights = new LinkedList<>();
 
     /**
-     * Creates a {@link TrainedCharacterData} from a character value with a modifier of 0.
+     * Creates a {@link TrainedCharacterData} from a character letter with a modifier of 0.
      *
-     * @param value The known character value
+     * @param letter The known character letter
      */
-    public TrainedCharacterData(char value) {
-        this.value = value;
+    public TrainedCharacterData(char letter) {
+        super(letter);
     }
 
     /**
      * Creates a {@link TrainedCharacterData} from a character value with a given modifier value.
      *
-     * @param value The known character value
+     * @param letter The known character value
      * @param modifier The modifier for the character
      */
-    public TrainedCharacterData(char value, int modifier) {
-        this.value = value;
-        this.modifier = modifier;
-    }
-
-    /**
-     * Gets the assigned character value.
-     *
-     * @return The assigned character value
-     */
-    public char getValue() {
-        return value;
-    }
-
-    /**
-     * Gets the modifier for the character.
-     *
-     * @return The character's modifier
-     */
-    public int getModifier() {
-        return modifier;
-    }
-
-    /**
-     * Sets the modifier for the character.
-     *
-     * @param modifier The modifier to set
-     */
-    public void setModifier(int modifier) {
-        this.modifier = modifier;
+    public TrainedCharacterData(char letter, int modifier) {
+        super(letter, modifier);
     }
 
     /**
@@ -87,6 +56,52 @@ public class TrainedCharacterData {
      */
     public double getSizeRatio() {
         return sizeRatio;
+    }
+
+    /**
+     * Gets the average width for everything trained with this object.
+     *
+     * @return The average width. Will return 0 if {@link #finishRecalculations()} has not been invoked.
+     */
+    public double getWidthAverage() {
+        return widthAverage;
+    }
+
+    /**
+     * Gets the average height for everything trained with this object.
+     *
+     * @return The average height. Will return 0 if {@link #finishRecalculations()} has not been invoked.
+     */
+    public double getHeightAverage() {
+        return heightAverage;
+    }
+
+    /**
+     * Gets the minimum center value of all the training data used.
+     *
+     * @return The minimum center value of all the training data used
+     */
+    public double getMinCenter() {
+        return minCenter;
+    }
+
+    /**
+     * Gets the maximum center value of all the training data used.
+     *
+     * @return The maximum center value of all the training data used
+     */
+    public double getMaxCenter() {
+        return maxCenter;
+    }
+
+    /**
+     * Gets if anything has been recalcuated/prepared to be recalculated to the character, e.g. by using
+     * {@link #recalculateTo(double, double)} or {@link #recalculateTo(SearchCharacter)}.
+     *
+     * @return If anything has been recalculated
+     */
+    public boolean isEmpty() {
+        return empty;
     }
 
     /**
@@ -157,7 +172,7 @@ public class TrainedCharacterData {
 
         this.sizeRatio = this.heightAverage != 0 ? this.widthAverage / this.heightAverage : 0;
 
-        if (value == ' ') {
+        if (this.letter == ' ') {
             return;
         }
 
@@ -191,55 +206,30 @@ public class TrainedCharacterData {
         }
     }
 
-    /**
-     * Gets the average width for everything trained with this object.
-     *
-     * @return The average width. Will return 0 if {@link #finishRecalculations()} has not been invoked.
-     */
-    public double getWidthAverage() {
-        return widthAverage;
-    }
-
-    /**
-     * Gets the average height for everything trained with this object.
-     *
-     * @return The average height. Will return 0 if {@link #finishRecalculations()} has not been invoked.
-     */
-    public double getHeightAverage() {
-        return heightAverage;
-    }
-
-    /**
-     * Gets the minimum center value of all the training data used.
-     *
-     * @return The minimum center value of all the training data used
-     */
-    public double getMinCenter() {
-        return minCenter;
-    }
-
-    /**
-     * Gets the maximum center value of all the training data used.
-     *
-     * @return The maximum center value of all the training data used
-     */
-    public double getMaxCenter() {
-        return maxCenter;
-    }
-
-    /**
-     * Gets if anything has been recalcuated/prepared to be recalculated to the character, e.g. by using
-     * {@link #recalculateTo(double, double)} or {@link #recalculateTo(SearchCharacter)}.
-     *
-     * @return If anything has been recalculated
-     */
-    public boolean isEmpty() {
-        return empty;
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.letter, this.x, this.y, this.width, this.height, this.widthAverage, this.heightAverage, this.segmentPercentages, this.minCenter, this.maxCenter, this.sizeRatio, this.empty);
     }
 
     @Override
-    public String toString() {
-        return String.valueOf(value);
+    public boolean equals(Object obj) {
+        if (!(obj instanceof TrainedCharacterData)) return false;
+        var character = (TrainedCharacterData) obj;
+        return character.letter == this.letter
+                && character.x == this.x
+                && character.y == this.y
+                && character.width == this.width
+                && character.height == this.height
+                && character.widthAverage == this.widthAverage
+                && character.heightAverage == this.heightAverage
+                && character.segmentPercentages == this.segmentPercentages
+                && character.minCenter == this.minCenter
+                && character.maxCenter == this.maxCenter
+                && character.sizeRatio == this.sizeRatio
+                && character.empty == this.empty
+                && character.recalculatingList == this.recalculatingList
+                && character.recalculatingWidths == this.recalculatingWidths
+                && character.recalculatingHeights == this.recalculatingHeights;
     }
 
 }
