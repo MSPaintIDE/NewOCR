@@ -3,6 +3,7 @@ package com.uddernetworks.newocr.recognition.mergence;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.recognition.mergence.rules.*;
+import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import org.slf4j.Logger;
@@ -66,31 +67,31 @@ public class DefaultMergenceManager implements MergenceManager {
         var dotSimilarity = similarityManager.getRule("dot").orElseThrow();
 
         // Cleaning up
-        // TODO: Make these options
-        flatKeys(sortedLines).forEach(imageLetter -> {
-            if (imageLetter.getAmountOfMerges() > 0) return;
-            var letter = imageLetter.getLetter();
-            var mod = imageLetter.getModifier();
-            if (dotSimilarity.matchesLetter(imageLetter)) {
-                imageLetter.setLetter('.');
-            } else if (letter == '=') {
-                imageLetter.setLetter('-');
-            } else if (letter == ';' && mod == 1) {
-                imageLetter.setLetter(',');
-            } else if (letter == 'j') { // This can happen because it has no merges here
-                imageLetter.setLetter('J');
-            } else if (letter == '"') { // This can happen because it has no merges here
-                imageLetter.setLetter('\'');
-            } else if (letter == '%') {
-                imageLetter.setLetter('/');
-            } else if (letter == 'i') {
-                imageLetter.setNextClosest();
-            } else if (letter == '!') { // Can't be dot from rule above
-                imageLetter.setNextClosest();
-            }
-        });
+        flatKeys(sortedLines).forEach(imageLetter -> processLetter(imageLetter, dotSimilarity));
 
         LOGGER.debug("Finished merging in " + (System.currentTimeMillis() - start));
+    }
+
+    private void processLetter(ImageLetter imageLetter, SimilarRule dotSimilarity) {
+        if (imageLetter.getAmountOfMerges() > 0) return;
+        var letter = imageLetter.getLetter();
+        var mod = imageLetter.getModifier();
+
+        // TODO: Make these options
+
+        if (dotSimilarity.matchesLetter(imageLetter)) {
+            imageLetter.setLetter('.');
+            imageLetter.setModifier(0);
+        } else if (letter == '='
+                || (letter == ';' && mod == 1)
+                || letter == 'j'
+                || letter == '"'
+                || letter == '%'
+                || letter == 'i'
+                || letter == '!') {
+            imageLetter.setNextClosest();
+            processLetter(imageLetter, dotSimilarity);
+        }
     }
 
     private Set<ImageLetter> processRule(MergeRule rule) {

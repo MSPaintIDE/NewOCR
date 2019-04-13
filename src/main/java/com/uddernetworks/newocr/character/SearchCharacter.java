@@ -20,8 +20,9 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
     private int width;
     private int height;
     private List<IntPair> segments = new LinkedList<>();
-    private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // FIrst 8 are the normal ones, last 9 are for the grid created
+    private double[] segmentPercentages = new double[8 + 9]; // Percentage <= 1 // First 8 are the normal ones, last 9 are for the grid created
     private Map<String, Double> trainingMeta = new HashMap<>();
+    private double centerOffset = 0;
 
     /**
      * Creates a SearchCharacter from a list of coordinates used by the character.
@@ -441,5 +442,26 @@ public class SearchCharacter implements Comparable<SearchCharacter> {
      */
     public void setTrainingMeta(String name, double data) {
         this.trainingMeta.put(name, data);
+    }
+
+    /**
+     * Gets the amount away a character is from the center of the line. This isn't useful for detecting single
+     * characters.
+     *
+     * @return The offset of the character
+     */
+    public double getCenterOffset() {
+        return centerOffset;
+    }
+
+    /**
+     * Sets the amount away a character is from the center of the line. This isn't useful for detecting single
+     * characters.
+     *
+     * @param centerOffset The offset of the character to set
+     */
+    public SearchCharacter setCenterOffset(double centerOffset) {
+        this.centerOffset = centerOffset;
+        return this;
     }
 }

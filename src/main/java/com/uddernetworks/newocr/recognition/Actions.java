@@ -41,6 +41,16 @@ public interface Actions {
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter);
 
     /**
+     * Actually matches the {@link SearchCharacter} object to a real character from the database with line bounds for
+     * improved accuracy.
+     *
+     * @param searchCharacter The input {@link SearchCharacter} to match to
+     * @param lineBounds The line bounds (Key/value is top/bottom Y values respectively) for improved accuracy
+     * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
+     */
+    Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, IntPair lineBounds);
+
+    /**
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
@@ -50,6 +60,17 @@ public interface Actions {
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, List<TrainedCharacterData> data);
 
     /**
+     * Actually matches the {@link SearchCharacter} object to a real character from the database with line bounds for
+     * improved accuracy.
+     *
+     * @param searchCharacter The input {@link SearchCharacter} to match to
+     * @param data The potential trained {@link TrainedCharacterData} to use
+     * @param lineBounds The line bounds (Key/value is top/bottom Y values respectively) for improved accuracy
+     * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
+     */
+    Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, List<TrainedCharacterData> data, IntPair lineBounds);
+
+    /**
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
@@ -57,6 +78,17 @@ public interface Actions {
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs);
+
+    /**
+     * Actually matches the {@link SearchCharacter} object to a real character from the database with line bounds for
+     * improved accuracy.
+     *
+     * @param searchCharacter The input {@link SearchCharacter} to match to
+     * @param diffs The potential {@link ImageLetter}s
+     * @param lineBounds The line bounds (Key/value is top/bottom Y values respectively) for improved accuracy
+     * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
+     */
+    Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs, IntPair lineBounds);
 
     /**
      * Compares the ratios of the given width and heights

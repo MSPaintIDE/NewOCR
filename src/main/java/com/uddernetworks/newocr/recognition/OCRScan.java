@@ -88,49 +88,9 @@ public class OCRScan implements Scan {
         // then it orders them by their X values, and then sorts the ImageLetters so certain ones go first, allowing the
         // characters to go to the correct lines
 
-        searchCharacters
-                .stream()
-                .map(actions::getCharacterFor)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .sorted(Comparator.comparingInt(ImageLetter::getX))
-                .sorted((o1, o2) -> {
-                    char cha = o1.getLetter();
-                    char cha2 = o2.getLetter();
-
-                    if (cha == cha2) return 0;
-                    if (cha == ',' ^ cha2 == ',') return cha2 == ',' ? 1 : -1;
-                    if (cha == '.' ^ cha2 == '.') return cha2 == '.' ? 1 : -1;
-                    if (cha == '_' ^ cha2 == '_') return cha2 == '_' ? 1 : -1;
-                    if (cha == '`' ^ cha2 == '`') return cha2 == '`' ? 1 : -1;
-                    if (cha == '\'' ^ cha2 == '\'') return cha2 == '\'' ? 1 : -1;
-                    if (cha == '"' ^ cha2 == '"') return cha2 == '"' ? 1 : -1;
-                    if (cha == '*' ^ cha2 == '*') return cha2 == '*' ? 1 : -1;
-                    return -1;
-                })
-                .forEach(imageLetter -> {
-
-                    var center = imageLetter.getY() + ((double) imageLetter.getHeight() / 2);
-
-                    // Get the place where it fits
-                    lines.entrySet().stream().filter(entry -> {
-                        var pair = entry.getKey();
-                        var topX = pair.getKey(); // Less than bottom
-                        var bottomX = pair.getValue();
-
-                        return OCRUtils.isWithin(topX, bottomX, center);
-                    }).findFirst().ifPresentOrElse(matchingPair -> {
-                        matchingPair.getValue().add(imageLetter);
-                    }, () -> LOGGER.warn("Found a letter not conforming to any bounds at (" + imageLetter.getX() + ", " + imageLetter.getY() + ") with a center Y of " + center));
-                });
-
-        // End ordering
         var sortedLines = new Int2ObjectLinkedOpenHashMap<List<ImageLetter>>();
 
-        // Sorts the characters again based on their X value in their respective lines. This must be done again because
-        // the two different lists (firstList and secondList) will have caused a mixup of X positions from normal
-        // characters, and the ones in secondList
-
+        // New method: First orders SearchCharacters
         lines.keySet()
                 .stream()
                 .map(entry -> new AbstractMap.SimpleEntry<>(entry, (int) Math.round(((double) entry.getValue() - (double) entry.getKey()) / 2D + entry.getKey())))
@@ -139,7 +99,15 @@ public class OCRScan implements Scan {
                     var linesEntry = nestedEntry.getKey();
                     int y = nestedEntry.getValue();
 
-                    List<ImageLetter> databaseCharacters = lines.get(linesEntry);
+                    var databaseCharacters = lines.get(linesEntry);
+
+                    searchCharacters.removeIf(searchCharacter -> {
+                        var center = searchCharacter.getY() + ((double) searchCharacter.getHeight() / 2);
+                        if (!OCRUtils.isWithin(linesEntry.getKey(), linesEntry.getValue(), center)) return false;
+                        searchCharacter.setCenterOffset(center);
+                        this.actions.getCharacterFor(searchCharacter, linesEntry).ifPresent(databaseCharacters::add);
+                        return true;
+                    });
 
                     if (databaseCharacters.isEmpty()) {
                         return;
@@ -148,6 +116,49 @@ public class OCRScan implements Scan {
                     databaseCharacters.sort(Comparator.comparingInt(ImageLetter::getX));
                     sortedLines.put(y, databaseCharacters);
                 });
+
+//        searchCharacters
+//                .stream()
+////                .filter(Optional::isPresent)
+////                .map(Optional::get)
+//                .sorted(Comparator.comparingInt(SearchCharacter::getX))
+//                .sorted((o1, o2) -> {
+//                    char cha = o1.getLetter();
+//                    char cha2 = o2.getLetter();
+//
+//                    if (cha == cha2) return 0;
+//                    if (cha == ',' ^ cha2 == ',') return cha2 == ',' ? 1 : -1;
+//                    if (cha == '.' ^ cha2 == '.') return cha2 == '.' ? 1 : -1;
+//                    if (cha == '_' ^ cha2 == '_') return cha2 == '_' ? 1 : -1;
+//                    if (cha == '`' ^ cha2 == '`') return cha2 == '`' ? 1 : -1;
+//                    if (cha == '\'' ^ cha2 == '\'') return cha2 == '\'' ? 1 : -1;
+//                    if (cha == '"' ^ cha2 == '"') return cha2 == '"' ? 1 : -1;
+//                    if (cha == '*' ^ cha2 == '*') return cha2 == '*' ? 1 : -1;
+//                    return -1;
+//                })
+//                .forEach(imageLetter -> {
+//
+//                    var center = imageLetter.getY() + ((double) imageLetter.getHeight() / 2);
+//
+//                    // Get the place where it fits
+//                    lines.entrySet().stream().filter(entry -> {
+//                        var pair = entry.getKey();
+//                        var topX = pair.getKey(); // Less than bottom
+//                        var bottomX = pair.getValue();
+//
+//                        return OCRUtils.isWithin(topX, bottomX, center);
+//                    }).findFirst().ifPresentOrElse(matchingPair -> {
+//                        matchingPair.getValue().add(imageLetter);
+//                    }, () -> LOGGER.warn("Found a letter not conforming to any bounds at (" + imageLetter.getX() + ", " + imageLetter.getY() + ") with a center Y of " + center));
+//                });
+
+        // End ordering
+
+        // Sorts the characters again based on their X value in their respective lines. This must be done again because
+        // the two different lists (firstList and secondList) will have caused a mixup of X positions from normal
+        // characters, and the ones in secondList
+
+
 
         this.mergenceManager.beginMergence(sortedLines, this.similarityManager);
 

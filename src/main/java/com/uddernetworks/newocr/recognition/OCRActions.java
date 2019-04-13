@@ -196,6 +196,11 @@ public class OCRActions implements Actions {
 
     @Override
     public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter) {
+        return getCharacterFor(searchCharacter, (IntPair) null);
+    }
+
+    @Override
+    public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, IntPair lineBounds) {
         try {
             var diffs = new Object2DoubleOpenHashMap<ImageLetter>(); // The lower value the better
 
@@ -210,7 +215,7 @@ public class OCRActions implements Actions {
                         diffs.put(imageLetter, charDifference);
                     }));
 
-            return getCharacterFor(searchCharacter, diffs);
+            return getCharacterFor(searchCharacter, diffs, lineBounds);
 
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
@@ -221,6 +226,11 @@ public class OCRActions implements Actions {
 
     @Override
     public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, List<TrainedCharacterData> data) {
+        return getCharacterFor(searchCharacter, data, null);
+    }
+
+    @Override
+    public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, List<TrainedCharacterData> data, IntPair lineBounds) {
         Object2DoubleMap<ImageLetter> diffs = new Object2DoubleOpenHashMap<>(); // The lower value the better
 
         data.forEach(character -> {
@@ -231,11 +241,19 @@ public class OCRActions implements Actions {
             });
         });
 
-        return getCharacterFor(searchCharacter, diffs);
+        return getCharacterFor(searchCharacter, diffs, lineBounds);
     }
 
     @Override
     public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs) {
+        return getCharacterFor(searchCharacter, diffs, null);
+    }
+
+    @Override
+    public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs, IntPair lineBounds) {
+        var lineCenter = lineBounds.getKey() + ((double) lineBounds.getValue() - lineBounds.getKey()) / 2D;
+//        System.out.println("lineBounds.getValue() = " + lineBounds.getValue());
+//        System.out.println("lineBounds.getKey() = " + lineBounds.getKey());
         double searchRatio = (double) searchCharacter.getWidth() / searchCharacter.getHeight();
         var orderedDifferences = diffs.object2DoubleEntrySet().stream()
                 .peek(entry -> {
@@ -245,7 +263,20 @@ public class OCRActions implements Actions {
                     double ratioDiff = Math.pow(ratio - searchRatio, 2);
                     ratioDiff *= this.options.getSizeRatioWeight();
 
-                    entry.setValue(ratioDiff + entry.getDoubleValue());
+                    var staticOffset = searchCharacter.getCenterOffset();
+                    var searchCharacterOffset = lineCenter - staticOffset;
+//                    var imageLetterOffset = (lineBounds.getValue() - lineBounds.getKey()) + (((double) imageLetter.getMaxCenter() - imageLetter.getMinCenter()) / 2D);
+                    var imageLetterOffset = imageLetter.getMinCenter() + (imageLetter.getMaxCenter() - imageLetter.getMinCenter()) / 2D;
+
+
+                    var offsetDiff = Math.abs(searchCharacterOffset - imageLetterOffset) / 1000D;
+//                    System.out.println(offsetDiff);
+//                    offsetDiff *= 0.25;
+
+//                    OCRUtils.isWithin(topX key, bottomX val, center)
+
+                    entry.setValue(ratioDiff + entry.getDoubleValue() + offsetDiff);
+//                    entry.setValue(Math.abs(searchCharacterOffset - imageLetterOffset));
                 })
                 .sorted(Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue))
                 .collect(Collectors.toList());
@@ -257,6 +288,8 @@ public class OCRActions implements Actions {
         var imageLetter = orderedDifferences.remove(0).getKey();
         imageLetter.setClosestMatches(orderedDifferences);
         imageLetter.setValues(searchCharacter.getValues());
+
+        System.out.println("Above is \t\t" + imageLetter.getLetter());
         return Optional.of(imageLetter);
     }
 

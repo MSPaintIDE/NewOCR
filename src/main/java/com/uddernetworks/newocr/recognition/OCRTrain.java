@@ -159,8 +159,8 @@ public class OCRTrain implements Train {
                     trainedSearchCharacter.recalculateTo(searchCharacter);
 
                     double halfOfLineHeight = ((double) line.bottomY() - (double) line.topY()) / 2;
-                    double middleToTopChar = (double) searchCharacter.getY() - (double) line.topY();
-                    double topOfLetterToCenter = halfOfLineHeight - middleToTopChar;
+                    double middleOfLineToTopChar = (double) searchCharacter.getY() - (double) line.topY();
+                    double topOfLetterToCenter = halfOfLineHeight - middleOfLineToTopChar;
 
                     // Sets the current center to be calculated, along with any meta it may have
                     trainedSearchCharacter.recalculateCenter(topOfLetterToCenter); // This NOW gets offset from top of
