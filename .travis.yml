@@ -1,5 +1,5 @@
+install: gradle wrapper --gradle-version 5.1.1
 language: java
-install: true
 jdk:
   - oraclejdk11
 before_cache:
@@ -10,5 +10,6 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 script:
+  - gradle --version
   - gradle clean install
   - gradle cleanTest test
