@@ -10,5 +10,5 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 script:
-  - clean install
-  - cleanTest test
+  - gradle clean install
+  - gradle cleanTest test
