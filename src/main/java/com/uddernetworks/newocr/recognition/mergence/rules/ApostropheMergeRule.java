@@ -6,8 +6,6 @@ import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,17 +16,13 @@ import java.util.concurrent.ExecutionException;
  */
 public class ApostropheMergeRule extends MergeRule {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(ApostropheMergeRule.class);
-
     private double apostropheRatio;
     private SimilarRule apostropheRule;
 
     public ApostropheMergeRule(DatabaseManager databaseManager, SimilarityManager similarityManager) {
         super(databaseManager, similarityManager);
 
-        similarityManager.getRule("vertical-line").ifPresentOrElse(rule ->
-                this.apostropheRule = rule, () ->
-                LOGGER.error("Tried to use uninitialized rule from " + similarityManager.getClass().getCanonicalName()));
+        similarityManager.getSafeRule("vertical-line", rule -> this.apostropheRule = rule);
 
         try {
             this.apostropheRatio = databaseManager.getAveragedData("apostropheRatio").get();

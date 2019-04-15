@@ -1,5 +1,6 @@
 package com.uddernetworks.newocr.recognition;
 
+import com.uddernetworks.newocr.character.CoordinateCharacter;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.character.TrainedCharacterData;
@@ -73,7 +74,9 @@ public class OCRActions implements Actions {
         var charMetaMap = Map.of(
                 ';', "semicolonDistance",
                 ':', "colonDistance",
-                '=', "equalsDistance"
+                '=', "equalsDistance",
+                'i', "distancei",
+                'j', "distancej"
         );
 
         // By default 0
@@ -81,8 +84,10 @@ public class OCRActions implements Actions {
                 Set.of('i', 'j', ':', ';', '='), 1 // The base is the second character (Bottom part)
         );
 
+        var lineNum = 0;
         var lineBounds = getLineBoundsForTraining(searchImage);
         for (var coords : lineBounds) {
+            lineNum++;
             var fromY = coords.getKey();
             var toY = coords.getValue();
 
@@ -109,7 +114,7 @@ public class OCRActions implements Actions {
             }
 
 //          Get the characters with horizontal overlap
-            var ignored = new HashSet<SearchCharacter>();
+            var ignored = new HashSet<CoordinateCharacter>();
 
             Collections.sort(found);
 
@@ -125,10 +130,14 @@ public class OCRActions implements Actions {
                 var increment = new AtomicInteger(0);
                 var list = found.stream()
                         .filter(part1::isOverlappingX)
-                        .sorted(Comparator.comparingInt(SearchCharacter::getY))
+                        .sorted(Comparator.comparingInt(CoordinateCharacter::getY))
                         .collect(Collectors.toList());
 
                 var currentChar = OCRTrain.TRAIN_STRING.charAt(i1);
+
+                if (currentChar == '%') {
+                    list.sort(Comparator.comparingDouble(character -> (double) character.getWidth() * (double) character.getHeight()));
+                }
 
                 // If this is 1, it gets the second character
                 var index = configurableBases.entrySet()
@@ -145,7 +154,8 @@ public class OCRActions implements Actions {
                         if (currentChar == '!' || currentChar == '?') { // ! ?
                             double diff = (double) (part2.getY() - (base.getY() + base.getHeight()));
                             var distance = diff / (double) base.getHeight();
-                            base.setTrainingMeta("distanceBelow", distance);
+
+                            base.setTrainingMeta(currentChar == '?' ? "distanceQuestion" : "distanceExclamation", distance);
                         } else if (currentChar == 'i' || currentChar == 'j' || currentChar == ':' || currentChar == ';' || currentChar == '=') { // i j   base below
                             double diff = (double) (base.getY() - (part2.getY() + part2.getHeight()));
                             var distance = diff / (double) base.getHeight();

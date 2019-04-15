@@ -6,14 +6,13 @@ import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static com.uddernetworks.newocr.recognition.similarity.Letter.QUESTION_MARK_BOTTOM;
+import static com.uddernetworks.newocr.recognition.similarity.Letter.QUESTION_MARK_TOP;
 import static com.uddernetworks.newocr.utils.OCRUtils.diff;
 
 /**
@@ -21,25 +20,20 @@ import static com.uddernetworks.newocr.utils.OCRUtils.diff;
  */
 public class UnderDotMergeRule extends MergeRule {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(UnderDotMergeRule.class);
-
-    private double distanceBelow;
+    private double distanceExclamation;
+    private double distanceQuestion;
     private SimilarRule dotRule;
     private SimilarRule verticalLineRule;
 
     public UnderDotMergeRule(DatabaseManager databaseManager, SimilarityManager similarityManager) {
         super(databaseManager, similarityManager);
 
-        similarityManager.getRule("dot").ifPresentOrElse(rule ->
-                this.dotRule = rule, () ->
-                LOGGER.error("Tried to use uninitialized rule from " + similarityManager.getClass().getCanonicalName()));
-
-        similarityManager.getRule("vertical-line").ifPresentOrElse(rule ->
-                this.verticalLineRule = rule, () ->
-                LOGGER.error("Tried to use uninitialized rule from " + similarityManager.getClass().getCanonicalName()));
+        similarityManager.getSafeRule("dot", rule -> this.dotRule = rule);
+        similarityManager.getSafeRule("vertical-line", rule -> this.verticalLineRule = rule);
 
         try {
-            this.distanceBelow = this.databaseManager.getAveragedData("distanceBelow").get();
+            this.distanceExclamation = this.databaseManager.getAveragedData("distanceExclamation").get();
+            this.distanceQuestion = this.databaseManager.getAveragedData("distanceQuestion").get();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -65,6 +59,8 @@ public class UnderDotMergeRule extends MergeRule {
         if (QUESTION_MARK_BOTTOM.matches(target)
                 && !this.verticalLineRule.matchesLetter(target)) return Optional.empty();
 
+        var question = QUESTION_MARK_TOP.matches(target);
+
         // Dot
         var below = letterData.get(index);
         if (!this.dotRule.matchesLetter(below)) return Optional.empty();
@@ -76,7 +72,9 @@ public class UnderDotMergeRule extends MergeRule {
         var difference = Math.abs(bottomOfCharacterY - aboveY);
         var isBelowBase = below.getHeight() < target.getHeight();
         double minHeight = target.getHeight();
-        double projectedDifference = this.distanceBelow * minHeight;
+        double distanceUsed = question ? this.distanceQuestion : this.distanceExclamation;
+
+        double projectedDifference = distanceUsed * minHeight;
         double delta = projectedDifference * 0.75D;
 
         if (diff(difference, projectedDifference) <= delta) {

@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,9 +33,9 @@ public class HOCONFontConfiguration implements FontConfiguration {
         this.config = ConfigFactory.load(fileName);
         this.reflectionCacher = reflectionCacher;
 
-        var tt = this.config.getConfig("language.properties");
-        this.systemName = tt.getString("system-name");
-        this.friendlyName = tt.getString("friendly-name");
+        var langProperties = this.config.getConfig("language.properties");
+        this.systemName = langProperties.getString("system-name");
+        this.friendlyName = langProperties.getString("friendly-name");
 
         LOGGER.info("[{}] Loading font configuration...", this.friendlyName);
     }
@@ -65,8 +64,6 @@ public class HOCONFontConfiguration implements FontConfiguration {
                 .stream()
                 .map(string -> string.charAt(0))
                 .collect(Collectors.toSet()));
-
-        ocrOptions.setRequireSizeCheck(EnumSet.copyOf(options.getEnumList(Letter.class, "require-size-check")));
 
         ocrOptions.setMaxCorrectionIterations(options.getInt("max-correction-iterations"));
         ocrOptions.setMaxPercentDiffToMerge(options.getDouble("max-percent-diff-to-merge"));
@@ -118,14 +115,14 @@ public class HOCONFontConfiguration implements FontConfiguration {
                                 return null;
                             }
                         }), () -> LOGGER.warn("[{}] No constructor found for {}", this.friendlyName, className)), () -> LOGGER.warn("[{}] Couldn't find rule with name of {}", this.friendlyName, className)));
-        LOGGER.info("[{}] Generated and added {} similarities...", this.friendlyName, ruleList.size());
+        LOGGER.info("[{}] Generated and added {} merge rules...", this.friendlyName, ruleList.size());
     }
 
     @Override
     public Optional<Class<MergeRule>> loadMergeClass(String className) {
         try {
             var got = Class.forName(className);
-            if (got.isInstance(MergeRule.class)) return Optional.of((Class<MergeRule>) got);
+            if (got.getClass().isInstance(MergeRule.class)) return Optional.of((Class<MergeRule>) got);
         } catch (ClassNotFoundException ignored) {}
         return Optional.empty();
     }

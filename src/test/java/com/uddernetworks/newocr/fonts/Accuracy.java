@@ -29,6 +29,7 @@ public class Accuracy {
 
     private static Logger LOGGER = LoggerFactory.getLogger(Accuracy.class);
     private static final double MINIMUM_SUCCESS_RATE = 98; // Requires at least a 98% success rate
+    private static final boolean TRIM_SPACES = true; // If spaces before the input should be trimmed, to take into account input image padding
 
     public static ScannedImage generate(String fontFamily, String configFileName) throws IOException {
         var strippedName = fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_");
@@ -39,9 +40,8 @@ public class Accuracy {
         var fontConfiguration = new HOCONFontConfiguration(configFileName, new ConfigReflectionCacher());
         var options = fontConfiguration.fetchOptions();
         fontConfiguration.fetchAndApplySimilarities(similarityManager);
-        fontConfiguration.fetchAndApplyMergeRules(mergenceManager);
 
-        return generate(fontFamily, options, similarityManager, databaseManager);
+        return generate(fontFamily, options, similarityManager, databaseManager, () -> fontConfiguration.fetchAndApplyMergeRules(mergenceManager));
     }
 
     public static ScannedImage generate(String fontFamily) throws IOException, ExecutionException, InterruptedException {
@@ -59,6 +59,10 @@ public class Accuracy {
     }
 
     public static ScannedImage generate(String fontFamily, OCROptions options, SimilarityManager similarityManager, DatabaseManager databaseManager) {
+        return generate(fontFamily, options, similarityManager, databaseManager, () -> {});
+    }
+
+    public static ScannedImage generate(String fontFamily, OCROptions options, SimilarityManager similarityManager, DatabaseManager databaseManager, Runnable postTrain) {
         LOGGER.info("Setting up database...");
 
         var readingImage = new File("src\\test\\resources\\training_" + fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_") + ".png");
@@ -77,6 +81,8 @@ public class Accuracy {
 
         LOGGER.info("Finished training in {}ms", System.currentTimeMillis() - start);
 
+        postTrain.run();
+
         LOGGER.info("Scanning training image...");
 
         return ocrHandle.scanImage(readingImage);
@@ -84,11 +90,11 @@ public class Accuracy {
 
     public void accuracyTest(ScannedImage trainImage) {
         var scannedString = trainImage.getPrettyString();
-        System.out.println(scannedString);
         var diffMatchPath = new DiffMatchPatch();
         var lines = scannedString.split("\n");
         var differences = 0;
         for (String line : lines) {
+            line = TRIM_SPACES ? line.trim() : line;
             var difference = diffMatchPath.diffMain(line, OCRScan.RAW_STRING);
             final int[] insert = {0};
             final int[] delete = {0};
@@ -101,6 +107,8 @@ public class Accuracy {
                         }
                     });
             differences += Math.max(insert[0], delete[0]);
+
+            System.out.println(line);
         }
 
         var totalChars = lines.length * OCRScan.RAW_STRING.length();

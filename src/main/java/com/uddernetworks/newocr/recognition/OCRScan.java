@@ -64,6 +64,8 @@ public class OCRScan implements Scan {
 
         OCRUtils.toGrid(input, values);
 
+//        OCRUtils.printOut(values);
+
         var searchImage = new SearchImage(values);
 
 

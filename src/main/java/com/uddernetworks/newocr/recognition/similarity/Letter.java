@@ -11,9 +11,9 @@ public enum Letter {
     QUOTE_RIGHT('\"', 1),
     HASHTAG('#'),
     DOLLAR('$'),
-    PERCENT_BASE('%', 1),
-    PERCENT_LDOT('%', 0),
-    PERCENT_RDOT('%', 2),
+    PERCENT_BASE('%', 2),
+    PERCENT_LDOT('%', 1),
+    PERCENT_RDOT('%', 0),
     AMPERSAND('&'),
     APOSTROPHE('\''),
     LEFT_PARENTHESE('('),
@@ -154,7 +154,8 @@ public enum Letter {
                 .filter(letter -> letter.letter == character && letter.mod == mod)
                 .findFirst();
         if (optional.isEmpty()) {
-            System.err.println("Couldn't find shit with " + character + " and " + mod);
+            System.err.println("Couldn't find a letter with char " + character + " and mod " + mod);
+            new Exception("tt").printStackTrace();
             return SPACE;
         }
 

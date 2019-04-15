@@ -28,9 +28,9 @@ public class UsingConfigDemo {
 
     private void mainInstance(String[] args) throws IOException, InterruptedException {
         boolean mono = args.length >= 1 && args[0].equalsIgnoreCase("mono");
-        var configFileName = "fonts/" + (mono ? "Monospaced.plain" : "ComicSans");
+        var configFileName = "fonts/" + (mono ? "Monospaced.plain" : "Calibri");
 
-        var databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db_" + (mono ? "mono" : "cms")));
+        var databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db_" + (mono ? "mono" : "calibri")));
         var scanner = new Scanner(System.in);
         var similarityManager = new DefaultSimilarityManager();
         var mergenceManager = new DefaultMergenceManager(databaseManager, similarityManager);
@@ -39,15 +39,6 @@ public class UsingConfigDemo {
         var options = fontConfiguration.fetchOptions();
         fontConfiguration.fetchAndApplySimilarities(similarityManager);
         fontConfiguration.fetchAndApplyMergeRules(mergenceManager);
-
-
-//        if (mono) {
-//            System.out.println("Mono!");
-//            options.setSpecialSpaces('`', '\'')
-//                    .addRequireSizeCheck(PERIOD, EXCLAMATION_DOT, j_DOT, i_DOT, ONE, l); // Added by this
-//        } else {
-//            options.setSpecialSpaces('`');
-//        }
 
         var ocrScan = new OCRScan(databaseManager, options, similarityManager);
         var ocrTrain = new OCRTrain(databaseManager, options, similarityManager);
@@ -68,7 +59,8 @@ public class UsingConfigDemo {
             LOGGER.info("Starting training...");
 
             var start = System.currentTimeMillis();
-            ocrTrain.trainImage(new File("training_" + (mono ? "mono" : "cms") + ".png"));
+            ocrTrain.trainImage(new File("training_Calibri.png"));
+//            ocrTrain.trainImage(new File("training_" + (mono ? "mono" : "arial") + ".png"));
 
             LOGGER.info("Finished training in " + (System.currentTimeMillis() - start) + "ms");
 
@@ -81,8 +73,9 @@ public class UsingConfigDemo {
 
 //         Warm up and load classes for everything, which can add over 1400ms to the first scan
 
-//        var scannedImage = ocrScan.scanImage(new File("test_" + (mono ? "mono" : "cms") + ".png"));
-        var scannedImage = ocrScan.scanImage(new File("training_" + (mono ? "mono" : "cms") + ".png"));
+//        var scannedImage = ocrScan.scanImage(new File("test_" + (mono ? "mono" : "arial") + ".png"));
+//        var scannedImage = ocrScan.scanImage(new File("training_" + (mono ? "mono" : "Arial") + ".png"));
+        var scannedImage = ocrScan.scanImage(new File("percent.png"));
 
         LOGGER.info("Got:\n" + scannedImage.getPrettyString());
 

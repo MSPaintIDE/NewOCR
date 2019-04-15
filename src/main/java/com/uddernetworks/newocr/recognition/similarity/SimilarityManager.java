@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public interface SimilarityManager {
 
@@ -40,6 +41,15 @@ public interface SimilarityManager {
      * @return A {@link SimilarRule} with the given name
      */
     Optional<SimilarRule> getRule(String similarityRuleName);
+
+    /**
+     * Gets a rule from the given name, and if found, sends it through the consumer. A message is sent saying the
+     * {@link SimilarRule} is not found if one isn't found.
+     *
+     * @param similarityRuleName The name of the {@link SimilarRule} to get
+     * @param ruleConsumer The consumer to be given the {@link SimilarRule} if found
+     */
+    void getSafeRule(String similarityRuleName, Consumer<SimilarRule> ruleConsumer);
 
     /**
      * When given a list of the potential results of a character (Irrelevant what character it is), this will find the

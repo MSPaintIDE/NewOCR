@@ -6,8 +6,6 @@ import com.uddernetworks.newocr.recognition.mergence.MergePriority;
 import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,13 +14,12 @@ import java.util.concurrent.ExecutionException;
 import static com.uddernetworks.newocr.utils.OCRUtils.diff;
 
 /**
- * Merges dots above base characters for the letter i
+ * Merges dots above base characters for the letter i, j, and ;
  */
 public class OverDotMergeRule extends MergeRule {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(OverDotMergeRule.class);
-
-    private double distanceAbove;
+    private double distancei;
+    private double distancej;
     private double semicolonDistance;
     private SimilarRule dotRule;
     private SimilarRule verticalLineRule;
@@ -30,16 +27,12 @@ public class OverDotMergeRule extends MergeRule {
     public OverDotMergeRule(DatabaseManager databaseManager, SimilarityManager similarityManager) {
         super(databaseManager, similarityManager);
 
-        similarityManager.getRule("dot").ifPresentOrElse(rule ->
-                this.dotRule = rule, () ->
-                LOGGER.error("Tried to use uninitialized rule from " + similarityManager.getClass().getCanonicalName()));
-
-        similarityManager.getRule("vertical-line").ifPresentOrElse(rule ->
-                this.verticalLineRule = rule, () ->
-                LOGGER.error("Tried to use uninitialized rule from " + similarityManager.getClass().getCanonicalName()));
+        similarityManager.getSafeRule("dot", rule -> this.dotRule = rule);
+        similarityManager.getSafeRule("vertical-line", rule -> this.verticalLineRule = rule);
 
         try {
-            this.distanceAbove = this.databaseManager.getAveragedData("distanceAbove").get();
+            this.distancei = this.databaseManager.getAveragedData("distancei").get();
+            this.distancej = this.databaseManager.getAveragedData("distancej").get();
             this.semicolonDistance = this.databaseManager.getAveragedData("semicolonDistance").get();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
@@ -82,13 +75,21 @@ public class OverDotMergeRule extends MergeRule {
 
         if (target.getAmountOfMerges() > 0 || above.getAmountOfMerges() > 0) return Optional.empty();
 
-        var distanceUsing = semicolon ? this.semicolonDistance : this.distanceAbove;
+        double distance = 0;
+
+        if (semicolon) {
+            distance = this.semicolonDistance;
+        } else if (targetLetter == 'j' || targetLetter == 'J') {
+            distance = this.distancej;
+        } else {
+            distance = this.distancei;
+        }
 
         var bottomOfCharacterY = above.getY() + above.getHeight();
         var difference = Math.abs(bottomOfCharacterY - target.getY());
         var isPartAbove = above.getHeight() < target.getHeight();
         double maxHeight = Math.max(above.getHeight(), target.getHeight());
-        double projectedDifference = distanceUsing * maxHeight;
+        double projectedDifference = distance * maxHeight;
         double delta = projectedDifference * 0.5D;
 
         if (diff(difference, projectedDifference) <= delta) {

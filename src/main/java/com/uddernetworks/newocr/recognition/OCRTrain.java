@@ -67,20 +67,26 @@ public class OCRTrain implements Train {
         // Stores the height/distance ratio for apostrophe parts
         var apostropheRatios = new DoubleArrayList();
         var distancesAbove = new DoubleArrayList();
-        var distancesBelow = new DoubleArrayList();
+        var distancesi = new DoubleArrayList();
+        var distancesj = new DoubleArrayList();
         var colonDistance = new DoubleArrayList();
         var semicolonDistance = new DoubleArrayList();
         var equalsDistance = new DoubleArrayList();
+        var distanceQuestion = new DoubleArrayList();
+        var distanceExclamation = new DoubleArrayList();
 
-        var searchCharactersCopy = new ArrayList<>(searchCharacters);
         var customSpaces = new HashMap<Character, List<Double>>();
 
+        // TODO: This can be improved in the future
         var metaMapping = Map.of(
                 "distanceAbove", distancesAbove,
-                "distanceBelow", distancesBelow,
+                "distancei", distancesi,
+                "distancej", distancesj,
                 "colonDistance", colonDistance,
                 "semicolonDistance", semicolonDistance,
-                "equalsDistance", equalsDistance
+                "equalsDistance", equalsDistance,
+                "distanceQuestion", distanceQuestion,
+                "distanceExclamation", distanceExclamation
         );
 
         // Goes through each line found
@@ -148,10 +154,6 @@ public class OCRTrain implements Train {
 
                     metaMapping.forEach((meta, list) -> searchCharacter.getTrainingMeta(meta).ifPresent(list::add));
 
-//                    if (current == ';') {
-//                        OCRUtils.makeImage(searchCharacter.getValues(), "ind\\" + Letter.getLetter(current, modifier).name() + "_" + ThreadLocalRandom.current().nextInt(100000) + ".png");
-//                    }
-
                     searchCharacter.setModifier(modifier);
                     var trainedSearchCharacter = getTrainedCharacter(trainedCharacterDataList, current, modifier);
 
@@ -172,16 +174,8 @@ public class OCRTrain implements Train {
                         letterIndex = 0;
                     }
                 }
-
-                // Removes any used letters from the line in searchCharacters, so none will be duplicated and to
-                // increase performance.
-                searchCharacters.removeAll(line.getLetters());
             }
         }
-
-        searchCharacters = searchCharactersCopy;
-
-        LOGGER.debug(searchCharacters.size() + " characters found");
 
         LOGGER.debug("Writing data to database...");
         long start = System.currentTimeMillis();

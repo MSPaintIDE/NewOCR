@@ -142,7 +142,7 @@ public abstract class Character implements Comparable<Character> {
      */
     public boolean isOverlappingX(Character searchCharacter) {
         // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
-        return getX() + getWidth() >= searchCharacter.getX() && searchCharacter.getX() + searchCharacter.getWidth() >= getX();
+        return getX() + getWidth() > searchCharacter.getX() && searchCharacter.getX() + searchCharacter.getWidth() > getX();
     }
 
     /**
@@ -153,7 +153,7 @@ public abstract class Character implements Comparable<Character> {
      */
     public boolean isOverlappingY(Character searchCharacter) {
         // Thanks https://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html :)
-        return getY() + getHeight() >= searchCharacter.getY() && searchCharacter.getY() + searchCharacter.getHeight() >= getY();
+        return getY() + getHeight() > searchCharacter.getY() && searchCharacter.getY() + searchCharacter.getHeight() > getY();
     }
 
     /**
