@@ -32,10 +32,9 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation('org.junit.jupiter:junit-jupiter:5.4.2')
     testCompile group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
     testCompile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
-    testCompile group: 'com.googlecode.junit-toolbox', name: 'junit-toolbox', version: '2.4'
 
     compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
 
@@ -66,6 +65,13 @@ compileJava {
                 '--module-path', classpath.asPath
         ]
         classpath = files()
+    }
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
     }
 }
 
