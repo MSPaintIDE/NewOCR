@@ -306,7 +306,8 @@ public class OCRDatabaseManager implements DatabaseManager {
     @Override
     public Future<Double> getAveragedData(String name) {
         return executor.submit(() -> {
-            try (var connection = dataSource.getConnection(); var getData = connection.prepareStatement(this.getAverageData)) {
+            try (var connection = dataSource.getConnection();
+                 var getData = connection.prepareStatement(this.getAverageData)) {
                 getData.setString(1, name);
                 var resultSet = getData.executeQuery();
                 if (!resultSet.next()) return 0D;

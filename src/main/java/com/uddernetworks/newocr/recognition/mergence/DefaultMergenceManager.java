@@ -35,7 +35,7 @@ public class DefaultMergenceManager implements MergenceManager {
 
     /**
      * Adds the default {@link MergeRule}s, otherwise all rules will need to be added manually via
-     * {@link MergenceManager#addRule(BiFunction)}
+     * {@link MergenceManager#addRule(BiFunction)}.
      *
      * @return The current {@link MergenceManager}
      */

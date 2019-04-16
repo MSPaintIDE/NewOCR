@@ -52,7 +52,7 @@ public interface DatabaseManager {
      * Adds segments (Percentage data points) to the database for a certain character, with a modifier of 0.
      *
      * @param letter The character to add segments to
-     * @param segments An array with a length of 17 all <= 1 as percentage data points
+     * @param segments An array with a length of 17 all &lt;= 1 as percentage data points
      */
     void addLetterSegments(char letter, double[] segments);
 
@@ -61,7 +61,7 @@ public interface DatabaseManager {
      *
      * @param letter The character to add segments to
      * @param modifier The modifier of the letter
-     * @param segments An array with a length of 17 all <= 1 as percentage data points
+     * @param segments An array with a length of 17 all &lt;= 1 as percentage data points
      */
     void addLetterSegments(char letter, int modifier, double[] segments);
 

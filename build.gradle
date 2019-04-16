@@ -54,6 +54,15 @@ dependencies {
 
 ext.moduleName = 'NewOCR'
 
+tasks.withType(Test)  {
+    maxParallelForks = 1
+}
+
+test {
+    minHeapSize = "1024m"
+    maxHeapSize = "61446m"
+}
+
 javadoc {
     options.addStringOption('-module-path', classpath.asPath)
 }

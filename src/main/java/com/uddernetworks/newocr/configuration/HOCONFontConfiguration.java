@@ -119,6 +119,7 @@ public class HOCONFontConfiguration implements FontConfiguration {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Optional<Class<MergeRule>> loadMergeClass(String className) {
         try {
             var got = Class.forName(className);

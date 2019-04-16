@@ -41,7 +41,7 @@ public class TrainedCharacterData extends Character {
 
     /**
      * Gets the calculated array of the percentages for each section. The array is always 16 elements with everything
-     * being <= 1.
+     * being &lt;= 1.
      *
      * @return An array of percentages
      */
@@ -186,8 +186,8 @@ public class TrainedCharacterData extends Character {
 
     /**
      * If the given value is less than the minimum center, it's the new minimum center, and if it's bigger than the
-     * maximum center, it will be the new maximum center. (Retrievable via {@link #getMaxCenter() and {
-     * @link #getMinCenter()}}).
+     * maximum center, it will be the new maximum center. (Retrievable via {@link #getMaxCenter() and
+     * {@link #getMinCenter()}}).
      *
      * @param center The value to add as center
      */

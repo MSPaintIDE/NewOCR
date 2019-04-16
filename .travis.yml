@@ -1,15 +1,22 @@
-install: gradle wrapper --gradle-version 5.1.1
-language: java
-jdk:
-  - oraclejdk11
-before_cache:
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-cache:
-  directories:
-    - $HOME/.gradle/caches/
-    - $HOME/.gradle/wrapper/
+os: windows
+language: shell
+filter_secrets: false
+cache: false
+before_install:
+  - choco install jdk11 -params 'installdir=c:\\newocr\\jdk' -y
+  - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
+  - unzip -qq gradle-5.3-bin.zip -d /c/newocr/gradle
+  - export GRADLE_HOME=/c/newocr/gradle/gradle-5.3
+  - export JAVA_HOME=/c/newocr/jdk
+  - export PATH=$GRADLE_HOME/bin:$PATH
+  - export PATH=$JAVA_HOME/bin:$PATH
+  - set TERM=dumb
+  - gradle -version
+after_success:
+  - wget https://raw.githubusercontent.com/DiscordHooks/travis-ci-discord-webhook/master/send.sh
+  - bash send.sh success $WEBHOOK_URL
+after_failure:
+  - wget https://raw.githubusercontent.com/DiscordHooks/travis-ci-discord-webhook/master/send.sh
+  - bash send.sh failure $WEBHOOK_URL
 script:
-  - gradle --version
-  - gradle clean install
-  - gradle cleanTest test
+  - gradle clean install cleanTest test --exclude-task signArchives --no-daemon

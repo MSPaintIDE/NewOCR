@@ -86,7 +86,7 @@ public class SearchCharacter extends CoordinateCharacter {
     }
 
     /**
-     * Performs calculations for the sections added by {@link #addSegment(IntPair)}, getting their <= 1 percentages
+     * Performs calculations for the sections added by {@link #addSegment(IntPair)}, getting their &lt;= 1 percentages
      * accessible from {@link #getSegmentPercentages()}. This must be invoked after {@link #applySections()}.
      */
     public void analyzeSlices() {
@@ -122,7 +122,7 @@ public class SearchCharacter extends CoordinateCharacter {
     }
 
     /**
-     * Gets the raw segment percentages all <= 1. This will return an empty array until {@link #applySections()} and
+     * Gets the raw segment percentages all &lt;= 1. This will return an empty array until {@link #applySections()} and
      * {@link #analyzeSlices()} have been invoked.
      *
      * @return The raw array of segment percentages with a length of 17

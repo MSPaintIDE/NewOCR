@@ -92,7 +92,7 @@ public class OCRUtils {
      *
      * @param input1 The first 2D array
      * @param input2 The second 2D array
-     * @return The percentage difference <= 1
+     * @return The percentage difference &lt;= 1
      */
     public static double getDifferencesFrom2D(boolean[][] input1, boolean[][] input2) {
         if (input1.length != input2.length) return 1D;

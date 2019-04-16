@@ -147,7 +147,7 @@ public class OCRActions implements Actions {
                         .findFirst()
                         .orElse(0);
 
-                var base = list.get(index);
+                var base = list.get(Math.min(index, list.size() - 1));
 
                 list.forEach(part2 -> {
                     if (!base.equals(part2)) { // If part2 is NOT the base

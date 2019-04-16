@@ -2,6 +2,7 @@ package com.uddernetworks.newocr.fonts;
 
 import com.uddernetworks.newocr.ScannedImage;
 import com.uddernetworks.newocr.configuration.ConfigReflectionCacher;
+import com.uddernetworks.newocr.configuration.FontConfiguration;
 import com.uddernetworks.newocr.configuration.HOCONFontConfiguration;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
@@ -19,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 import static org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Operation.DELETE;
 import static org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Operation.EQUAL;
@@ -33,41 +33,22 @@ public class Accuracy {
 
     public static ScannedImage generate(String fontFamily, String configFileName) throws IOException {
         var strippedName = fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_");
-        var databaseManager = new OCRDatabaseManager(new File("src\\test\\resources\\database\\ocr_db_" + strippedName));
+        var databaseManager = new OCRDatabaseManager(new File("src" + File.separator + "test" + File.separator + "resources" + File.separator + "database" + File.separator + "ocr_db_" + strippedName));
         var similarityManager = new DefaultSimilarityManager();
-        var mergenceManager = new DefaultMergenceManager(databaseManager, similarityManager);
 
         var fontConfiguration = new HOCONFontConfiguration(configFileName, new ConfigReflectionCacher());
         var options = fontConfiguration.fetchOptions();
         fontConfiguration.fetchAndApplySimilarities(similarityManager);
 
-        return generate(fontFamily, options, similarityManager, databaseManager, () -> fontConfiguration.fetchAndApplyMergeRules(mergenceManager));
+        return generate(fontFamily, options, similarityManager, databaseManager, fontConfiguration);
     }
 
-    public static ScannedImage generate(String fontFamily) throws IOException, ExecutionException, InterruptedException {
-        return generate(fontFamily, new OCROptions(), new DefaultSimilarityManager().loadDefaults());
-    }
-
-    public static ScannedImage generate(String fontFamily, OCROptions options) throws IOException, ExecutionException, InterruptedException {
-        return generate(fontFamily, options, new DefaultSimilarityManager().loadDefaults());
-    }
-
-    public static ScannedImage generate(String fontFamily, OCROptions options, SimilarityManager similarityManager) throws IOException {
-        var strippedName = fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_");
-        var databaseManager = new OCRDatabaseManager(new File("src\\test\\resources\\database\\ocr_db_" + strippedName));
-        return generate(fontFamily, options, similarityManager, databaseManager);
-    }
-
-    public static ScannedImage generate(String fontFamily, OCROptions options, SimilarityManager similarityManager, DatabaseManager databaseManager) {
-        return generate(fontFamily, options, similarityManager, databaseManager, () -> {});
-    }
-
-    public static ScannedImage generate(String fontFamily, OCROptions options, SimilarityManager similarityManager, DatabaseManager databaseManager, Runnable postTrain) {
+    public static ScannedImage generate(String fontFamily, OCROptions options, SimilarityManager similarityManager, DatabaseManager databaseManager, FontConfiguration fontConfiguration) {
         LOGGER.info("Setting up database...");
 
-        var readingImage = new File("src\\test\\resources\\training_" + fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_") + ".png");
+        var readingImage = new File("src" + File.separator + "test" + File.separator + "resources" + File.separator + "training_" + fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_") + ".png");
 
-        var ocrHandle = new OCRScan(databaseManager, options, similarityManager);
+        var mergenceManager = new DefaultMergenceManager(databaseManager, similarityManager);
         var ocrTrain = new OCRTrain(databaseManager, options, similarityManager);
 
         LOGGER.info("Generating image for {}", fontFamily);
@@ -81,11 +62,18 @@ public class Accuracy {
 
         LOGGER.info("Finished training in {}ms", System.currentTimeMillis() - start);
 
-        postTrain.run();
+        // It needs some kind of delay, I need to inspect in the future on what causes this. Check the repo for any
+        // issues on the matter before reporting.
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {}
+
+        fontConfiguration.fetchAndApplyMergeRules(mergenceManager);
+        var ocrScan = new OCRScan(databaseManager, options, similarityManager, mergenceManager);
 
         LOGGER.info("Scanning training image...");
 
-        return ocrHandle.scanImage(readingImage);
+        return ocrScan.scanImage(readingImage);
     }
 
     public void accuracyTest(ScannedImage trainImage) {

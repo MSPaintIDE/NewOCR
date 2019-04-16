@@ -24,6 +24,7 @@ public class DatabaseCharacter extends Character {
      * Creates a DatabaseCharacter from the given character.
      *
      * @param letter The letter of the object
+     * @param modifier The modifier of the character
      */
     public DatabaseCharacter(char letter, int modifier) {
         super(letter, modifier);
@@ -32,7 +33,7 @@ public class DatabaseCharacter extends Character {
     /**
      * Gets the 16 sectioned percentages for the stored character.
      *
-     * @return An array of percentages <= 1 with a length of 17
+     * @return An array of percentages &lt;= 1 with a length of 17
      */
     public double[] getData() {
         return data;

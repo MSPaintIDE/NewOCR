@@ -21,6 +21,7 @@ public interface SimilarityManager {
      * Removes a {@link SimilarRule} from the internal list if found.
      *
      * @param ruleClass The {@link SimilarRule} to add if found
+     * @return The current {@link SimilarityManager}
      */
     SimilarityManager removeSimilarity(Class<? extends SimilarRule> ruleClass);
 
