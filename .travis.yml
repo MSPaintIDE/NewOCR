@@ -10,6 +10,7 @@ before_install:
   - export JAVA_HOME=/c/newocr/jdk
   - export PATH=$GRADLE_HOME/bin:$PATH
   - export PATH=$JAVA_HOME/bin:$PATH
+  - export GRADLE_OPTS="-Xms4096m -Xmx61446m"
   - set TERM=dumb
   - gradle -version
 after_success:
