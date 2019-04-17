@@ -155,7 +155,6 @@ public enum Letter {
                 .findFirst();
         if (optional.isEmpty()) {
             System.err.println("Couldn't find a letter with char " + character + " and mod " + mod);
-            new Exception("tt").printStackTrace();
             return SPACE;
         }
 

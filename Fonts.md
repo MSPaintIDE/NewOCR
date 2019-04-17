@@ -4,7 +4,7 @@ NewOCR can train almost any arbitrary font from a training file in the correct f
 
 ## Why is [font] not supported?
 
-There are several reasons a font may not be supported. At the current NewOCR version, fonts must contain all characters in the training image, and have **no kerning. ** Kerning is the biggest reason some fonts are not supported.
+There are several reasons a font may not be supported. At the current NewOCR version, fonts must contain all characters in the training image, and have **no kerning. ** Kerning is the biggest reason some fonts are not supported. Another smaller reason some fonts aren't supported is due to letters looking similar to each other. An example is in the font Arial, and the characters I, L, and |. They all look identical other than a height change in one of them, which makes it impossible for the OCR to know what is going on without context (Soon to be supported, hopefully).
 
 ## Supported Fonts
 
@@ -14,7 +14,18 @@ Just because a font is not on this list, does **not** mean it will not work! The
 + Monospaced
 + Verdana
 + Calibri
++ Consolas
++ Courier New
++ MS Gothic (Passes, but needs to be tuned with - and _ separation)
 ## Unsupported Fonts
 
-+ Arial **Reason: Kerning**
++ Arial **Reason: Kerning/Similar characters**
 + Terminal **Reason: Kerning**
++ Lucidia Console **Reason: Kerning** (Need to double-check)
++ Javanese Text
++ Ebrima
++ Montserrat **Reason: Kerning** (Around [\\])
++ OCR-A **Reason: Conjoined quotes** <small>hmmm... ironic</small>
++ Myanmar Text **Reason: Kerning**
++ Bahnschrift Light Condensed **Reason: vertical lines misrecognition**
++ Ink Free **Reason: Kerning**
