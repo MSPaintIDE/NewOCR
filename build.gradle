@@ -61,6 +61,7 @@ tasks.withType(Test)  {
 test {
     minHeapSize = "1024m"
     maxHeapSize = "61446m"
+    forkEvery = 1
 }
 
 javadoc {
