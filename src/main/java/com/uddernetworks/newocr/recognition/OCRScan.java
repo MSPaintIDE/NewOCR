@@ -10,6 +10,7 @@ import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
 import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.train.OCROptions;
+import com.uddernetworks.newocr.train.UntrainedDatabaseException;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
@@ -53,6 +54,9 @@ public class OCRScan implements Scan {
 
     @Override
     public ScannedImage scanImage(File file) {
+
+        if (!this.databaseManager.isTrainedSync()) throw new UntrainedDatabaseException(this.databaseManager);
+
         var start = System.currentTimeMillis();
 
         // Preparing image
@@ -63,8 +67,6 @@ public class OCRScan implements Scan {
         input = OCRUtils.filter(input).orElseThrow();
 
         OCRUtils.toGrid(input, values);
-
-//        OCRUtils.printOut(values);
 
         var searchImage = new SearchImage(values);
 

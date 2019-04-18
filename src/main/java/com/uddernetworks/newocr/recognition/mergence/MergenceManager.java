@@ -22,7 +22,7 @@ public interface MergenceManager {
     /**
      * Orders and invokes all merge rules' {@link MergeRule#mergeCharacters(ImageLetter, List)} method with appropriate data.
      *
-     * @param sortedLines The read image data
+     * @param sortedLines       The read image data
      * @param similarityManager The {@link SimilarityManager} used
      */
     void beginMergence(Int2ObjectLinkedOpenHashMap<List<ImageLetter>> sortedLines, SimilarityManager similarityManager);

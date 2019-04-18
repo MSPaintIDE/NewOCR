@@ -98,7 +98,7 @@ public class ScannedImage {
     /**
      * Adds a line containing {@link ImageLetter}s.
      *
-     * @param y The exact Y position of the line
+     * @param y                     The exact Y position of the line
      * @param databaseCharacterList A list of {@link ImageLetter}s as the line
      */
     public void addLine(int y, List<ImageLetter> databaseCharacterList) {

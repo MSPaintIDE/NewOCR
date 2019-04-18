@@ -44,7 +44,8 @@ public class PercentMergeRule extends MergeRule {
         var part1 = letterData.get(baseIndex - 1);
         var part2 = letterData.get(baseIndex + 1);
 
-        if (target.getAmountOfMerges() > 0 || part1.getAmountOfMerges() > 0 || part2.getAmountOfMerges() > 0) return Optional.empty();
+        if (target.getAmountOfMerges() > 0 || part1.getAmountOfMerges() > 0 || part2.getAmountOfMerges() > 0)
+            return Optional.empty();
 
         var partsOptional = getParts(target, part1, part2);
         if (partsOptional.isEmpty()) return Optional.empty();
@@ -77,11 +78,11 @@ public class PercentMergeRule extends MergeRule {
 
         // TODO: Improve/shorten logic?
         if (oneDot && twoDot && threeBase) {
-            return Optional.of(new ImageLetter[] {three, one, two});
+            return Optional.of(new ImageLetter[]{three, one, two});
         } else if (oneDot && twoBase && threeDot) {
-            return Optional.of(new ImageLetter[] {two, one, three});
+            return Optional.of(new ImageLetter[]{two, one, three});
         } else if (oneBase && twoDot && threeDot) {
-            return Optional.of(new ImageLetter[] {one, two, three});
+            return Optional.of(new ImageLetter[]{one, two, three});
         }
 
         return Optional.empty();

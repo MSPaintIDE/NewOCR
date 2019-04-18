@@ -1,0 +1,1 @@
+INSERT INTO boolean_properties VALUES(?, ?);

@@ -32,7 +32,7 @@ public class TrainedCharacterData extends Character {
     /**
      * Creates a {@link TrainedCharacterData} from a character value with a given modifier value.
      *
-     * @param letter The known character value
+     * @param letter   The known character value
      * @param modifier The modifier for the character
      */
     public TrainedCharacterData(char letter, int modifier) {
@@ -108,7 +108,7 @@ public class TrainedCharacterData extends Character {
      * Adds the given width and height variables to the internal list to be put into calculations upon invoking
      * {@link #finishRecalculations()}.
      *
-     * @param width The width of the character
+     * @param width  The width of the character
      * @param height The height of the character
      */
     public void recalculateTo(double width, double height) {

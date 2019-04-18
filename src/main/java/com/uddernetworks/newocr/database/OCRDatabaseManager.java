@@ -12,9 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -23,6 +21,7 @@ import java.util.stream.Stream;
 public class OCRDatabaseManager implements DatabaseManager {
 
     private final boolean useInternal;
+    private String name;
     private DataSource dataSource;
     private ExecutorService executor = Executors.newCachedThreadPool();
     private String createLetterEntry;
@@ -35,6 +34,8 @@ public class OCRDatabaseManager implements DatabaseManager {
     private String getAverageData;
     private String addCustomSpace;
     private String getCustomSpace;
+    private String setBooleanProperty;
+    private String getBooleanProperty;
 
     private final AtomicReference<List<DatabaseCharacter>> databaseCharacterCache = new AtomicReference<>();
     private final AtomicReference<Map<Character, Double>> customSpaceCache = new AtomicReference<>(new HashMap<>());
@@ -74,11 +75,13 @@ public class OCRDatabaseManager implements DatabaseManager {
         }
 
         if (useInternal) {
+            this.name = filePath.getName();
             filePath.getParentFile().mkdirs();
             config.setJdbcUrl("jdbc:hsqldb:file:" + filePath);
             config.setUsername("SA");
             config.setPassword("");
         } else {
+            this.name = databaseURL.replace(password, "<hidden>");
             config.setDriverClassName("com.mysql.jdbc.Driver");
             config.setJdbcUrl(databaseURL);
             config.setUsername(username);
@@ -92,7 +95,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
         dataSource = new HikariDataSource(config);
 
-        List.of("letters.sql", "sectionData.sql", "data.sql", "customSpaces.sql").parallelStream().forEach(table -> {
+        List.of("letters.sql", "sectionData.sql", "data.sql", "customSpaces.sql", "booleanProperties.sql").parallelStream().forEach(table -> {
             var stream = OCRDatabaseManager.class.getResourceAsStream("/" + table);
 
             try (var reader = new BufferedReader(new InputStreamReader(stream));
@@ -131,6 +134,8 @@ public class OCRDatabaseManager implements DatabaseManager {
         this.getAverageData = getQuery("getAverageData");
         this.addCustomSpace = getQuery("addCustomSpace");
         this.getCustomSpace = getQuery("getCustomSpace");
+        this.setBooleanProperty = getQuery("setBooleanProperty");
+        this.getBooleanProperty = getQuery("getBooleanProperty");
     }
 
     /**
@@ -146,6 +151,16 @@ public class OCRDatabaseManager implements DatabaseManager {
         try (var reader = new BufferedReader(new InputStreamReader(resource.openStream()))) {
             return reader.lines().collect(Collectors.joining("\n"));
         }
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getName() {
+        return this.name;
     }
 
     @Override
@@ -332,7 +347,8 @@ public class OCRDatabaseManager implements DatabaseManager {
     @Override
     public Future<Double> getCustomSpace(char letter) {
         return executor.submit(() -> customSpaceCache.get().computeIfAbsent(letter, ignored -> {
-            try (var connection = dataSource.getConnection(); var getData = connection.prepareStatement(this.getCustomSpace)) {
+            try (var connection = dataSource.getConnection();
+                 var getData = connection.prepareStatement(this.getCustomSpace)) {
                 getData.setInt(1, letter);
                 var resultSet = getData.executeQuery();
                 if (!resultSet.next()) return 0D;
@@ -343,6 +359,54 @@ public class OCRDatabaseManager implements DatabaseManager {
                 return 0D;
             }
         }));
+    }
+
+    @Override
+    public void setProperty(String name, boolean value) {
+        try (var connection = dataSource.getConnection();
+             var addData = connection.prepareStatement(this.setBooleanProperty)) {
+            addData.setString(1, name);
+            addData.setBoolean(2, value);
+            addData.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public Future<Optional<Boolean>> getProperty(String name) {
+        return executor.submit(() -> {
+            try (var connection = dataSource.getConnection();
+                 var getData = connection.prepareStatement(this.getBooleanProperty)) {
+                getData.setString(1, name);
+                var resultSet = getData.executeQuery();
+                if (!resultSet.next()) return Optional.empty();
+
+                return Optional.of(resultSet.getBoolean(1));
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return Optional.empty();
+            }
+        });
+    }
+
+    @Override
+    public void setTrained(boolean trained) {
+        setProperty("trained", trained);
+    }
+
+    @Override
+    public Future<Optional<Boolean>> isTrained() {
+        return getProperty("trained");
+    }
+
+    @Override
+    public boolean isTrainedSync() {
+        try {
+            return getProperty("trained").get().orElse(false);
+        } catch (InterruptedException | ExecutionException e) {
+            return false;
+        }
     }
 
     @Override
@@ -362,6 +426,15 @@ public class OCRDatabaseManager implements DatabaseManager {
         if (!this.executor.isShutdown()) {
             this.executor.shutdown();
         }
+    }
+
+    @Override
+    public void shutdown(TimeUnit unit, long duration) {
+        try {
+            unit.sleep(duration);
+        } catch (InterruptedException ignored) {}
+
+        shutdown();
     }
 
     @Override

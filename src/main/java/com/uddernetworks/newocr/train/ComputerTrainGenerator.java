@@ -13,7 +13,7 @@ public class ComputerTrainGenerator implements TrainGenerator {
 
     @Override
     public void generateTrainingImage(File file) {
-        generateTrainingImage(file,new TrainGeneratorOptions());
+        generateTrainingImage(file, new TrainGeneratorOptions());
     }
 
     @Override

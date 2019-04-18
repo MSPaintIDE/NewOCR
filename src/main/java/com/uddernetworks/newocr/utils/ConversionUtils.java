@@ -9,7 +9,7 @@ public class ConversionUtils {
      * @return The point value of the pixel
      */
     public static int pixelToPoint(int pixel) {
-        return (int) Math.round(((double) pixel) / (4D/3D));
+        return (int) Math.round(((double) pixel) / (4D / 3D));
     }
 
     /**
@@ -19,7 +19,7 @@ public class ConversionUtils {
      * @return The pixel value of the point
      */
     public static int pointToPixel(int point) {
-        return (int) Math.round(((double) point) * (4D/3D));
+        return (int) Math.round(((double) point) * (4D / 3D));
     }
 
 }

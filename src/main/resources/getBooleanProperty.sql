@@ -1,0 +1,1 @@
+SELECT value FROM boolean_properties WHERE name = ? LIMIT 1;

@@ -28,6 +28,33 @@ public class HOCONFontConfiguration implements FontConfiguration {
     private String systemName;
     private String friendlyName;
 
+    /**
+     * Creates a {@link HOCONFontConfiguration} with a given file name and {@link ReflectionCacher} (Which should be
+     * global across all instances of this current class). This also includes a {@link SimilarityManager} and a
+     * {@link MergenceManager} to automatically invoke the methods
+     * {@link FontConfiguration#fetchAndApplySimilarities(SimilarityManager)} and
+     * {@link FontConfiguration#fetchAndApplyMergeRules(MergenceManager)} in their respective order.
+     *
+     * @param fileName          The name of the file
+     * @param reflectionCacher  The {@link ReflectionCacher} to use
+     * @param similarityManager The {@link SimilarityManager} to invoke
+     *                          {@link FontConfiguration#fetchAndApplySimilarities(SimilarityManager)} on
+     * @param mergenceManager   The {@link MergenceManager} to invoke
+     *                          {@link FontConfiguration#fetchAndApplyMergeRules(MergenceManager)} on
+     */
+    public HOCONFontConfiguration(String fileName, ReflectionCacher reflectionCacher, SimilarityManager similarityManager, MergenceManager mergenceManager) {
+        this(fileName, reflectionCacher);
+        fetchAndApplySimilarities(similarityManager);
+        fetchAndApplyMergeRules(mergenceManager);
+    }
+
+    /**
+     * Creates a {@link HOCONFontConfiguration} with a given file name and {@link ReflectionCacher} (Which should be
+     * global across all instances of this current class)
+     *
+     * @param fileName         The name of the file
+     * @param reflectionCacher The {@link ReflectionCacher} to use
+     */
     public HOCONFontConfiguration(String fileName, ReflectionCacher reflectionCacher) {
         this.fileName = fileName;
         this.config = ConfigFactory.load(fileName);
@@ -124,7 +151,8 @@ public class HOCONFontConfiguration implements FontConfiguration {
         try {
             var got = Class.forName(className);
             if (got.getClass().isInstance(MergeRule.class)) return Optional.of((Class<MergeRule>) got);
-        } catch (ClassNotFoundException ignored) {}
+        } catch (ClassNotFoundException ignored) {
+        }
         return Optional.empty();
     }
 

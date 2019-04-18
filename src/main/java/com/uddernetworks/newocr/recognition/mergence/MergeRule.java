@@ -37,7 +37,7 @@ public abstract class MergeRule {
      * true, the given data will be a full line of data. If it returns false, the data will be all characters with a
      * horizontal overlap in a column.
      *
-     * @param target The base charcater
+     * @param target     The base charcater
      * @param letterData The letter data
      * @return The {@link ImageLetter} that should be removed if the merge was successful
      */

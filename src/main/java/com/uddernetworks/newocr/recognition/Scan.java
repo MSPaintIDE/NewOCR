@@ -3,6 +3,7 @@ package com.uddernetworks.newocr.recognition;
 import com.uddernetworks.newocr.ScannedImage;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
+import com.uddernetworks.newocr.train.UntrainedDatabaseException;
 
 import java.io.File;
 import java.util.List;
@@ -14,8 +15,9 @@ public interface Scan {
      *
      * @param file The input image to be scanned
      * @return A {@link ScannedImage} containing all scanned character data
+     * @throws UntrainedDatabaseException If the database was not trained yet
      */
-    ScannedImage scanImage(File file);
+    ScannedImage scanImage(File file) throws UntrainedDatabaseException;
 
     /**
      * Gets and inserts all the spaces of the current line based on the font size given (The first character of the line

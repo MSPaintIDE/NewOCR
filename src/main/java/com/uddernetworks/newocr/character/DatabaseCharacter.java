@@ -23,7 +23,7 @@ public class DatabaseCharacter extends Character {
     /**
      * Creates a DatabaseCharacter from the given character.
      *
-     * @param letter The letter of the object
+     * @param letter   The letter of the object
      * @param modifier The modifier of the character
      */
     public DatabaseCharacter(char letter, int modifier) {
@@ -43,7 +43,7 @@ public class DatabaseCharacter extends Character {
      * Sets a percentage value to the data.
      *
      * @param index The index of the data to set
-     * @param data The percentage of filled in pixels found
+     * @param data  The percentage of filled in pixels found
      */
     public void addDataPoint(int index, double data) {
         this.data[index] = data;
@@ -52,7 +52,7 @@ public class DatabaseCharacter extends Character {
     /**
      * Sets multiple used data points.
      *
-     * @param avgWidth The average width across all used characters in the font sizes
+     * @param avgWidth  The average width across all used characters in the font sizes
      * @param avgHeight The average height across all used characters in the font sizes
      * @param minCenter The minimum relative center value in the training ste for this character and font size
      * @param maxCenter The maximum relative center value in the training ste for this character and font size

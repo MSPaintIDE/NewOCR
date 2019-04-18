@@ -33,7 +33,7 @@ public class Accuracy {
 
     public static ScannedImage generate(String fontFamily, String configFileName) throws IOException {
         var strippedName = fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_");
-        var databaseManager = new OCRDatabaseManager(new File("src" + File.separator + "test" + File.separator + "resources" + File.separator + "database" + File.separator + "ocr_db_" + strippedName));
+        var databaseManager = new OCRDatabaseManager(new File("src\\test\\resources\\database\\ocr_db_" + strippedName));
         var similarityManager = new DefaultSimilarityManager();
 
         var fontConfiguration = new HOCONFontConfiguration(configFileName, new ConfigReflectionCacher());
@@ -46,7 +46,7 @@ public class Accuracy {
     public static ScannedImage generate(String fontFamily, OCROptions options, SimilarityManager similarityManager, DatabaseManager databaseManager, FontConfiguration fontConfiguration) {
         LOGGER.info("Setting up database...");
 
-        var readingImage = new File("src" + File.separator + "test" + File.separator + "resources" + File.separator + "training_" + fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_") + ".png");
+        var readingImage = new File("src\\test\\resources\\training_" + fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_") + ".png");
 
         var mergenceManager = new DefaultMergenceManager(databaseManager, similarityManager);
         var ocrTrain = new OCRTrain(databaseManager, options, similarityManager);

@@ -18,7 +18,7 @@ public interface Actions {
      * into lines, then horizontally. Each individual section then has vertical padding removed. Any 'characters' that
      * are 2x2 pixels or less are discarded. More information on this method can be found on page 55 of <a href=https://www.researchgate.net/publication/260405352_OPTICAL_CHARACTER_RECOGNITION_OCR_SYSTEM_FOR_MULTIFONT_ENGLISH_TEXTS_USING_DCT_WAVELET_TRANSFORM>this paper</a>.
      *
-     * @param searchImage The image to scan
+     * @param searchImage      The image to scan
      * @param searchCharacters The list that will have all of the {@link SearchCharacter}s added to
      */
     void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters);
@@ -45,7 +45,7 @@ public interface Actions {
      * improved accuracy.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
-     * @param lineBounds The line bounds (Key/value is top/bottom Y values respectively) for improved accuracy
+     * @param lineBounds      The line bounds (Key/value is top/bottom Y values respectively) for improved accuracy
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, IntPair lineBounds);
@@ -54,7 +54,7 @@ public interface Actions {
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
-     * @param data The potential trained {@link TrainedCharacterData} to use
+     * @param data            The potential trained {@link TrainedCharacterData} to use
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, List<TrainedCharacterData> data);
@@ -64,8 +64,8 @@ public interface Actions {
      * improved accuracy.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
-     * @param data The potential trained {@link TrainedCharacterData} to use
-     * @param lineBounds The line bounds (Key/value is top/bottom Y values respectively) for improved accuracy
+     * @param data            The potential trained {@link TrainedCharacterData} to use
+     * @param lineBounds      The line bounds (Key/value is top/bottom Y values respectively) for improved accuracy
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, List<TrainedCharacterData> data, IntPair lineBounds);
@@ -74,7 +74,7 @@ public interface Actions {
      * Actually matches the {@link SearchCharacter} object to a real character from the database.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
-     * @param diffs The potential {@link ImageLetter}s
+     * @param diffs           The potential {@link ImageLetter}s
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs);
@@ -84,8 +84,8 @@ public interface Actions {
      * improved accuracy.
      *
      * @param searchCharacter The input {@link SearchCharacter} to match to
-     * @param diffs The potential {@link ImageLetter}s
-     * @param lineBounds The line bounds (Key/value is top/bottom Y values respectively) for improved accuracy
+     * @param diffs           The potential {@link ImageLetter}s
+     * @param lineBounds      The line bounds (Key/value is top/bottom Y values respectively) for improved accuracy
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs, IntPair lineBounds);

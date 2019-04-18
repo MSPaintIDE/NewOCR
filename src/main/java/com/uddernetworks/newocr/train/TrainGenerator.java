@@ -15,7 +15,7 @@ public interface TrainGenerator {
     /**
      * Generates an image that can be used while training the OCR using the given options.
      *
-     * @param file The file to write to
+     * @param file    The file to write to
      * @param options The options used during image generation
      */
     void generateTrainingImage(File file, TrainGeneratorOptions options);

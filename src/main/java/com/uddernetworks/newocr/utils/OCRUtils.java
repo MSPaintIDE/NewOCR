@@ -530,7 +530,7 @@ public class OCRUtils {
                 System.out.print(bool ? "＃" : "　");
             }
 
-             System.out.println();
+            System.out.println();
         }
     }
 }

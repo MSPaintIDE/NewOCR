@@ -39,7 +39,7 @@ public class OCROptions {
 
     /**
      * Sets the maximum amount of times the system will try and go through and correct errors.
-     *
+     * <p>
      * The value by default is 10
      *
      * @param maxCorrectionIterations The amount of iterations to set
@@ -63,7 +63,7 @@ public class OCROptions {
      * Sets the maximum percentage difference a line must be in order to merge in the very first phase of training. This
      * is primarily for when underscores are below a line, and will need to be X% smaller than the line to merge. They
      * will also need to be at least {@link OCROptions#setMaxPercentDistanceToMerge(double)} percent away to merge.
-     *
+     * <p>
      * This value is by default 0.5
      *
      * @param maxPercentDiffToMerge The percentage to set
@@ -86,7 +86,7 @@ public class OCROptions {
     /**
      * Sets the maximum percentage of the top line a lower line much be away compared to its height in order to merge.
      * E.g. This value is set as 50%, and a top line is 100px high. Another line must be at least 50px from the line.
-     *
+     * <p>
      * This value is by default 0.25
      *
      * @param maxPercentDistanceToMerge The percentage to set

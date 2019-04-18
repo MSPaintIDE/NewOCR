@@ -42,8 +42,10 @@ public class OCRTrain implements Train {
     @Override
     public void trainImage(File file) {
 
-        // First clear the database
-        databaseManager.clearData();
+        if (this.databaseManager.isTrainedSync()) {
+            databaseManager.clearData();
+            this.databaseManager.setTrained(false);
+        }
 
         List<TrainedCharacterData> trainedCharacterDataList = new ArrayList<>();
 
@@ -202,6 +204,8 @@ public class OCRTrain implements Train {
                 e.printStackTrace();
             }
         });
+
+        this.databaseManager.setTrained(true);
 
         LOGGER.debug("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
     }

@@ -19,6 +19,7 @@ public class SearchImage {
 
     /**
      * Creates a {@link SearchImage} from a boolean grid.
+     *
      * @param values The boolean grid of the image
      */
     public SearchImage(boolean[][] values) {
@@ -29,8 +30,9 @@ public class SearchImage {
      * Adds the surrounding black pixels from the given coordinate to the coordinates parameter.
      * When a new value sis count, it is set to false to stop duplicates without checking each entry
      * of the map.
-     * @param originalX The X location of the current black pixel
-     * @param originalY The Y location of the current black pixel
+     *
+     * @param originalX   The X location of the current black pixel
+     * @param originalY   The Y location of the current black pixel
      * @param coordinates The mutable list of coordinates that will have each new coordinate added to it
      */
     public void scanFrom(int originalX, int originalY, List<IntPair> coordinates) {
@@ -96,6 +98,7 @@ public class SearchImage {
 
     /**
      * Gets the value of the given coordinates. If it's true, it will set the value to false and return true.
+     *
      * @param x The X coordinate to check
      * @param y The Y coordinate to check
      * @return The value of the coordinate, or false if the position is inexistant
@@ -110,6 +113,7 @@ public class SearchImage {
     /**
      * Gets the coordinate of the given coordinates. Similar to {@link SearchImage#hasValue(int, int)}, but
      * it performs no mutation to the values grid.
+     *
      * @param x The X coordinate to check
      * @param y The Y coordinate to check
      * @return The value of the coordinates
@@ -120,6 +124,7 @@ public class SearchImage {
 
     /**
      * Gets the raw values grid.
+     *
      * @return The raw values grid
      */
     public boolean[][] getValues() {
@@ -147,9 +152,9 @@ public class SearchImage {
     /**
      * Gets a {@link SearchImage} from the bounds of the current image.
      *
-     * @param x The X position to start at
-     * @param y The Y position to start at
-     * @param width The width of the sub image
+     * @param x      The X position to start at
+     * @param y      The Y position to start at
+     * @param width  The width of the sub image
      * @param height The height of the sub image
      * @return The inner image from the coordinates given
      */

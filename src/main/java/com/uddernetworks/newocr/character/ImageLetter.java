@@ -24,15 +24,16 @@ public class ImageLetter extends CoordinateCharacter {
 
     /**
      * Creates an ImageLetter from collected data.
-     * @param letter The letter value
-     * @param modifier The modifier of the letter
-     * @param x The X coordinate of this character
-     * @param y The Y coordinate of this character
-     * @param width The width of this character
-     * @param height The height of this character
-     * @param averageWidth The average width of the character
+     *
+     * @param letter        The letter value
+     * @param modifier      The modifier of the letter
+     * @param x             The X coordinate of this character
+     * @param y             The Y coordinate of this character
+     * @param width         The width of this character
+     * @param height        The height of this character
+     * @param averageWidth  The average width of the character
      * @param averageHeight The average height of the character
-     * @param ratio The width/height ratio of this character
+     * @param ratio         The width/height ratio of this character
      */
     public ImageLetter(char letter, int modifier, int x, int y, int width, int height, double averageWidth, double averageHeight, double ratio) {
         this(letter, modifier, x, y, width, height, averageWidth, averageHeight, ratio, null);
@@ -41,17 +42,16 @@ public class ImageLetter extends CoordinateCharacter {
     /**
      * Creates an ImageLetter from collected data.
      *
-     *
-     * @param letter The letter value
-     * @param modifier The modifier of the letter
-     * @param x The X coordinate of this character
-     * @param y The Y coordinate of this character
-     * @param width The width of this character
-     * @param height The height of this character
-     * @param averageWidth The average width of the character
+     * @param letter        The letter value
+     * @param modifier      The modifier of the letter
+     * @param x             The X coordinate of this character
+     * @param y             The Y coordinate of this character
+     * @param width         The width of this character
+     * @param height        The height of this character
+     * @param averageWidth  The average width of the character
      * @param averageHeight The average height of the character
-     * @param ratio The width/height ratio of this character
-     * @param coordinates The data coordinates of this character (In form of [Black, Total])
+     * @param ratio         The width/height ratio of this character
+     * @param coordinates   The data coordinates of this character (In form of [Black, Total])
      */
     public ImageLetter(char letter, int modifier, int x, int y, int width, int height, double averageWidth, double averageHeight, double ratio, List<IntPair> coordinates) {
         this.letter = letter;
@@ -125,7 +125,7 @@ public class ImageLetter extends CoordinateCharacter {
      * used in the future.
      *
      * @param clazz The class type of the data, only used for getting the returning type
-     * @param <T> The type of the data
+     * @param <T>   The type of the data
      * @return Data set to the character
      */
     public <T> Optional<T> getData(Class<T> clazz) {
@@ -182,7 +182,7 @@ public class ImageLetter extends CoordinateCharacter {
     /**
      * Sets the maximum relative center value from the top of the character found in the training set for this font size.
      *
-     * @param maxCenter  The maximum relative center value from the top of the character found in the training set for this font size
+     * @param maxCenter The maximum relative center value from the top of the character found in the training set for this font size
      */
     public void setMaxCenter(double maxCenter) {
         this.maxCenter = maxCenter;

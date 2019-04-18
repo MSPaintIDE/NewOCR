@@ -29,7 +29,7 @@ public interface SimilarityManager {
      * Finds any matching {@link SimilarRule}s for the first {@link ImageLetter}, and then checks if the second
      * {@link ImageLetter} also matches any of them.
      *
-     * @param first The first {@link ImageLetter}
+     * @param first  The first {@link ImageLetter}
      * @param second The second {@link ImageLetter}
      * @return If the two {@link ImageLetter}s are similar
      */
@@ -48,7 +48,7 @@ public interface SimilarityManager {
      * {@link SimilarRule} is not found if one isn't found.
      *
      * @param similarityRuleName The name of the {@link SimilarRule} to get
-     * @param ruleConsumer The consumer to be given the {@link SimilarRule} if found
+     * @param ruleConsumer       The consumer to be given the {@link SimilarRule} if found
      */
     void getSafeRule(String similarityRuleName, Consumer<SimilarRule> ruleConsumer);
 

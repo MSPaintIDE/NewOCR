@@ -1,5 +1,6 @@
 package com.uddernetworks.newocr.demo;
 
+import com.uddernetworks.newocr.ScannedImage;
 import com.uddernetworks.newocr.configuration.ConfigReflectionCacher;
 import com.uddernetworks.newocr.configuration.HOCONFontConfiguration;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
@@ -30,6 +31,9 @@ public class UsingConfigDemo {
         boolean mono = args.length >= 1 && args[0].equalsIgnoreCase("mono");
         var configFileName = "fonts/" + (mono ? "Monospaced.plain" : "Calibri");
 
+        new ComputerTrainGenerator().generateTrainingImage(new File("training.png"), new TrainGeneratorOptions()
+                .setFontFamily("Calibri"));
+
         var databaseManager = new OCRDatabaseManager(new File("database" + File.separator + "ocr_db_" + (mono ? "mono" : "calibri")));
         var scanner = new Scanner(System.in);
         var similarityManager = new DefaultSimilarityManager();
@@ -59,7 +63,7 @@ public class UsingConfigDemo {
             LOGGER.info("Starting training...");
 
             var start = System.currentTimeMillis();
-            ocrTrain.trainImage(new File("training_Calibri.png"));
+            ocrTrain.trainImage(new File("training.png"));
 //            ocrTrain.trainImage(new File("training_" + (mono ? "mono" : "arial") + ".png"));
 
             LOGGER.info("Finished training in " + (System.currentTimeMillis() - start) + "ms");
@@ -71,11 +75,7 @@ public class UsingConfigDemo {
             return;
         }
 
-//         Warm up and load classes for everything, which can add over 1400ms to the first scan
-
-//        var scannedImage = ocrScan.scanImage(new File("test_" + (mono ? "mono" : "arial") + ".png"));
-//        var scannedImage = ocrScan.scanImage(new File("training_" + (mono ? "mono" : "Arial") + ".png"));
-        var scannedImage = ocrScan.scanImage(new File("percent.png"));
+        ScannedImage scannedImage = ocrScan.scanImage(new File("training.png"));
 
         LOGGER.info("Got:\n" + scannedImage.getPrettyString());
 

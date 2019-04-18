@@ -29,8 +29,8 @@ public class SearchCharacter extends CoordinateCharacter {
      * Creates a SearchCharacter from a list of coordinates used by the character.
      *
      * @param coordinates Coordinates used by the character
-     * @param xOffset The X offset of the coordinates
-     * @param yOffset The Y offset of the coordinates
+     * @param xOffset     The X offset of the coordinates
+     * @param yOffset     The Y offset of the coordinates
      */
     public SearchCharacter(List<IntPair> coordinates, int xOffset, int yOffset) {
         this.coordinates = coordinates;
