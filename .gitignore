@@ -12,7 +12,7 @@ out/
 
 # Training temp files
 **/resources/training_**.png
-**/resources/database/
+database/
 
 # Misc.
 **.class

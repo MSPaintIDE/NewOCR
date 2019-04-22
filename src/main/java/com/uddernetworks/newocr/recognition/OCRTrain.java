@@ -4,8 +4,6 @@ import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
-import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
-import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
@@ -14,9 +12,13 @@ import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class OCRTrain implements Train {
 
@@ -28,10 +30,6 @@ public class OCRTrain implements Train {
     private Actions actions;
 
     public OCRTrain(DatabaseManager databaseManager, OCROptions options) {
-        this(databaseManager, options, new DefaultSimilarityManager().loadDefaults());
-    }
-
-    public OCRTrain(DatabaseManager databaseManager, OCROptions options, SimilarityManager similarityManager) {
         this.databaseManager = databaseManager;
         this.options = options;
         ImageIO.setUseCache(false);
@@ -53,7 +51,6 @@ public class OCRTrain implements Train {
 
         var input = OCRUtils.readImage(file);
         var values = OCRUtils.createGrid(input);
-        var searchCharacters = new ArrayList<SearchCharacter>();
 
         input = OCRUtils.filter(input).orElseThrow();
 
@@ -64,32 +61,13 @@ public class OCRTrain implements Train {
         TrainedCharacterData spaceTrainedCharacter = new TrainedCharacterData(' ');
         trainedCharacterDataList.add(spaceTrainedCharacter);
 
-        Collections.sort(searchCharacters);
-
         // Stores the height/distance ratio for apostrophe parts
         var apostropheRatios = new DoubleArrayList();
-        var distancesAbove = new DoubleArrayList();
-        var distancesi = new DoubleArrayList();
-        var distancesj = new DoubleArrayList();
-        var colonDistance = new DoubleArrayList();
-        var semicolonDistance = new DoubleArrayList();
-        var equalsDistance = new DoubleArrayList();
-        var distanceQuestion = new DoubleArrayList();
-        var distanceExclamation = new DoubleArrayList();
 
         var customSpaces = new HashMap<Character, List<Double>>();
 
-        // TODO: This can be improved in the future
-        var metaMapping = Map.of(
-                "distanceAbove", distancesAbove,
-                "distancei", distancesi,
-                "distancej", distancesj,
-                "colonDistance", colonDistance,
-                "semicolonDistance", semicolonDistance,
-                "equalsDistance", equalsDistance,
-                "distanceQuestion", distanceQuestion,
-                "distanceExclamation", distanceExclamation
-        );
+        var metaMapping = Stream.of("distanceAbove", "distancei", "distancej", "colonDistance", "semicolonDistance", "equalsDistance", "distanceQuestion", "distanceExclamation")
+                .collect(Collectors.toMap(name -> name, name -> new DoubleArrayList()));
 
         // Goes through each line found
         for (var line : this.actions.getLettersDuringTraining(searchImage)) {

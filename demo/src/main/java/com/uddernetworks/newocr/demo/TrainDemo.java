@@ -25,7 +25,7 @@ public class TrainDemo {
         var mergenceManager = new DefaultMergenceManager(databaseManager, similarityManager);
 
         var fontConfiguration = new HOCONFontConfiguration("fonts/ComicSans", new ConfigReflectionCacher(), similarityManager, mergenceManager);
-        var ocrTrain = new OCRTrain(databaseManager, fontConfiguration.fetchOptions(), similarityManager);
+        var ocrTrain = new OCRTrain(databaseManager, fontConfiguration.fetchOptions());
 
         var trainImage = new File("demo\\src\\main\\resources\\training.png");
 

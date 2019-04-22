@@ -49,7 +49,7 @@ public class Accuracy {
         var readingImage = new File("src\\test\\resources\\training_" + fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_") + ".png");
 
         var mergenceManager = new DefaultMergenceManager(databaseManager, similarityManager);
-        var ocrTrain = new OCRTrain(databaseManager, options, similarityManager);
+        var ocrTrain = new OCRTrain(databaseManager, options);
 
         LOGGER.info("Generating image for {}", fontFamily);
         new ComputerTrainGenerator().generateTrainingImage(readingImage, new TrainGeneratorOptions()
@@ -65,7 +65,7 @@ public class Accuracy {
         // It needs some kind of delay, I need to inspect in the future on what causes this. Check the repo for any
         // issues on the matter before reporting.
         try {
-            Thread.sleep(500);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {}
 
         fontConfiguration.fetchAndApplyMergeRules(mergenceManager);

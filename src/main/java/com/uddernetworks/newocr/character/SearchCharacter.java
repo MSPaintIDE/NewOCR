@@ -1,7 +1,7 @@
 package com.uddernetworks.newocr.character;
 
 import com.uddernetworks.newocr.utils.IntPair;
-import com.uddernetworks.newocr.utils.OCRUtils;
+import com.uddernetworks.newocr.utils.SegmentationUtils;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -77,12 +77,12 @@ public class SearchCharacter extends CoordinateCharacter {
      */
     public void applySections() {
         AtomicInteger index = new AtomicInteger();
-        OCRUtils.getHorizontalHalf(this.values)
-                .flatMap(OCRUtils::getVerticalHalf)
-                .forEach(section -> OCRUtils.getDiagonal(section, index.get() == 1 || index.getAndIncrement() == 2).forEach(this::addSegment));
+        SegmentationUtils.getHorizontalHalf(this.values)
+                .flatMap(SegmentationUtils::getVerticalHalf)
+                .forEach(section -> SegmentationUtils.getDiagonal(section, index.get() == 1 || index.getAndIncrement() == 2).forEach(this::addSegment));
 
-        OCRUtils.getHorizontalThird(this.values).forEach(values ->
-                OCRUtils.getVerticalThird(values).forEach(this::addSegment));
+        SegmentationUtils.getHorizontalThird(this.values).forEach(values ->
+                SegmentationUtils.getVerticalThird(values).forEach(this::addSegment));
     }
 
     /**
