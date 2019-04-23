@@ -233,7 +233,6 @@ public class OCRActions implements Actions {
 
     @Override
     public Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs, IntPair lineBounds) {
-        var lineCenter = lineBounds == null ? -1 : lineBounds.getKey() + ((double) lineBounds.getValue() - lineBounds.getKey()) / 2D;
         double searchRatio = (double) searchCharacter.getWidth() / searchCharacter.getHeight();
         var orderedDifferences = diffs.object2DoubleEntrySet().stream()
                 .peek(entry -> {
@@ -243,16 +242,7 @@ public class OCRActions implements Actions {
                     double ratioDiff = Math.pow(ratio - searchRatio, 2);
                     ratioDiff *= this.options.getSizeRatioWeight();
 
-                    var offsetDiff = 0D;
-                    if (lineBounds != null) {
-                        var staticOffset = searchCharacter.getCenterOffset();
-                        var searchCharacterOffset = lineCenter - staticOffset;
-                        var imageLetterOffset = imageLetter.getMinCenter() + (imageLetter.getMaxCenter() - imageLetter.getMinCenter()) / 2D;
-
-                        offsetDiff = Math.abs(searchCharacterOffset - imageLetterOffset) / 1000D;
-                    }
-
-                    entry.setValue(ratioDiff + entry.getDoubleValue() + offsetDiff);
+                    entry.setValue(ratioDiff + entry.getDoubleValue());
                 })
                 .sorted(Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue))
                 .collect(Collectors.toList());

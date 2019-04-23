@@ -7,8 +7,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.stream.Collectors;
 
 /**
  * Some various utility methods used by the OCR that may assist others using the library.
@@ -34,6 +36,24 @@ public class OCRUtils {
         }
 
         return bufferedImage;
+    }
+
+    /**
+     * Removes all common spaces between all newlines, useful if the OCR say adds an extra 2 spaces before all lines of
+     * text, this will remove the 2 spaces.
+     *
+     * @param string The input string
+     * @return The input string trimmed properly
+     */
+    public static String removeLeadingSpaces(String string) {
+        var split = string.split("\n");
+        var commonSpaces = Arrays.stream(split).mapToInt(OCRUtils::countLeadingSpaces).min().orElse(0);
+        if (commonSpaces == 0) return string;
+        return Arrays.stream(split).map(line -> line.substring(commonSpaces)).collect(Collectors.joining("\n"));
+    }
+
+    private static int countLeadingSpaces(String input) {
+        return input.length() - input.stripLeading().length();
     }
 
     /*

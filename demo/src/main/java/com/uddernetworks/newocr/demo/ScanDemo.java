@@ -7,6 +7,7 @@ import com.uddernetworks.newocr.database.OCRDatabaseManager;
 import com.uddernetworks.newocr.recognition.OCRScan;
 import com.uddernetworks.newocr.recognition.mergence.DefaultMergenceManager;
 import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
+import com.uddernetworks.newocr.utils.OCRUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,9 +37,9 @@ public class ScanDemo {
 
         var start = System.currentTimeMillis();
 
-        ScannedImage scannedImage = ocrScan.scanImage(new File("demo\\src\\main\\resources\\scan.png"));
+        ScannedImage scannedImage = ocrScan.scanImage(new File("demo\\src\\main\\resources\\code.png"));
 
-        LOGGER.info("Got:\n" + scannedImage.getPrettyString());
+        LOGGER.info("Got:\n" + OCRUtils.removeLeadingSpaces(scannedImage.getPrettyString()));
 
         LOGGER.info("Finished scanning in " + (System.currentTimeMillis() - start) + "ms");
 

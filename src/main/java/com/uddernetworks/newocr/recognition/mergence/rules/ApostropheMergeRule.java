@@ -7,9 +7,12 @@ import com.uddernetworks.newocr.recognition.mergence.MergeRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+
+import static com.uddernetworks.newocr.recognition.similarity.Letter.*;
 
 /**
  * Merges pieces of apostrophes.
@@ -57,6 +60,27 @@ public class ApostropheMergeRule extends MergeRule {
 
         if (!this.apostropheRule.matchesLetter(before)) return Optional.empty();
 
+        // If the size of the apostrophes are not similar, or are not around 50% of their neighbor's
+        // height, it's probably not actually an apostrophe
+        var diff = percentDiff(target.getHeight(), before.getHeight());
+        if (diff >= 0.25D) return Optional.empty();
+
+        var compare = Arrays.asList(EXCLAMATION_DOT, QUOTE_LEFT, QUOTE_RIGHT, PERCENT_LDOT, PERCENT_RDOT, APOSTROPHE, ASTERISK, PLUS, COMMA, MINUS, PERIOD, COLON_TOP, COLON_BOTTOM, SEMICOLON_TOP, SEMICOLON_BOTTOM, EQUALS_TOP, EQUALS_BOTTOM, QUESTION_MARK_BOTTOM, CARROT, UNDERSCORE, GRAVE, i_DOT, j_DOT, TILDE, SPACE);
+
+        ImageLetter compareCharacter = null;
+        for (ImageLetter current : letterData) {
+            var currentLetter = getLetter(current);
+            if (target.equals(current) || before.equals(current) || compare.contains(currentLetter)) continue;
+            compareCharacter = current;
+            break;
+        }
+
+        if (compareCharacter != null) {
+            var sizeDiff = percentDiff(compareCharacter.getHeight(), target.getHeight());
+
+            if (sizeDiff <= 0.5D) return Optional.empty();
+        }
+
         var avgLength = (double) before.getHeight() * apostropheRatio;
         if (target.getX() - before.getX() <= avgLength) {
             // If the ' (Represented as ") are close enough to each other, they are put into a single " and the second (current) character is removed
@@ -66,5 +90,9 @@ public class ApostropheMergeRule extends MergeRule {
         }
 
         return Optional.empty();
+    }
+
+    private double percentDiff(double one, double two) {
+        return 1D - (Math.min(one, two) / Math.max(one, two));
     }
 }

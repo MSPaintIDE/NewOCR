@@ -108,7 +108,7 @@ public class OCRScan implements Scan {
                     searchCharacters.removeIf(searchCharacter -> {
                         var center = searchCharacter.getY() + ((double) searchCharacter.getHeight() / 2);
                         if (!OCRUtils.isWithin(linesEntry.getKey(), linesEntry.getValue(), center)) return false;
-                        searchCharacter.setCenterOffset(center);
+                        searchCharacter.setCenterOffset(center - searchCharacter.getY());
                         this.actions.getCharacterFor(searchCharacter, linesEntry).ifPresent(databaseCharacters::add);
                         return true;
                     });

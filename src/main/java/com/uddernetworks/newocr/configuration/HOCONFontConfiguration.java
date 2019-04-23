@@ -92,9 +92,7 @@ public class HOCONFontConfiguration implements FontConfiguration {
                 .map(string -> string.charAt(0))
                 .collect(Collectors.toSet()));
 
-        ocrOptions.setMaxCorrectionIterations(options.getInt("max-correction-iterations"));
         ocrOptions.setMaxPercentDiffToMerge(options.getDouble("max-percent-diff-to-merge"));
-        ocrOptions.setMaxPercentDistanceToMerge(options.getDouble("max-percent-distance-to-merge"));
         ocrOptions.setSizeRatioWeight(options.getDouble("size-ratio-weight"));
 
         LOGGER.info("[{}] Generated OCROptions", this.friendlyName);
