@@ -21,7 +21,7 @@ gradle javadoc --no-daemon
 cd build/docs/
 mv javadoc/* ../../pages
 cd ../../pages
-ls
+echo "docs.newocr.dev" > CNAME
 
 # deploy
 git add . &> /dev/null

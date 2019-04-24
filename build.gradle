@@ -23,7 +23,7 @@ apply plugin: 'io.codearte.nexus-staging'
 
 group 'com.uddernetworks.newocr'
 archivesBaseName = "NewOCR"
-version '1.2.1'
+version '2.0.0-SNAPSHOT'
 
 sourceCompatibility = 11
 
@@ -112,59 +112,62 @@ artifacts {
     archives javadocJar, sourcesJar
 }
 
-allprojects {
-    apply plugin: 'signing'
-    apply plugin: 'maven'
+apply plugin: 'signing'
+apply plugin: 'maven'
 
-    // Signature of artifacts
-    signing {
-        sign configurations.archives
-    }
+// Signature of artifacts
+signing {
+    sign configurations.archives
+}
 
-    // OSSRH publication
-    uploadArchives {
-        repositories {
-            mavenDeployer {
-                // POM signature
-                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+// -Prelease uploadArchives closeAndPromoteRepository -x demo:uploadArchives
 
-                if (project.hasProperty("ossrhUser") && project.hasProperty("ossrhPassword")) {
-                    // Target repository
-                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                        authentication(userName: ossrhUser, password: ossrhPassword)
+// OSSRH publication
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            // POM signature
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            if (project.hasProperty("ossrhUser") && project.hasProperty("ossrhPassword")) {
+                // Target repository
+                String repo = version.toString().endsWith("-SNAPSHOT") ?
+                        "https://oss.sonatype.org/content/repositories/snapshots" :
+                        "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+                println "Using repository ${repo}"
+                repository(url: repo) {
+                    authentication(userName: ossrhUser, password: ossrhPassword)
+                }
+            }
+
+            pom.project {
+                name 'NewOCR'
+                description 'NewOCR is a library for simple but efficient OCR detection in pure Java.'
+                packaging 'jar'
+                url 'https://github.com/MSPaintIDE/NewOCR'
+
+                scm {
+                    connection 'scm:git:https://github.com/MSPaintIDE/NewOCR.git'
+                    developerConnection 'scm:git:git@github.com:MSPaintIDE/NewOCR.git'
+                    url 'https://github.com/MSPaintIDE/NewOCR.git'
+                }
+
+                licenses {
+                    license {
+                        name 'The MIT License (MIT)'
+                        url 'http://opensource.org/licenses/MIT'
+                        distribution 'repo'
                     }
                 }
 
-                pom.project {
-                    name 'NewOCR'
-                    description 'NewOCR is a library for simple but efficient OCR detection in pure Java.'
-                    packaging 'jar'
-                    url 'https://github.com/RubbaBoy/NewOCR'
-
-                    scm {
-                        connection 'scm:git:https://github.com/RubbaBoy/NewOCR.git'
-                        developerConnection 'scm:git:git@github.com:RubbaBoy/NewOCR.git'
-                        url 'https://github.com/RubbaBoy/NewOCR.git'
-                    }
-
-                    licenses {
-                        license {
-                            name 'The MIT License (MIT)'
-                            url 'http://opensource.org/licenses/MIT'
-                            distribution 'repo'
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id = 'RubbaBoy'
-                            name = 'Adam Yarris'
-                            email = 'adamyarris@gmail.com'
-                        }
+                developers {
+                    developer {
+                        id = 'RubbaBoy'
+                        name = 'Adam Yarris'
+                        email = 'adamyarris@gmail.com'
                     }
                 }
             }
         }
     }
-
 }
