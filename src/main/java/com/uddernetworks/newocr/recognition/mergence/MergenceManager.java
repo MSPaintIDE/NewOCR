@@ -8,6 +8,9 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import java.util.List;
 import java.util.function.BiFunction;
 
+/**
+ * The manager for {@link MergeRule}s to combine/merge multi part characters.
+ */
 public interface MergenceManager {
 
     /**

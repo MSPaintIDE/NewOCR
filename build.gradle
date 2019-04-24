@@ -66,6 +66,8 @@ test {
 
 javadoc {
     options.addStringOption('-module-path', classpath.asPath)
+    source = sourceSets.main.allJava
+    classpath = configurations.compile
 }
 
 compileJava {

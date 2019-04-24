@@ -3,6 +3,9 @@ package com.uddernetworks.newocr.configuration;
 import java.lang.reflect.Constructor;
 import java.util.Optional;
 
+/**
+ * A simple class to cache constructors from classes.
+ */
 public interface ReflectionCacher {
 
     /**

@@ -1,5 +1,8 @@
 package com.uddernetworks.newocr.utils;
 
+/**
+ * Provides simple conversions of units used by the OCR and programs using the library.
+ */
 public class ConversionUtils {
 
     /**

@@ -9,6 +9,9 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The manager that provides methods to connect and interact with the database.
+ */
 public interface DatabaseManager {
 
     /**

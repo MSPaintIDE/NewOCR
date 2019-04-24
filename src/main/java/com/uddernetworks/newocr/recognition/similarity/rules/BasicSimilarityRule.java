@@ -8,7 +8,8 @@ import java.util.EnumSet;
 import java.util.Set;
 
 /**
- * Matches characters together with the same modifier of 0
+ * A simple {@link SimilarRule} that is used by {@link com.uddernetworks.newocr.configuration.HOCONFontConfiguration}
+ * and by other default {@link SimilarRule}s.
  */
 public class BasicSimilarityRule implements SimilarRule {
 

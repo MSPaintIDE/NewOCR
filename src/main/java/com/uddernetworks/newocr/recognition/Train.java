@@ -1,12 +1,14 @@
 package com.uddernetworks.newocr.recognition;
 
-import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.train.ComputerTrainGenerator;
 
 import java.io.File;
 import java.util.List;
 
+/**
+ * The main class that handles training of an image/font.
+ */
 public interface Train {
 
     /**
@@ -16,16 +18,6 @@ public interface Train {
      * @param file The input image to be trained from
      */
     void trainImage(File file);
-
-    /**
-     * Gets the amount of false detections for a given character using the given training data.
-     *
-     * @param charData                 A 2D List of {@link SearchCharacter}s containing the data to compare with
-     * @param trainedCharacterDataList A list of {@link TrainedCharacterData} to be tested
-     * @param checking                 The actual character to keep track of
-     * @return The amount of false detections/problems with detecting the given character
-     */
-    int getErrorsForCharacter(List<List<SearchCharacter>> charData, List<TrainedCharacterData> trainedCharacterDataList, char checking);
 
     /**
      * Gets the {@link TrainedCharacterData} with the known letter value of the given character, with the same modifier.

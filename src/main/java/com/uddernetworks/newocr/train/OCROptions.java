@@ -5,20 +5,40 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * General options used by the OCR scanning and training.
+ */
 public class OCROptions {
     private Set<Character> specialSpaces = new HashSet<>();
     private double maxPercentDiffToMerge = 0.5;
     private double sizeRatioWeight = 4;
 
+    /**
+     * Gets the characters requiring custom trained spaces.
+     *
+     * @return The characters requiring custom spacing
+     */
     public Set<Character> getSpecialSpaces() {
         return this.specialSpaces;
     }
 
+    /**
+     * Sets the characters requiring custom trained spaces.
+     *
+     * @param specialSpaces The characters requiring separate training for their trailing spaces.
+     * @return The current {@link OCROptions} object
+     */
     public OCROptions setSpecialSpaces(Set<Character> specialSpaces) {
         this.specialSpaces = new HashSet<>(specialSpaces);
         return this;
     }
 
+    /**
+     * Sets the characters requiring custom trained spaces.
+     *
+     * @param specialSpaces The characters requiring separate training for their trailing spaces.
+     * @return The current {@link OCROptions} object
+     */
     public OCROptions setSpecialSpaces(char... specialSpaces) {
         this.specialSpaces = IntStream.range(0, specialSpaces.length)
                 .mapToObj(x -> specialSpaces[x])

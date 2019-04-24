@@ -6,13 +6,13 @@
             <img src="https://img.shields.io/discord/528423806453415972.svg?logo=discord"
                 alt="NewOCR and MS Paint IDE's Discord server">
     </a>
-    <a href="https://travis-ci.org/RubbaBoy/NewOCR/">
+    <a href="https://travis-ci.org/MSPaintIDE/NewOCR/">
         <img alt="Travis (.org) branch" src="https://img.shields.io/travis/RubbaBoy/NewOCR/dev.svg">
     </a>
 </div>
 
 # NewOCR
-NewOCR is an OCR library made to suit [MS Paint IDE](https://github.com/RubbaBoy/MSPaintIDE)'s needs, though can be used in any project, as nothing is made specific to the IDE. The OCR can be trained with many fonts, though is geared towards fonts like **Verdana** and similar fonts. Other fonts _may_ require some tweaking of the character detector, but the main detection will work with no matter how different the characters are from Verdana (Hell you could modify it to work with emojis).
+NewOCR is an OCR library made to suit [MS Paint IDE](https://github.com/MSPaintIDE/MSPaintIDE)'s needs, though can be used in any project, as nothing is made specific to the IDE. The OCR can be trained with many fonts, though is geared towards fonts like **Verdana** and similar fonts. Other fonts _may_ require some tweaking of the character detector, but the main detection will work with no matter how different the characters are from Verdana (Hell you could modify it to work with emojis).
 
 With upcoming versions in the `dev` branch, the OCR is meant to detect and read both natural (With more filtering being worked on) and computer-generated (Not low resolution) images containing text.
 

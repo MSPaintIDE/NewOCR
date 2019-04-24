@@ -6,6 +6,9 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A rule to state certain character pieces are effectively the same, i.e. an l and a | and a 1
+ */
 public interface SimilarRule {
 
     /**

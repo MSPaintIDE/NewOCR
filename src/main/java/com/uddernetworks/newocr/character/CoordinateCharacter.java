@@ -5,6 +5,9 @@ import com.uddernetworks.newocr.utils.IntPair;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * The superclass for characters containing data from the input image.
+ */
 public abstract class CoordinateCharacter extends Character {
 
     List<IntPair> coordinates;

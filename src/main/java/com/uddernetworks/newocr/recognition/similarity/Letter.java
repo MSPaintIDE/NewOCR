@@ -4,6 +4,10 @@ import com.uddernetworks.newocr.character.ImageLetter;
 
 import java.util.Arrays;
 
+/**
+ * An enum containing every possible character piece that can be detected.
+ * Each one of these are recognised as a separate character and will be trained as such.
+ */
 public enum Letter {
     EXCLAMATION('!', 0, "|"),
     EXCLAMATION_DOT('!', 1, "."),

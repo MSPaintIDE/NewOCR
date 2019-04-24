@@ -2,6 +2,9 @@ package com.uddernetworks.newocr.character;
 
 import java.util.Objects;
 
+/**
+ * The superclass of all characters.
+ */
 public abstract class Character implements Comparable<Character> {
 
     // Coordinate data

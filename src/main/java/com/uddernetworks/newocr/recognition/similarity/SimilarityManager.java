@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+/**
+ * The manager for {@link SimilarRule}s, usually derived from
+ * {@link com.uddernetworks.newocr.configuration.FontConfiguration}s.
+ */
 public interface SimilarityManager {
 
     /**

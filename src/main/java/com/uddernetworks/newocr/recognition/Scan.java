@@ -2,12 +2,14 @@ package com.uddernetworks.newocr.recognition;
 
 import com.uddernetworks.newocr.ScannedImage;
 import com.uddernetworks.newocr.character.ImageLetter;
-import com.uddernetworks.newocr.recognition.mergence.MergenceManager;
 import com.uddernetworks.newocr.train.UntrainedDatabaseException;
 
 import java.io.File;
 import java.util.List;
 
+/**
+ * The main class that handles character scanning of an image.
+ */
 public interface Scan {
 
     /**
@@ -17,7 +19,7 @@ public interface Scan {
      * @return A {@link ScannedImage} containing all scanned character data
      * @throws UntrainedDatabaseException If the database was not trained yet
      */
-    ScannedImage scanImage(File file) throws UntrainedDatabaseException;
+    ScannedImage scanImage(File file);
 
     /**
      * Gets and inserts all the spaces of the current line based on the font size given (The first character of the line
@@ -28,8 +30,6 @@ public interface Scan {
      * @return A copy of the input {@link ImageLetter} List, but with spaces appended to the end
      */
     List<ImageLetter> getSpacesFor(List<ImageLetter> line, int fontSize);
-
-    MergenceManager getMergenceManager();
 
     /**
      * Gets the full space character count for the blank gap divided by the space width. This is calculated by getting

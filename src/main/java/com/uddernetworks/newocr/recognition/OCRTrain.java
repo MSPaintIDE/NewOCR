@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,6 +28,12 @@ public class OCRTrain implements Train {
     private OCROptions options;
     private Actions actions;
 
+    /**
+     * Creates a new {@link OCRTrain}.
+     *
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param options The {@link OCROptions} to use
+     */
     public OCRTrain(DatabaseManager databaseManager, OCROptions options) {
         this.databaseManager = databaseManager;
         this.options = options;
@@ -186,19 +191,6 @@ public class OCRTrain implements Train {
         this.databaseManager.setTrained(true);
 
         LOGGER.debug("Finished writing to database in " + (System.currentTimeMillis() - start) + "ms");
-    }
-
-    @Override
-    public int getErrorsForCharacter(List<List<SearchCharacter>> charData, List<TrainedCharacterData> trainedCharacterDataList, char checking) {
-        var errors = new AtomicInteger(0);
-        charData.parallelStream().forEach(line -> line.parallelStream()
-                .forEach(searchCharacter -> this.actions.getCharacterFor(searchCharacter, trainedCharacterDataList).ifPresent(imageLetter -> {
-                    var correct = searchCharacter.getLetter();
-                    var calculatedChar = imageLetter.getLetter();
-                    if (correct == checking && calculatedChar != correct) errors.incrementAndGet();
-                })));
-
-        return errors.get();
     }
 
     @Override

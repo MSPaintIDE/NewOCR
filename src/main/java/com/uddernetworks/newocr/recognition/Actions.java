@@ -11,6 +11,9 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A class to provide general actions for the OCR.
+ */
 public interface Actions {
 
     /**
@@ -89,17 +92,6 @@ public interface Actions {
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs, IntPair lineBounds);
-
-    /**
-     * Compares the ratios of the given width and heights
-     *
-     * @param width1  Character from image
-     * @param height1 Character from image
-     * @param width2  Character from database
-     * @param height2 Character from database
-     * @return The similarity of rectangles, lower being more similar
-     */
-    double compareSizes(double width1, double height1, double width2, double height2);
 
     /**
      * Gets the top and bottom line bounds found from the value 2D array. This is used for getting characters for

@@ -19,8 +19,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static com.uddernetworks.newocr.utils.OCRUtils.diff;
-
 public class OCRActions implements Actions {
 
     private static Logger LOGGER = LoggerFactory.getLogger(OCRActions.class);
@@ -31,6 +29,11 @@ public class OCRActions implements Actions {
     private double distanceAbove = -1;
     private double distanceBelow = -1;
 
+    /**
+     * Creates a new {@link OCRActions} with a {@link DatabaseManager} and {@link OCROptions}.
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param options The {@link OCROptions} to use
+     */
     public OCRActions(DatabaseManager databaseManager, OCROptions options) {
         this.databaseManager = databaseManager;
         this.options = options;
@@ -254,26 +257,6 @@ public class OCRActions implements Actions {
         imageLetter.setValues(searchCharacter.getValues());
 
         return Optional.of(imageLetter);
-    }
-
-    @Override
-    public double compareSizes(double width1, double height1, double width2, double height2) {
-        var res = 0D;
-
-        double ratio1 = width1 / height1;
-        double ratio2 = width2 / height2;
-        double ratioDiff = diff(ratio1, ratio2);
-
-        if ((width1 > height1 && width2 < height2)
-                || (width1 < height1 && width2 > height2)) {
-            // If they aren't rotated the right way (E.g. tall rectangle isn't similar to a wide one)
-            if (ratioDiff > 0.5) {
-                res += 300D;
-            }
-        }
-
-        res += ratioDiff;
-        return res;
     }
 
     @Override

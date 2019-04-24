@@ -35,14 +35,35 @@ public class OCRScan implements Scan {
     private SimilarityManager similarityManager;
     private MergenceManager mergenceManager;
 
+    /**
+     * Creates a new {@link OCRScan} with a default {@link SimilarityManager} and {@link MergenceManager}.
+     *
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param options The {@link OCROptions} to use
+     */
     public OCRScan(DatabaseManager databaseManager, OCROptions options) {
         this(databaseManager, options, new DefaultSimilarityManager().loadDefaults());
     }
 
+    /**
+     * Creates a new {@link OCRScan} with a default {@link MergenceManager}.
+     *
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param options The {@link OCROptions} to use
+     * @param similarityManager The {@link SimilarityManager} to use
+     */
     public OCRScan(DatabaseManager databaseManager, OCROptions options, SimilarityManager similarityManager) {
         this(databaseManager, options, similarityManager, new DefaultMergenceManager(databaseManager, similarityManager).loadDefaults());
     }
 
+    /**
+     * Creates a new {@link OCRScan}.
+     *
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param options The {@link OCROptions} to use
+     * @param similarityManager The {@link SimilarityManager} to use
+     * @param mergenceManager The {@link MergenceManager} to use
+     */
     public OCRScan(DatabaseManager databaseManager, OCROptions options, SimilarityManager similarityManager, MergenceManager mergenceManager) {
         this.databaseManager = databaseManager;
         this.mergenceManager = mergenceManager;
@@ -182,11 +203,6 @@ public class OCRScan implements Scan {
         }
 
         return ret;
-    }
-
-    @Override
-    public MergenceManager getMergenceManager() {
-        return this.mergenceManager;
     }
 
     @Override

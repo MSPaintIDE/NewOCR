@@ -7,6 +7,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
+/**
+ * A utility class for methods to create segments separating character images for training and scanning.
+ */
 public class SegmentationUtils {
 
     public static final IntPair ZERO_PLACEHOLDER = new IntPair(0, 0);

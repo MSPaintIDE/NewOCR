@@ -75,7 +75,7 @@ public class OverDotMergeRule extends MergeRule {
 
         if (target.getAmountOfMerges() > 0 || above.getAmountOfMerges() > 0) return Optional.empty();
 
-        double distance = 0;
+        double distance;
 
         if (semicolon) {
             distance = this.semicolonDistance;

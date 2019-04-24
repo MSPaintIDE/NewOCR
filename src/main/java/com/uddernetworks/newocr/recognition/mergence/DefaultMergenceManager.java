@@ -28,6 +28,12 @@ public class DefaultMergenceManager implements MergenceManager {
     private Map<ImageLetter, List<ImageLetter>> horizontalLetterRelations = new ConcurrentHashMap<>();
     private Map<ImageLetter, List<ImageLetter>> verticalLetterRelations = new ConcurrentHashMap<>();
 
+    /**
+     * Creates a new {@link DefaultMergenceManager}.
+     *
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param similarityManager The {@link SimilarityManager} to use
+     */
     public DefaultMergenceManager(DatabaseManager databaseManager, SimilarityManager similarityManager) {
         this.databaseManager = databaseManager;
         this.similarityManager = similarityManager;

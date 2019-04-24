@@ -7,6 +7,9 @@ import com.uddernetworks.newocr.train.OCROptions;
 
 import java.util.Optional;
 
+/**
+ * The configuration to read a file to populate managers and options.
+ */
 public interface FontConfiguration {
 
     /**
