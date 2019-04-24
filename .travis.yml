@@ -14,7 +14,7 @@ before_install:
   - gradle -version
 script:
   - gradle clean install cleanTest test --exclude-task signArchives --no-daemon
-  - gradle javadoc
+  - gradle javadoc --no-daemon
 after_success:
   - wget https://raw.githubusercontent.com/DiscordHooks/travis-ci-discord-webhook/master/send.sh
   - bash send.sh success $WEBHOOK_URL
@@ -30,4 +30,4 @@ deploy:
   local_dir: "./build/docs/javadoc"
   repo: "MSPaintIDE/NewOCR-javadocs"
   on:
-    branch: master
+    branch: dev # Change this to master

@@ -16,7 +16,6 @@ Just because a font is not on this list, does **not** mean it will not work! The
 + Calibri
 + Consolas
 + Courier New
-+ MS Gothic (Passes, but needs to be tuned with - and _ separation)
 ## Unsupported Fonts
 
 + Arial **Reason: Kerning/Similar characters**
