@@ -9,17 +9,17 @@ import java.util.Objects;
  * @version January 12, 2019
  */
 public final class IntPair {
-    
+
     /**
      * The key of this {@link IntPair}.
      */
     private int key;
-    
+
     /**
      * The value of this {@link IntPair}.
      */
     private int value;
-    
+
     /**
      * Creates a new {@link IntPair} with the specified key and value.
      *
@@ -30,7 +30,7 @@ public final class IntPair {
         this.key = key;
         this.value = value;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -39,12 +39,12 @@ public final class IntPair {
         if (!(o instanceof IntPair)) {
             return false;
         }
-    
+
         var pair = (IntPair) o;
-        
+
         return key == pair.key && value == pair.value;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -52,7 +52,15 @@ public final class IntPair {
     public int hashCode() {
         return Objects.hash(key, value);
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return "IntPair[key = " + key + ", value = " + value + "]";
+    }
+
     /**
      * Gets this {@link IntPair}'s key.
      *
@@ -61,7 +69,16 @@ public final class IntPair {
     public int getKey() {
         return key;
     }
-    
+
+    /**
+     * Sets this {@link IntPair}'s key.
+     *
+     * @param key The key as an {@code int}.
+     */
+    public void setKey(int key) {
+        this.key = key;
+    }
+
     /**
      * Gets this {@link IntPair}'s value.
      *
@@ -70,5 +87,14 @@ public final class IntPair {
     public int getValue() {
         return value;
     }
-    
+
+    /**
+     * Sets this {@link IntPair}'s value.
+     *
+     * @param value The value as an {@code int}.
+     */
+    public void setValue(int value) {
+        this.value = value;
+    }
+
 }

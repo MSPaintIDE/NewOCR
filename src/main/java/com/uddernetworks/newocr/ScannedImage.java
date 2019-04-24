@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 /**
  * An object to store line data for {@link ImageLetter}s on a scanned image.
@@ -28,6 +27,7 @@ public class ScannedImage {
 
     /**
      * Gets the string of a scanned image
+     *
      * @return The string of a scanned image
      */
     public String getPrettyString() {
@@ -44,38 +44,16 @@ public class ScannedImage {
     }
 
     /**
-     * Gets the first font size found in points.
-     *
-     * @param ocrHandle The OCRHandle used
-     * @return The font size in points
-     */
-    public int getFirstFontSize(OCRHandle ocrHandle) {
-        try {
-            for (var imageLetters : grid.values()) {
-                for (var imageLetter : imageLetters) {
-                    int size = ocrHandle.getFontSize(imageLetter).get();
-
-                    if (size != -1) {
-                        return size;
-                    }
-                }
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-
-        return 0;
-    }
-
-    /**
      * Gets the letter at the given index of the actual {@link ScannedImage#getPrettyString()} position, meaning
      * newlines are not returned.
      *
      * @param index The character index
-     * @return The ImageLetter at the given position
+     * @return The ImageLetter at the given position, if found
      */
-    public ImageLetter letterAt(int index) {
-        List<ImageLetter> last = getGridLineAtIndex(0).get();
+    public Optional<ImageLetter> letterAt(int index) {
+        var firstLineOptional = getGridLineAtIndex(0);
+        if (firstLineOptional.isEmpty()) return Optional.empty();
+        List<ImageLetter> last = firstLineOptional.get();
 
         var i = 0;
         while (last.size() + 1 <= index) {
@@ -85,7 +63,7 @@ public class ScannedImage {
             last = nextLine.get();
         }
 
-        return last.get(index);
+        return Optional.ofNullable(last.size() <= index ? null : last.get(index));
     }
 
     /**
@@ -120,7 +98,7 @@ public class ScannedImage {
     /**
      * Adds a line containing {@link ImageLetter}s.
      *
-     * @param y The exact Y position of the line
+     * @param y                     The exact Y position of the line
      * @param databaseCharacterList A list of {@link ImageLetter}s as the line
      */
     public void addLine(int y, List<ImageLetter> databaseCharacterList) {

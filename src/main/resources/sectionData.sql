@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS sectionData (
   letter INTEGER,
-  minFontSize INTEGER,
-  maxFontSize INTEGER,
+  modifier INTEGER,
   sectionIndex INTEGER,
   data DOUBLE
 );

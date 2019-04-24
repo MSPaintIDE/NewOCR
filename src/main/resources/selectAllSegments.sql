@@ -1,1 +1,1 @@
-SELECT CHAR(letter) AS letter, sectionIndex, data FROM sectionData WHERE minFontSize = ? AND maxFontSize = ? ORDER BY letter, sectionIndex;
+SELECT CHAR(letter) AS letter, modifier, sectionIndex, data FROM sectionData ORDER BY letter, modifier, sectionIndex;

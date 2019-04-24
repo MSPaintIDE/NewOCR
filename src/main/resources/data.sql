@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS data (
+  name VARCHAR(64),
+  value DOUBLE
+);
