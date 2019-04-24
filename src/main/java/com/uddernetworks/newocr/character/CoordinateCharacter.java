@@ -18,7 +18,7 @@ public abstract class CoordinateCharacter extends Character {
      * Merges the given {@link CoordinateCharacter} with the current one, possibly changing width, height, X and Y
      * values, along with combining the current and given {@link CoordinateCharacter}'s coordinates and values
      * (Accessible via {@link CoordinateCharacter#getCoordinates()} and {@link CoordinateCharacter#getValues()}
-     * respectively)
+     * respectively).
      *
      * @param character The {@link CoordinateCharacter} to merge into the current one
      */

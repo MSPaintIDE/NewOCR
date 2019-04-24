@@ -10,11 +10,20 @@ git config --global user.email "nobody@ms-paint-i.de"
 git config --global user.name "Travis CI"
 git config core.autocrlf true
 
+mkdir pages
+cd pages
+
+git clone https://github.com/MSPaintIDE/NewOCR-javadocs .
+rm -rf *
+cd ../
+
 gradle javadoc --no-daemon
-cd build/docs/javadoc
+cd build/docs/
+mv javadoc/* ../../pages
+cd ../../pages
+ls
 
 # deploy
-git init
 git add . &> /dev/null
-git commit -m "Update docs from https://github.com/MSPaintIDE/NewOCR"
-git push --force --quiet "https://${GITHUB_TOKEN}@github.com/MSPaintIDE/NewOCR-javadocs.git" master:master &> /dev/null
+git commit -m "Update docs from https://github.com/MSPaintIDE/NewOCR" &> /dev/null
+git push --quiet "https://${GITHUB_TOKEN}@github.com/MSPaintIDE/NewOCR-javadocs.git" master:master &> /dev/null
