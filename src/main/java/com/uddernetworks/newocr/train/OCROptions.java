@@ -7,6 +7,10 @@ import java.util.stream.IntStream;
 
 /**
  * General options used by the OCR scanning and training.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class OCROptions {
     private Set<Character> specialSpaces = new HashSet<>();

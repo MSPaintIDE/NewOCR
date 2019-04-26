@@ -5,6 +5,10 @@ import java.util.Optional;
 
 /**
  * A simple class to cache constructors from classes.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public interface ReflectionCacher {
 

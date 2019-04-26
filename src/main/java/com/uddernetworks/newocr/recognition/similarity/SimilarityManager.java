@@ -10,6 +10,10 @@ import java.util.function.Consumer;
 /**
  * The manager for {@link SimilarRule}s, usually derived from
  * {@link com.uddernetworks.newocr.configuration.FontConfiguration}s.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public interface SimilarityManager {
 

@@ -8,6 +8,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * A class to cache constructors from the {@link HOCONFontConfiguration}.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public class ConfigReflectionCacher implements ReflectionCacher {
 
     private static Logger LOGGER = LoggerFactory.getLogger(ConfigReflectionCacher.class);

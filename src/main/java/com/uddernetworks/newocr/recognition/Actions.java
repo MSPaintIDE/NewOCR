@@ -10,9 +10,14 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 
 /**
  * A class to provide general actions for the OCR.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public interface Actions {
 
@@ -92,6 +97,14 @@ public interface Actions {
      * @return The {@link ImageLetter} object with the {@link DatabaseCharacter} inside it containing the found character
      */
     Optional<ImageLetter> getCharacterFor(SearchCharacter searchCharacter, Object2DoubleMap<ImageLetter> diffs, IntPair lineBounds);
+
+    /**
+     * Gets the estimated font size for the given {@link ImageLetter}.
+     *
+     * @param imageLetter The {@link ImageLetter} to get the font size of
+     * @return The font size in pixels
+     */
+    OptionalDouble getFontSize(ImageLetter imageLetter);
 
     /**
      * Gets the top and bottom line bounds found from the value 2D array. This is used for getting characters for

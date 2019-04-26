@@ -7,6 +7,10 @@ import java.util.Arrays;
 /**
  * An enum containing every possible character piece that can be detected.
  * Each one of these are recognised as a separate character and will be trained as such.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public enum Letter {
     EXCLAMATION('!', 0, "|"),

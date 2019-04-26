@@ -2,6 +2,10 @@ package com.uddernetworks.newocr.utils;
 
 /**
  * Provides simple conversions of units used by the OCR and programs using the library.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class ConversionUtils {
 

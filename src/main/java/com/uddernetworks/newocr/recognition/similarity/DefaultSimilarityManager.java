@@ -14,6 +14,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+/**
+ * Uses methods from {@link SimilarRule}s and checks if characters are similar.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public class DefaultSimilarityManager implements SimilarityManager {
 
     private static Logger LOGGER = LoggerFactory.getLogger(DefaultSimilarityManager.class);

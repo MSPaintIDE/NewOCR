@@ -1,7 +1,7 @@
 package com.uddernetworks.newocr.fonts;
 
 import com.uddernetworks.newocr.FontTestNameGenerator;
-import com.uddernetworks.newocr.ScannedImage;
+import com.uddernetworks.newocr.recognition.ScannedImage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Test;

@@ -4,7 +4,9 @@ import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
+import com.uddernetworks.newocr.recognition.similarity.Letter;
 import com.uddernetworks.newocr.train.OCROptions;
+import com.uddernetworks.newocr.train.TrainGeneratorOptions;
 import com.uddernetworks.newocr.utils.OCRUtils;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import org.slf4j.Logger;
@@ -17,8 +19,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
+/**
+ * The base class for actually training an image/font.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public class OCRTrain implements Train {
 
     private static Logger LOGGER = LoggerFactory.getLogger(OCRTrain.class);
@@ -32,23 +42,42 @@ public class OCRTrain implements Train {
      * Creates a new {@link OCRTrain}.
      *
      * @param databaseManager The {@link DatabaseManager} to use
-     * @param options The {@link OCROptions} to use
+     * @param options         The {@link OCROptions} to use
      */
     public OCRTrain(DatabaseManager databaseManager, OCROptions options) {
+        this(databaseManager, options, new OCRActions(databaseManager, options));
+    }
+
+    /**
+     * Creates a new {@link OCRTrain}.
+     *
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param options         The {@link OCROptions} to use
+     * @param actions         The {@link Actions} to use
+     */
+    public OCRTrain(DatabaseManager databaseManager, OCROptions options, Actions actions) {
         this.databaseManager = databaseManager;
         this.options = options;
+        this.actions = actions;
         ImageIO.setUseCache(false);
-
-        this.actions = new OCRActions(databaseManager, options);
     }
 
     @Override
     public void trainImage(File file) {
+        trainImage(file, null);
+    }
+
+    @Override
+    public void trainImage(File file, TrainGeneratorOptions generatorOptions) {
 
         if (this.databaseManager.isTrainedSync()) {
             databaseManager.clearData();
             this.databaseManager.setTrained(false);
         }
+
+        var trainingFontSize = generatorOptions != null;
+
+        this.databaseManager.setProperty("trainingFontSize", trainingFontSize);
 
         List<TrainedCharacterData> trainedCharacterDataList = new ArrayList<>();
 
@@ -69,10 +98,14 @@ public class OCRTrain implements Train {
         // Stores the height/distance ratio for apostrophe parts
         var apostropheRatios = new DoubleArrayList();
 
-        var customSpaces = new HashMap<Character, List<Double>>();
+        var fontSizes = new HashMap<Letter, DoubleArrayList>();
+
+        var customSpaces = new HashMap<Character, DoubleArrayList>();
 
         var metaMapping = Stream.of("distanceAbove", "distancei", "distancej", "colonDistance", "semicolonDistance", "equalsDistance", "distanceQuestion", "distanceExclamation")
                 .collect(Collectors.toMap(name -> name, name -> new DoubleArrayList()));
+
+        var currentFontSize = trainingFontSize ? generatorOptions.getMaxFontSize() : 0;
 
         // Goes through each line found
         for (var line : this.actions.getLettersDuringTraining(searchImage)) {
@@ -129,7 +162,7 @@ public class OCRTrain implements Train {
                     if (nextMeasuringSpace != null) {
                         double width = searchCharacter.getX() - (nextMeasuringSpace.getX() + nextMeasuringSpace.getWidth());
                         double ratio = width / (double) nextMeasuringSpace.getHeight();
-                        customSpaces.computeIfAbsent(nextMeasuringSpace.getLetter(), x -> new ArrayList<>()).add(ratio);
+                        customSpaces.computeIfAbsent(nextMeasuringSpace.getLetter(), x -> new DoubleArrayList()).add(ratio);
                         nextMeasuringSpace = null;
                     }
 
@@ -144,6 +177,10 @@ public class OCRTrain implements Train {
 
                     // Adds the current segment values of the current searchCharacter to the trainedSearchCharacter
                     trainedSearchCharacter.recalculateTo(searchCharacter);
+
+                    // Get the font size divided by the width/height of the character
+                    double result = (double) currentFontSize / searchCharacter.getHeight();
+                    fontSizes.computeIfAbsent(Letter.getLetter(current, modifier), x -> new DoubleArrayList()).add(result);
 
                     double halfOfLineHeight = ((double) line.bottomY() - (double) line.topY()) / 2;
                     double middleOfLineToTopChar = (double) searchCharacter.getY() - (double) line.topY();
@@ -160,6 +197,8 @@ public class OCRTrain implements Train {
                     }
                 }
             }
+
+            currentFontSize--;
         }
 
         LOGGER.debug("Writing data to database...");
@@ -168,6 +207,7 @@ public class OCRTrain implements Train {
         // Add the apostropheRatios data into the database
         CompletableFuture.runAsync(() -> metaMapping.forEach(databaseManager::addAveragedData))
                 .thenRunAsync(() -> databaseManager.addAveragedData("apostropheRatio", apostropheRatios))
+                .thenRunAsync(() -> fontSizes.forEach(((letter, ratios) -> databaseManager.setFontSize(letter.getLetter(), letter.getMod(), DoubleStream.of(ratios.toDoubleArray()).average().orElse(0D)))))
                 .thenRunAsync(() -> customSpaces.forEach((character, ratios) -> databaseManager.addCustomSpace(character, ratios.stream().mapToDouble(Double::doubleValue).average().orElse(0))));
 
         // Inserts all character data into the database after recalculating the

@@ -6,33 +6,36 @@ import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
+import com.uddernetworks.newocr.recognition.similarity.Letter;
 import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+/**
+ * Provides general OCR actions.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public class OCRActions implements Actions {
-
-    private static Logger LOGGER = LoggerFactory.getLogger(OCRActions.class);
 
     private DatabaseManager databaseManager;
     private OCROptions options;
 
-    private double distanceAbove = -1;
-    private double distanceBelow = -1;
-
     /**
      * Creates a new {@link OCRActions} with a {@link DatabaseManager} and {@link OCROptions}.
+     *
      * @param databaseManager The {@link DatabaseManager} to use
-     * @param options The {@link OCROptions} to use
+     * @param options         The {@link OCROptions} to use
      */
     public OCRActions(DatabaseManager databaseManager, OCROptions options) {
         this.databaseManager = databaseManager;
@@ -41,15 +44,6 @@ public class OCRActions implements Actions {
 
     @Override
     public void getLetters(SearchImage searchImage, List<SearchCharacter> searchCharacters) {
-        try {
-            if (this.distanceAbove == -1)
-                this.distanceAbove = this.databaseManager.getAveragedData("distanceAbove").get();
-            if (this.distanceBelow == -1)
-                this.distanceBelow = this.databaseManager.getAveragedData("distanceBelow").get();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-
         var coordinates = new ArrayList<IntPair>();
 
         var width = searchImage.getWidth();
@@ -87,10 +81,8 @@ public class OCRActions implements Actions {
                 Set.of('i', 'j', ':', ';', '='), 1 // The base is the second character (Bottom part)
         );
 
-        var lineNum = 0;
         var lineBounds = getLineBoundsForTraining(searchImage);
         for (var coords : lineBounds) {
-            lineNum++;
             var fromY = coords.getKey();
             var toY = coords.getValue();
 
@@ -116,7 +108,7 @@ public class OCRActions implements Actions {
                 }
             }
 
-//          Get the characters with horizontal overlap
+            // Get the characters with horizontal overlap
             var ignored = new HashSet<CoordinateCharacter>();
 
             Collections.sort(found);
@@ -260,6 +252,26 @@ public class OCRActions implements Actions {
     }
 
     @Override
+    public OptionalDouble getFontSize(ImageLetter imageLetter) {
+        var charactersToSize = imageLetter.getMergedPieces().orElse(Map.of(Letter.getLetter(imageLetter), imageLetter));
+        var sizesGot = new DoubleArrayList();
+        charactersToSize.forEach((letter, character) -> {
+            try {
+                var characterSizeRatio = this.databaseManager.getFontSize(character.getLetter(), character.getModifier()).get();
+
+                double realCharacterSize = character.getHeight();
+                var fontSize = characterSizeRatio * realCharacterSize;
+
+                sizesGot.add(fontSize);
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        });
+
+        return sizesGot.stream().mapToDouble(Double::valueOf).average();
+    }
+
+    @Override
     public List<IntPair> getLineBoundsForTraining(SearchImage image) {
         // Pair<topY, bottomY>
         List<IntPair> lines = new ArrayList<>();
@@ -333,14 +345,6 @@ public class OCRActions implements Actions {
         remove.stream().sorted(Collections.reverseOrder()).forEach(i -> lines.remove(i.intValue()));
 
         return lines;
-    }
-
-    private boolean characterAt(int index, char character) {
-        return OCRTrain.TRAIN_STRING.charAt(index) == character;
-    }
-
-    private int index(char character) {
-        return OCRTrain.TRAIN_STRING.indexOf(character);
     }
 
 }

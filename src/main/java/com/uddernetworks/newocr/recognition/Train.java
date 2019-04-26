@@ -2,12 +2,17 @@ package com.uddernetworks.newocr.recognition;
 
 import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.train.ComputerTrainGenerator;
+import com.uddernetworks.newocr.train.TrainGeneratorOptions;
 
 import java.io.File;
 import java.util.List;
 
 /**
  * The main class that handles training of an image/font.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public interface Train {
 
@@ -18,6 +23,15 @@ public interface Train {
      * @param file The input image to be trained from
      */
     void trainImage(File file);
+
+    /**
+     * Scans the input image and creates training data based off of it. It must be an input image created from
+     * {@link ComputerTrainGenerator} or something of a similar format.
+     *
+     * @param file             The input image to be trained from
+     * @param generatorOptions The options to use, in order to detect font sizes
+     */
+    void trainImage(File file, TrainGeneratorOptions generatorOptions);
 
     /**
      * Gets the {@link TrainedCharacterData} with the known letter value of the given character, with the same modifier.

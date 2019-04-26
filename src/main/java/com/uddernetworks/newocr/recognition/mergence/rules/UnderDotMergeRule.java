@@ -17,6 +17,10 @@ import static com.uddernetworks.newocr.utils.OCRUtils.diff;
 
 /**
  * Merges the dot under a character for ! and ?
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class UnderDotMergeRule extends MergeRule {
 

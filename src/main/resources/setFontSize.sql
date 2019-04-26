@@ -1,0 +1,1 @@
+INSERT INTO fontSize VALUES(?, ?, ?);

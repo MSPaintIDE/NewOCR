@@ -6,6 +6,10 @@ import java.util.List;
 
 /**
  * An object to store {@link SearchCharacter} data for a scanned line.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public interface CharacterLine {
 

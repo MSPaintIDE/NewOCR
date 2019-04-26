@@ -1,0 +1,1 @@
+SELECT value FROM fontSize WHERE letter = ? AND modifier = ?;

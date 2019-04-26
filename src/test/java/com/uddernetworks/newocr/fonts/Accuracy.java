@@ -1,6 +1,5 @@
 package com.uddernetworks.newocr.fonts;
 
-import com.uddernetworks.newocr.ScannedImage;
 import com.uddernetworks.newocr.configuration.ConfigReflectionCacher;
 import com.uddernetworks.newocr.configuration.FontConfiguration;
 import com.uddernetworks.newocr.configuration.HOCONFontConfiguration;
@@ -8,6 +7,7 @@ import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.database.OCRDatabaseManager;
 import com.uddernetworks.newocr.recognition.OCRScan;
 import com.uddernetworks.newocr.recognition.OCRTrain;
+import com.uddernetworks.newocr.recognition.ScannedImage;
 import com.uddernetworks.newocr.recognition.mergence.DefaultMergenceManager;
 import com.uddernetworks.newocr.recognition.similarity.DefaultSimilarityManager;
 import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;

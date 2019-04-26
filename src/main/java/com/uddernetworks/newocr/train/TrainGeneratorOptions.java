@@ -2,6 +2,10 @@ package com.uddernetworks.newocr.train;
 
 /**
  * Defines options for the actual generation of the image to train on.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class TrainGeneratorOptions {
     private int maxFontSize = 90;

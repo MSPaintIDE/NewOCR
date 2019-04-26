@@ -15,11 +15,15 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * From https://wiki.newocr.dev/examples/basic-training
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class Training {
     public static void main(String[] args) throws IOException {
-        new ComputerTrainGenerator().generateTrainingImage(new File("train_comicsans.png"),
-                new TrainGeneratorOptions().setFontFamily("Comic Sans MS"));
+        var generateOptions = new TrainGeneratorOptions().setFontFamily("Comic Sans MS");
+        new ComputerTrainGenerator().generateTrainingImage(new File("train_comicsans.png"), generateOptions);
 
         var databaseManager = new OCRDatabaseManager(new File("database\\ocr_basictraining"));
         var similarityManager = new DefaultSimilarityManager();
@@ -29,7 +33,7 @@ public class Training {
 
         var ocrTrain = new OCRTrain(databaseManager, fontConfiguration.fetchOptions());
 
-        ocrTrain.trainImage(new File("train_comicsans.png"));
+        ocrTrain.trainImage(new File("train_comicsans.png"), generateOptions);
 
         databaseManager.shutdown(TimeUnit.SECONDS, 1L);
     }

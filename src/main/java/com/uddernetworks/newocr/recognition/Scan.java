@@ -1,6 +1,5 @@
 package com.uddernetworks.newocr.recognition;
 
-import com.uddernetworks.newocr.ScannedImage;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.train.UntrainedDatabaseException;
 
@@ -9,14 +8,18 @@ import java.util.List;
 
 /**
  * The main class that handles character scanning of an image.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public interface Scan {
 
     /**
-     * Scans the input image and returns a {@link ScannedImage} containing all the characters and their info.
+     * Scans the input image and returns a {@link DefaultScannedImage} containing all the characters and their info.
      *
      * @param file The input image to be scanned
-     * @return A {@link ScannedImage} containing all scanned character data
+     * @return A {@link DefaultScannedImage} containing all scanned character data
      * @throws UntrainedDatabaseException If the database was not trained yet
      */
     ScannedImage scanImage(File file);

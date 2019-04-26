@@ -1,6 +1,5 @@
 package com.uddernetworks.newocr.recognition;
 
-import com.uddernetworks.newocr.ScannedImage;
 import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.database.DatabaseManager;
@@ -24,6 +23,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+/**
+ * The base class for actually scanning an image.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public class OCRScan implements Scan {
 
     private static Logger LOGGER = LoggerFactory.getLogger(OCRScan.class);
@@ -39,7 +45,7 @@ public class OCRScan implements Scan {
      * Creates a new {@link OCRScan} with a default {@link SimilarityManager} and {@link MergenceManager}.
      *
      * @param databaseManager The {@link DatabaseManager} to use
-     * @param options The {@link OCROptions} to use
+     * @param options         The {@link OCROptions} to use
      */
     public OCRScan(DatabaseManager databaseManager, OCROptions options) {
         this(databaseManager, options, new DefaultSimilarityManager().loadDefaults());
@@ -48,8 +54,8 @@ public class OCRScan implements Scan {
     /**
      * Creates a new {@link OCRScan} with a default {@link MergenceManager}.
      *
-     * @param databaseManager The {@link DatabaseManager} to use
-     * @param options The {@link OCROptions} to use
+     * @param databaseManager   The {@link DatabaseManager} to use
+     * @param options           The {@link OCROptions} to use
      * @param similarityManager The {@link SimilarityManager} to use
      */
     public OCRScan(DatabaseManager databaseManager, OCROptions options, SimilarityManager similarityManager) {
@@ -59,18 +65,29 @@ public class OCRScan implements Scan {
     /**
      * Creates a new {@link OCRScan}.
      *
-     * @param databaseManager The {@link DatabaseManager} to use
-     * @param options The {@link OCROptions} to use
+     * @param databaseManager   The {@link DatabaseManager} to use
+     * @param options           The {@link OCROptions} to use
      * @param similarityManager The {@link SimilarityManager} to use
-     * @param mergenceManager The {@link MergenceManager} to use
+     * @param mergenceManager   The {@link MergenceManager} to use
      */
     public OCRScan(DatabaseManager databaseManager, OCROptions options, SimilarityManager similarityManager, MergenceManager mergenceManager) {
+        this(databaseManager, similarityManager, mergenceManager, new OCRActions(databaseManager, options));
+    }
+
+    /**
+     * Creates a new {@link OCRScan}.
+     *
+     * @param databaseManager   The {@link DatabaseManager} to use
+     * @param similarityManager The {@link SimilarityManager} to use
+     * @param mergenceManager   The {@link MergenceManager} to use
+     * @param actions           The {@link Actions} to use
+     */
+    public OCRScan(DatabaseManager databaseManager, SimilarityManager similarityManager, MergenceManager mergenceManager, Actions actions) {
         this.databaseManager = databaseManager;
         this.mergenceManager = mergenceManager;
         this.similarityManager = similarityManager;
+        this.actions = actions;
         ImageIO.setUseCache(false);
-
-        this.actions = new OCRActions(databaseManager, options);
     }
 
     @Override
@@ -150,7 +167,7 @@ public class OCRScan implements Scan {
 
         // Sorts the lines again based on X values, to move spaces from the back to their proper locations in the line.
 
-        ScannedImage scannedImage = new ScannedImage(file, input);
+        ScannedImage scannedImage = new DefaultScannedImage(file, input);
 
         sortedLines.keySet().stream().sorted().forEach(y -> {
             List<ImageLetter> line = sortedLines.get(y.intValue());

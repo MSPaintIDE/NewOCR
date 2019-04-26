@@ -7,7 +7,6 @@ module NewOCR {
     requires slf4j.api;
     requires typesafe.config;
 
-    exports com.uddernetworks.newocr;
     exports com.uddernetworks.newocr.character;
     exports com.uddernetworks.newocr.configuration;
     exports com.uddernetworks.newocr.database;

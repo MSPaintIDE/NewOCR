@@ -14,7 +14,11 @@ import java.util.concurrent.ExecutionException;
 import static com.uddernetworks.newocr.utils.OCRUtils.diff;
 
 /**
- * Merges : and = pieces
+ * Merges : and = pieces.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class EqualVerticalMergeRule extends MergeRule {
 

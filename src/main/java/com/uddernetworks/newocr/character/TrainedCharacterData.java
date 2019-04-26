@@ -6,6 +6,10 @@ import java.util.OptionalDouble;
 
 /**
  * This is an object meant for storing the data for characters in the training stage.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class TrainedCharacterData extends Character {
 

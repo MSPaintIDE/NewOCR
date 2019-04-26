@@ -12,6 +12,10 @@ import java.util.List;
  * Provides a way to easily get touching coordinates of black pixels.
  * This uses a boolean array, because they will always be either black
  * or white, and it's *much* faster than reading an image's color.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class SearchImage {
 

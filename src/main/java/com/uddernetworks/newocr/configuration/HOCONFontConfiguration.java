@@ -17,6 +17,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Reads a HOCON Configuration file and derives options from it.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public class HOCONFontConfiguration implements FontConfiguration {
 
     private static Logger LOGGER = LoggerFactory.getLogger(HOCONFontConfiguration.class);

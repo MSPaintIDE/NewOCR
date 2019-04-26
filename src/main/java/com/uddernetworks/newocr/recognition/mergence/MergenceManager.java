@@ -10,6 +10,10 @@ import java.util.function.BiFunction;
 
 /**
  * The manager for {@link MergeRule}s to combine/merge multi part characters.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public interface MergenceManager {
 

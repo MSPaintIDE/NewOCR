@@ -9,6 +9,13 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * Creates a simple image to train on from a given font.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public class ComputerTrainGenerator implements TrainGenerator {
 
     @Override

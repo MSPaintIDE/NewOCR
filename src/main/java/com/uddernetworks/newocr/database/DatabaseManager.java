@@ -134,6 +134,10 @@ public interface DatabaseManager {
      */
     Future<Double> getCustomSpace(char letter);
 
+    void setFontSize(char letter, int mod, double ratio);
+
+    Future<Double> getFontSize(char letter, int mod);
+
     /**
      * Sets the boolean property to the database.
      *
@@ -185,7 +189,7 @@ public interface DatabaseManager {
     /**
      * Shuts down all executor threads when the program is ready to be terminated after the specified time.
      *
-     * @param unit The Unit of time
+     * @param unit     The Unit of time
      * @param duration How long until it should shut down
      */
     void shutdown(TimeUnit unit, long duration);

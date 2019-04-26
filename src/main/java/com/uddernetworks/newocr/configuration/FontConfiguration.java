@@ -9,6 +9,10 @@ import java.util.Optional;
 
 /**
  * The configuration to read a file to populate managers and options.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public interface FontConfiguration {
 

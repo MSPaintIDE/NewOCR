@@ -16,6 +16,13 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Merges character pieces together.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public class DefaultMergenceManager implements MergenceManager {
 
     private static Logger LOGGER = LoggerFactory.getLogger(DefaultMergenceManager.class);
@@ -31,7 +38,7 @@ public class DefaultMergenceManager implements MergenceManager {
     /**
      * Creates a new {@link DefaultMergenceManager}.
      *
-     * @param databaseManager The {@link DatabaseManager} to use
+     * @param databaseManager   The {@link DatabaseManager} to use
      * @param similarityManager The {@link SimilarityManager} to use
      */
     public DefaultMergenceManager(DatabaseManager databaseManager, SimilarityManager similarityManager) {

@@ -7,6 +7,13 @@ import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Provides methods to combine/merge two character pieces.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public abstract class MergeRule {
 
     protected DatabaseManager databaseManager;

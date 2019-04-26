@@ -10,6 +10,10 @@ import java.util.Set;
 /**
  * A simple {@link SimilarRule} that is used by {@link com.uddernetworks.newocr.configuration.HOCONFontConfiguration}
  * and by other default {@link SimilarRule}s.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class BasicSimilarityRule implements SimilarRule {
 

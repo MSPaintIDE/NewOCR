@@ -6,7 +6,7 @@ import java.util.Objects;
  * A class that acts as an {@code int}-{@code int} tuple.
  *
  * @author Jacob G.
- * @version January 12, 2019
+ * @since January 12, 2019
  */
 public final class IntPair {
 

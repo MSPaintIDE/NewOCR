@@ -11,7 +11,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Merges all pieces of a percent sign
+ * Merges all pieces of a percent sign.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class PercentMergeRule extends MergeRule {
 

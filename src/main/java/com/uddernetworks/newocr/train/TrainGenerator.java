@@ -2,6 +2,13 @@ package com.uddernetworks.newocr.train;
 
 import java.io.File;
 
+/**
+ * Generates a training image to be used by the OCR.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
+ */
 public interface TrainGenerator {
 
     /**

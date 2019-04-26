@@ -8,6 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An object meant to store characters directly scanned from an image and that is being searched for/mutated.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class SearchCharacter extends CoordinateCharacter {
 

@@ -10,6 +10,10 @@ import java.util.Optional;
 
 /**
  * An object to contain data from characters directly scanned from an image.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public class ImageLetter extends CoordinateCharacter {
 

@@ -1,4 +1,4 @@
-package com.uddernetworks.newocr;
+package com.uddernetworks.newocr.recognition;
 
 import com.uddernetworks.newocr.character.ImageLetter;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
@@ -11,8 +11,12 @@ import java.util.Optional;
 
 /**
  * An object to store line data for {@link ImageLetter}s on a scanned image.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
-public class ScannedImage {
+public class DefaultScannedImage implements ScannedImage {
 
     private transient File originalFile;
 
@@ -20,16 +24,12 @@ public class ScannedImage {
 
     private final Int2ObjectMap<List<ImageLetter>> grid = new Int2ObjectLinkedOpenHashMap<>();
 
-    public ScannedImage(File originalFile, BufferedImage originalImage) {
+    public DefaultScannedImage(File originalFile, BufferedImage originalImage) {
         this.originalFile = originalFile;
         this.originalImage = originalImage;
     }
 
-    /**
-     * Gets the string of a scanned image
-     *
-     * @return The string of a scanned image
-     */
+    @Override
     public String getPrettyString() {
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -39,26 +39,33 @@ public class ScannedImage {
                     .forEach(stringBuilder::append);
             stringBuilder.append("\n");
         });
+        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
 
         return stringBuilder.toString();
     }
 
-    /**
-     * Gets the letter at the given index of the actual {@link ScannedImage#getPrettyString()} position, meaning
-     * newlines are not returned.
-     *
-     * @param index The character index
-     * @return The ImageLetter at the given position, if found
-     */
+    @Override
+    public ScannedImage stripLeadingSpaces() {
+        var commonSpaces = grid.int2ObjectEntrySet().stream().mapToInt(entry -> {
+            var line = entry.getValue();
+            for (int i = 0; i < line.size(); i++) if (line.get(i).getLetter() != ' ') return i;
+            return line.size();
+        }).min().orElse(0);
+        if (commonSpaces > 0)
+            grid.int2ObjectEntrySet().forEach(entry -> entry.getValue().subList(0, commonSpaces).clear());
+        return this;
+    }
+
+    @Override
     public Optional<ImageLetter> letterAt(int index) {
         var firstLineOptional = getGridLineAtIndex(0);
         if (firstLineOptional.isEmpty()) return Optional.empty();
-        List<ImageLetter> last = firstLineOptional.get();
+        var last = firstLineOptional.get();
 
         var i = 0;
         while (last.size() + 1 <= index) {
             index -= last.size() + 1;
-            Optional<List<ImageLetter>> nextLine = getGridLineAtIndex(++i);
+            var nextLine = getGridLineAtIndex(++i);
             if (nextLine.isEmpty()) break;
             last = nextLine.get();
         }
@@ -66,79 +73,42 @@ public class ScannedImage {
         return Optional.ofNullable(last.size() <= index ? null : last.get(index));
     }
 
-    /**
-     * Gets the line at the stored index. This is NOT by the y value.
-     *
-     * @param index The index of the row
-     * @return The row
-     */
+    @Override
     public Optional<List<ImageLetter>> getGridLineAtIndex(int index) throws IndexOutOfBoundsException {
         return grid.keySet().stream().skip(index).limit(1).findFirst().map(t -> grid.get(t.intValue()));
     }
 
-    /**
-     * gets the amount of lines in the image.
-     *
-     * @return The amount of lines in the image
-     */
+    @Override
     public int getLineCount() {
         return grid.size();
     }
 
-    /**
-     * Returns the raw, mutable grid of {@link ImageLetter}s internally used with the key of the mpa being the exact Y
-     * position of the line.
-     *
-     * @return The raw, mutable grid of values
-     */
+    @Override
     public Int2ObjectMap<List<ImageLetter>> getGrid() {
         return grid;
     }
 
-    /**
-     * Adds a line containing {@link ImageLetter}s.
-     *
-     * @param y                     The exact Y position of the line
-     * @param databaseCharacterList A list of {@link ImageLetter}s as the line
-     */
+    @Override
     public void addLine(int y, List<ImageLetter> databaseCharacterList) {
         grid.put(y, databaseCharacterList);
     }
 
-    /**
-     * Gets the line at the given index value.
-     *
-     * @param y The index of the line
-     * @return The line at the given index value
-     */
+    @Override
     public List<ImageLetter> getLine(int y) {
         return grid.values().stream().skip(y).findFirst().orElse(null);
     }
 
-    /**
-     * Gets both the line Y and values at the given index value.
-     *
-     * @param y The index of the line
-     * @return The line at the given Y index value
-     */
+    @Override
     public Int2ObjectMap.Entry<List<ImageLetter>> getLineEntry(int y) {
         return grid.int2ObjectEntrySet().stream().skip(y).findFirst().orElse(null);
     }
 
-    /**
-     * Gets the original image scanned by the OCR.
-     *
-     * @return The original image, which may be null if pulled from caches
-     */
+    @Override
     public BufferedImage getOriginalImage() {
         return originalImage;
     }
 
-    /**
-     * Gets the original {@link File} scanned by the OCR.
-     *
-     * @return The original File, which may be null if pulled from caches
-     */
+    @Override
     public File getOriginalFile() {
         return originalFile;
     }

@@ -1,18 +1,23 @@
 package com.uddernetworks.newocr.character;
 
+import com.uddernetworks.newocr.recognition.similarity.Letter;
 import com.uddernetworks.newocr.utils.IntPair;
 
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * The superclass for characters containing data from the input image.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public abstract class CoordinateCharacter extends Character {
 
     List<IntPair> coordinates;
     boolean[][] values;
     int amountOfMerges = 0;
+    Map<Letter, CoordinateCharacter> mergedPieces;
 
     /**
      * Merges the given {@link CoordinateCharacter} with the current one, possibly changing width, height, X and Y
@@ -23,6 +28,11 @@ public abstract class CoordinateCharacter extends Character {
      * @param character The {@link CoordinateCharacter} to merge into the current one
      */
     public void merge(CoordinateCharacter character) {
+        if (this.mergedPieces == null)
+            (this.mergedPieces = new HashMap<>()).put(Letter.getLetter(this.letter, this.modifier), this);
+        this.mergedPieces.put(Letter.getLetter(character.letter, character.modifier), character);
+        if (character.mergedPieces != null) this.mergedPieces.putAll(character.mergedPieces);
+
         this.amountOfMerges++;
         this.coordinates.addAll(character.coordinates);
         int maxX = Integer.MIN_VALUE, minX = Integer.MAX_VALUE;
@@ -101,6 +111,15 @@ public abstract class CoordinateCharacter extends Character {
      */
     public int getAmountOfMerges() {
         return amountOfMerges;
+    }
+
+    /**
+     * Gets the individual pieces before merging.
+     *
+     * @return The {@link CoordinateCharacter}s that have been merged, or null if there have been no merges
+     */
+    public Optional<Map<Letter, CoordinateCharacter>> getMergedPieces() {
+        return Optional.ofNullable(mergedPieces);
     }
 
     @Override

@@ -4,6 +4,10 @@ import java.util.Objects;
 
 /**
  * The superclass of all characters.
+ *
+ * @author Adam Yarris
+ * @version 2.0.0
+ * @since April 25, 2019
  */
 public abstract class Character implements Comparable<Character> {
 

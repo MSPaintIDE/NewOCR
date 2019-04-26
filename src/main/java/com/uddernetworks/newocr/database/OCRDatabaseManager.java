@@ -36,9 +36,12 @@ public class OCRDatabaseManager implements DatabaseManager {
     private String getCustomSpace;
     private String setBooleanProperty;
     private String getBooleanProperty;
+    private String setFontSize;
+    private String getFontSize;
 
     private final AtomicReference<List<DatabaseCharacter>> databaseCharacterCache = new AtomicReference<>();
     private final AtomicReference<Map<Character, Double>> customSpaceCache = new AtomicReference<>(new HashMap<>());
+    private final AtomicReference<Map<Character, Double>> fontSizeCache = new AtomicReference<>(new HashMap<>());
 
     /**
      * Connects to the database with the given credentials, and executes the queries found in letters.sql and sectionData.sql
@@ -95,7 +98,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
         dataSource = new HikariDataSource(config);
 
-        List.of("letters.sql", "sectionData.sql", "data.sql", "customSpaces.sql", "booleanProperties.sql").parallelStream().forEach(table -> {
+        List.of("letters.sql", "sectionData.sql", "data.sql", "customSpaces.sql", "booleanProperties.sql", "fontSizes.sql").parallelStream().forEach(table -> {
             var stream = OCRDatabaseManager.class.getResourceAsStream("/" + table);
 
             try (var reader = new BufferedReader(new InputStreamReader(stream));
@@ -136,6 +139,8 @@ public class OCRDatabaseManager implements DatabaseManager {
         this.getCustomSpace = getQuery("getCustomSpace");
         this.setBooleanProperty = getQuery("setBooleanProperty");
         this.getBooleanProperty = getQuery("getBooleanProperty");
+        this.setFontSize = getQuery("setFontSize");
+        this.getFontSize = getQuery("getFontSize");
     }
 
     /**
@@ -362,6 +367,37 @@ public class OCRDatabaseManager implements DatabaseManager {
     }
 
     @Override
+    public void setFontSize(char letter, int mod, double ratio) {
+        try (var connection = dataSource.getConnection();
+             var addData = connection.prepareStatement(this.setFontSize)) {
+            addData.setInt(1, letter);
+            addData.setInt(2, mod);
+            addData.setDouble(3, ratio);
+            addData.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public Future<Double> getFontSize(char letter, int mod) {
+        return executor.submit(() -> fontSizeCache.get().computeIfAbsent(letter, ignored -> {
+            try (var connection = dataSource.getConnection();
+                 var getData = connection.prepareStatement(this.getFontSize)) {
+                getData.setInt(1, letter);
+                getData.setInt(2, mod);
+                var resultSet = getData.executeQuery();
+                if (!resultSet.next()) return 0D;
+
+                return resultSet.getDouble(1);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return 0D;
+            }
+        }));
+    }
+
+    @Override
     public void setProperty(String name, boolean value) {
         try (var connection = dataSource.getConnection();
              var addData = connection.prepareStatement(this.setBooleanProperty)) {
@@ -411,7 +447,7 @@ public class OCRDatabaseManager implements DatabaseManager {
 
     @Override
     public void clearData() {
-        Stream.of("letters", "sectionData", "data", "customSpaces").parallel().forEach(table -> {
+        Stream.of("letters", "sectionData", "data", "customSpaces", "fontSize").parallel().forEach(table -> {
             try (var connection = dataSource.getConnection(); // Keeping the same connection throughout all tables might be faster
                  var truncate = connection.prepareStatement("TRUNCATE TABLE " + table)) {
                 truncate.executeUpdate();
