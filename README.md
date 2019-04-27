@@ -14,6 +14,8 @@
 # NewOCR
 NewOCR is an OCR library made to suit [MS Paint IDE](https://github.com/MSPaintIDE/MSPaintIDE)'s needs, though can be used in any project, as nothing is made specific to the IDE. The OCR can be trained with many fonts, though is geared towards fonts like **Verdana** and similar fonts. Other fonts _may_ require some tweaking of the character detector, but the main detection will work with no matter how different the characters are from Verdana (It could even modify it to work with emojis).
 
+It should be noted that this OCR is made for/tested with Windows, and may require some slight modification to work with other OS's.
+
 Currently, NewOCR is being tested against the following fonts:
 
 - Comic Sans MS
