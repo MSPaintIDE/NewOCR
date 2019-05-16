@@ -37,6 +37,7 @@ public class OCRTrain implements Train {
     private DatabaseManager databaseManager;
     private OCROptions options;
     private Actions actions;
+    private TrainGeneratorOptions generatorOptions;
 
     /**
      * Creates a new {@link OCRTrain}.
@@ -56,15 +57,28 @@ public class OCRTrain implements Train {
      * @param actions         The {@link Actions} to use
      */
     public OCRTrain(DatabaseManager databaseManager, OCROptions options, Actions actions) {
+        this(databaseManager, options, actions, null);
+    }
+
+    /**
+     * Creates a new {@link OCRTrain}.
+     *
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param options         The {@link OCROptions} to use
+     * @param actions         The {@link Actions} to use
+     * @param generatorOptions The {@link TrainGeneratorOptions} to use during training
+     */
+    public OCRTrain(DatabaseManager databaseManager, OCROptions options, Actions actions, TrainGeneratorOptions generatorOptions) {
         this.databaseManager = databaseManager;
         this.options = options;
         this.actions = actions;
+        this.generatorOptions = generatorOptions;
         ImageIO.setUseCache(false);
     }
 
     @Override
     public void trainImage(File file) {
-        trainImage(file, null);
+        trainImage(file, this.generatorOptions);
     }
 
     @Override

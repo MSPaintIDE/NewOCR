@@ -46,13 +46,12 @@ public class DefaultScannedImage implements ScannedImage {
 
     @Override
     public ScannedImage stripLeadingSpaces() {
-        var commonSpaces = grid.int2ObjectEntrySet().stream().mapToInt(entry -> {
-            var line = entry.getValue();
+        var commonSpaces = grid.values().stream().mapToInt(line -> {
             for (int i = 0; i < line.size(); i++) if (line.get(i).getLetter() != ' ') return i;
             return line.size();
         }).min().orElse(0);
         if (commonSpaces > 0)
-            grid.int2ObjectEntrySet().forEach(entry -> entry.getValue().subList(0, commonSpaces).clear());
+            grid.values().forEach(values -> values.subList(0, commonSpaces).clear());
         return this;
     }
 

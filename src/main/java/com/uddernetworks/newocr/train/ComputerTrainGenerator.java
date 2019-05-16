@@ -18,9 +18,19 @@ import java.io.IOException;
  */
 public class ComputerTrainGenerator implements TrainGenerator {
 
+    private TrainGeneratorOptions generatorOptions;
+
+    public ComputerTrainGenerator() {
+        this(new TrainGeneratorOptions());
+    }
+
+    public ComputerTrainGenerator(TrainGeneratorOptions generatorOptions) {
+        this.generatorOptions = generatorOptions;
+    }
+
     @Override
     public void generateTrainingImage(File file) {
-        generateTrainingImage(file, new TrainGeneratorOptions());
+        generateTrainingImage(file, this.generatorOptions);
     }
 
     @Override

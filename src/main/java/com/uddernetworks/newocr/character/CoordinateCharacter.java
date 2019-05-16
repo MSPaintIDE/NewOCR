@@ -31,7 +31,10 @@ public abstract class CoordinateCharacter extends Character {
         if (this.mergedPieces == null)
             (this.mergedPieces = new HashMap<>()).put(Letter.getLetter(this.letter, this.modifier), this);
         this.mergedPieces.put(Letter.getLetter(character.letter, character.modifier), character);
-        if (character.mergedPieces != null) this.mergedPieces.putAll(character.mergedPieces);
+        if (character.mergedPieces != null) {
+            this.mergedPieces.putAll(character.mergedPieces);
+            character.mergedPieces.clear();
+        }
 
         this.amountOfMerges++;
         this.coordinates.addAll(character.coordinates);

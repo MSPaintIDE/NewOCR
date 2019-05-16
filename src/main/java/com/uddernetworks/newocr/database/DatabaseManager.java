@@ -134,8 +134,22 @@ public interface DatabaseManager {
      */
     Future<Double> getCustomSpace(char letter);
 
+    /**
+     * Sets the font size ratio for the given character and modifier.
+     *
+     * @param letter The character to set
+     * @param mod The modifier of the character
+     * @param ratio The ratio
+     */
     void setFontSize(char letter, int mod, double ratio);
 
+    /**
+     * Gets the font size ratio from the given character and modifier.
+     *
+     * @param letter The letter to get
+     * @param mod The modifier of the letter
+     * @return The font size ratio
+     */
     Future<Double> getFontSize(char letter, int mod);
 
     /**
