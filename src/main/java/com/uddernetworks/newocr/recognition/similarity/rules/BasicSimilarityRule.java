@@ -50,4 +50,9 @@ public class BasicSimilarityRule implements SimilarRule {
     public boolean matchesLetter(ImageLetter first) {
         return this.characters.contains(Letter.getLetter(first));
     }
+
+    @Override
+    public boolean matchesLetter(Letter first) {
+        return this.characters.contains(first);
+    }
 }

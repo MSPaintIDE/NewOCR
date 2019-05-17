@@ -24,6 +24,14 @@ public interface SimilarRule {
     boolean matchesLetter(ImageLetter first);
 
     /**
+     * Gets if the current rule matches with the given {@link ImageLetter} and is allowed to be processed.
+     *
+     * @param first The first {@link Letter} of the data
+     * @return If the given {@link Letter} can be processed by the current rule
+     */
+    boolean matchesLetter(Letter first);
+
+    /**
      * Gets the name of the rule.
      *
      * @return The name of the rule

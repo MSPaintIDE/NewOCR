@@ -90,7 +90,7 @@ public class HOCONFontConfiguration implements FontConfiguration {
     }
 
     @Override
-    public OCROptions fetchOptions() {
+    public OCROptions fetchOptions(SimilarityManager similarityManager) {
         var options = this.config.getConfig("language.options");
         var ocrOptions = new OCROptions();
 
@@ -101,6 +101,23 @@ public class HOCONFontConfiguration implements FontConfiguration {
 
         ocrOptions.setMaxPercentDiffToMerge(options.getDouble("max-percent-diff-to-merge"));
         ocrOptions.setSizeRatioWeight(options.getDouble("size-ratio-weight"));
+
+        var weights = this.config.getConfigList("language.ratio-weights");
+        weights.forEach(item -> {
+            var weight = item.getDouble("weight");
+            var letterList = item.getEnumList(Letter.class, "letters");
+            var ruleList = item.getStringList("similarities")
+                    .stream()
+                    .map(similarityManager::getRule)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toList());
+
+            ocrOptions.addRatioWeights(letterList, weight);
+            ocrOptions.addRatioWeightsFromRules(ruleList, weight);
+        });
+
+        LOGGER.info("[{}] Processed {} custom ratio weights...", this.friendlyName, weights.size());
 
         LOGGER.info("[{}] Generated OCROptions", this.friendlyName);
 

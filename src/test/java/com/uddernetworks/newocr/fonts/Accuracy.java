@@ -37,8 +37,8 @@ public class Accuracy {
         var similarityManager = new DefaultSimilarityManager();
 
         var fontConfiguration = new HOCONFontConfiguration(configFileName, new ConfigReflectionCacher());
-        var options = fontConfiguration.fetchOptions();
         fontConfiguration.fetchAndApplySimilarities(similarityManager);
+        var options = fontConfiguration.fetchOptions(similarityManager);
 
         return generate(fontFamily, options, similarityManager, databaseManager, fontConfiguration);
     }
@@ -49,7 +49,7 @@ public class Accuracy {
         var readingImage = new File("src\\test\\resources\\training_" + fontFamily.replaceAll("[^a-zA-Z\\d\\s:]", "_") + ".png");
 
         var mergenceManager = new DefaultMergenceManager(databaseManager, similarityManager);
-        var ocrTrain = new OCRTrain(databaseManager, options);
+        var ocrTrain = new OCRTrain(databaseManager, similarityManager, options);
 
         LOGGER.info("Generating image for {}", fontFamily);
         new ComputerTrainGenerator().generateTrainingImage(readingImage, new TrainGeneratorOptions()

@@ -41,9 +41,10 @@ public interface FontConfiguration {
     /**
      * Generates and returns the {@link OCROptions} from the file configuration.
      *
+     * @param similarityManager The {@link SimilarityManager} to use
      * @return The {@link OCROptions} from the settings
      */
-    OCROptions fetchOptions();
+    OCROptions fetchOptions(SimilarityManager similarityManager);
 
     /**
      * Fetches the similarities' settings from the configuration and applies them to the given

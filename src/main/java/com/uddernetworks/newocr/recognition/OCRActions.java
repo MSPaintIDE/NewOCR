@@ -7,6 +7,7 @@ import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.recognition.similarity.Letter;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.utils.IntPair;
 import com.uddernetworks.newocr.utils.OCRUtils;
@@ -28,16 +29,32 @@ import java.util.stream.Collectors;
  */
 public class OCRActions implements Actions {
 
+    private SimilarityManager similarityManager;
     private DatabaseManager databaseManager;
     private OCROptions options;
 
     /**
-     * Creates a new {@link OCRActions} with a {@link DatabaseManager} and {@link OCROptions}.
+     * Creates a new {@link OCRActions} with a {@link DatabaseManager} and {@link OCROptions}. The
+     * {@link OCRActions#OCRActions(SimilarityManager, DatabaseManager, OCROptions)} constructor is preferred, as
+     * without the {@link SimilarityManager} there is less-accurate character fetching.
      *
      * @param databaseManager The {@link DatabaseManager} to use
      * @param options         The {@link OCROptions} to use
      */
     public OCRActions(DatabaseManager databaseManager, OCROptions options) {
+        this.databaseManager = databaseManager;
+        this.options = options;
+    }
+
+    /**
+     * Creates a new {@link OCRActions} with a {@link DatabaseManager} and {@link OCROptions}.
+     *
+     * @param similarityManager The {@link SimilarityManager} to use
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param options         The {@link OCROptions} to use
+     */
+    public OCRActions(SimilarityManager similarityManager, DatabaseManager databaseManager, OCROptions options) {
+        this.similarityManager = similarityManager;
         this.databaseManager = databaseManager;
         this.options = options;
     }
@@ -183,14 +200,16 @@ public class OCRActions implements Actions {
 
             var data = new ArrayList<>(databaseManager.getAllCharacterSegments().get());
 
-            data.forEach(character ->
-                    OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
-                        // Gets the difference of the database character and searchCharacter (Lower is better)
-                        var imageLetter = new ImageLetter(character.getLetter(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getAvgWidth(), character.getAvgHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates());
-                        imageLetter.setMaxCenter(character.getMaxCenter());
-                        imageLetter.setMinCenter(character.getMinCenter());
-                        diffs.put(imageLetter, charDifference);
-                    }));
+
+            data.forEach(character -> {
+                OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
+                    // Gets the difference of the database character and searchCharacter (Lower is better)
+                    var imageLetter = new ImageLetter(character.getLetter(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getAvgWidth(), character.getAvgHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates());
+                    imageLetter.setMaxCenter(character.getMaxCenter());
+                    imageLetter.setMinCenter(character.getMinCenter());
+                    diffs.put(imageLetter, charDifference);
+                });
+            });
 
             return getCharacterFor(searchCharacter, diffs, lineBounds);
 
@@ -235,7 +254,7 @@ public class OCRActions implements Actions {
 
                     double ratio = imageLetter.getAverageWidth() / imageLetter.getAverageHeight();
                     double ratioDiff = Math.pow(ratio - searchRatio, 2);
-                    ratioDiff *= this.options.getSizeRatioWeight();
+                    ratioDiff *= this.similarityManager == null ? this.options.getSizeRatioWeight() : this.options.getSizeRatioWeight(Letter.getLetter(imageLetter));
 
                     entry.setValue(ratioDiff + entry.getDoubleValue());
                 })

@@ -5,6 +5,7 @@ import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.database.DatabaseManager;
 import com.uddernetworks.newocr.detection.SearchImage;
 import com.uddernetworks.newocr.recognition.similarity.Letter;
+import com.uddernetworks.newocr.recognition.similarity.SimilarityManager;
 import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.train.TrainGeneratorOptions;
 import com.uddernetworks.newocr.utils.OCRUtils;
@@ -47,6 +48,16 @@ public class OCRTrain implements Train {
      */
     public OCRTrain(DatabaseManager databaseManager, OCROptions options) {
         this(databaseManager, options, new OCRActions(databaseManager, options));
+    }
+
+    /**
+     * Creates a new {@link OCRTrain}.
+     *
+     * @param databaseManager The {@link DatabaseManager} to use
+     * @param options         The {@link OCROptions} to use
+     */
+    public OCRTrain(DatabaseManager databaseManager, SimilarityManager similarityManager, OCROptions options) {
+        this(databaseManager, options, new OCRActions(similarityManager, databaseManager, options));
     }
 
     /**

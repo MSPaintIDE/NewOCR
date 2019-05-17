@@ -1,7 +1,9 @@
 package com.uddernetworks.newocr.train;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.uddernetworks.newocr.recognition.similarity.Letter;
+import com.uddernetworks.newocr.recognition.similarity.SimilarRule;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -16,6 +18,7 @@ public class OCROptions {
     private Set<Character> specialSpaces = new HashSet<>();
     private double maxPercentDiffToMerge = 0.5;
     private double sizeRatioWeight = 4;
+    private Map<Letter, Double> specificRatioWeights = new HashMap<>();
 
     /**
      * Gets the characters requiring custom trained spaces.
@@ -73,6 +76,26 @@ public class OCROptions {
         return this;
     }
 
+    public void addRatioWeight(Letter letter, double weight) {
+        this.specificRatioWeights.put(letter, weight);
+    }
+
+    public void addRatioWeights(List<Letter> letters, double weight) {
+        letters.forEach(letter -> this.specificRatioWeights.put(letter, weight));
+    }
+
+    public void addRatioWeightFromRule(SimilarRule similarRule, double weight) {
+        Arrays.stream(Letter.values()).filter(similarRule::matchesLetter).forEach(letter -> this.specificRatioWeights.put(letter, weight));
+    }
+
+    public void addRatioWeightsFromRules(List<SimilarRule> similarRules, double weight) {
+        Arrays.stream(Letter.values())
+                .filter(letter ->
+                        similarRules.stream()
+                                .anyMatch(rule -> rule.matchesLetter(letter)))
+                .forEach(letter -> this.specificRatioWeights.put(letter, weight));
+    }
+
     /**
      * Gets the amount the width/height radio should be multiplied across all a character's potential matches, to
      * increase its effects compared to the actual section similarity.
@@ -81,6 +104,16 @@ public class OCROptions {
      */
     public double getSizeRatioWeight() {
         return sizeRatioWeight;
+    }
+
+    /**
+     * Gets the amount the width/height radio should be multiplied across all a character's potential matches, to
+     * increase its effects compared to the actual section similarity.
+     *
+     * @return The weight of the width/height ratio
+     */
+    public double getSizeRatioWeight(Letter letter) {
+        return sizeRatioWeight * this.specificRatioWeights.getOrDefault(letter, 1D);
     }
 
     /**

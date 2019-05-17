@@ -71,7 +71,7 @@ public class OCRScan implements Scan {
      * @param mergenceManager   The {@link MergenceManager} to use
      */
     public OCRScan(DatabaseManager databaseManager, OCROptions options, SimilarityManager similarityManager, MergenceManager mergenceManager) {
-        this(databaseManager, similarityManager, mergenceManager, new OCRActions(databaseManager, options));
+        this(databaseManager, similarityManager, mergenceManager, new OCRActions(similarityManager, databaseManager, options));
     }
 
     /**
