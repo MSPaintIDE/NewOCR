@@ -3,11 +3,12 @@ language: shell
 filter_secrets: false
 cache: false
 before_install:
-  - choco install openjdk -params 'installdir=c:\\newocr\\jdk' -y
+  - choco install openjdk -y
   - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
+  - mkdir 'c:\\newocr'
   - unzip -qq gradle-5.3-bin.zip -d /c/newocr/gradle
   - export GRADLE_HOME=/c/newocr/gradle/gradle-5.3
-  - export JAVA_HOME=/c/newocr/jdk
+  - export JAVA_HOME="C:\\Program Files\\OpenJDK\\jdk-12.0.1"
   - export PATH=$GRADLE_HOME/bin:$PATH
   - export PATH=$JAVA_HOME/bin:$PATH
   - set TERM=dumb
