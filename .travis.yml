@@ -3,7 +3,7 @@ language: shell
 filter_secrets: false
 cache: false
 before_install:
-  - choco install jdk11 -params 'installdir=c:\\newocr\\jdk' -y
+  - choco install openjdk -params 'installdir=c:\\newocr\\jdk' -y
   - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
   - unzip -qq gradle-5.3-bin.zip -d /c/newocr/gradle
   - export GRADLE_HOME=/c/newocr/gradle/gradle-5.3
