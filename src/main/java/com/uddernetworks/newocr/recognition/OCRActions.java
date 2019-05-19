@@ -201,15 +201,13 @@ public class OCRActions implements Actions {
             var data = new ArrayList<>(databaseManager.getAllCharacterSegments().get());
 
 
-            data.forEach(character -> {
-                OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
-                    // Gets the difference of the database character and searchCharacter (Lower is better)
-                    var imageLetter = new ImageLetter(character.getLetter(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getAvgWidth(), character.getAvgHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates());
-                    imageLetter.setMaxCenter(character.getMaxCenter());
-                    imageLetter.setMinCenter(character.getMinCenter());
-                    diffs.put(imageLetter, charDifference);
-                });
-            });
+            data.forEach(character -> OCRUtils.getDifferencesFrom(searchCharacter.getSegmentPercentages(), character.getData()).ifPresent(charDifference -> {
+                // Gets the difference of the database character and searchCharacter (Lower is better)
+                var imageLetter = new ImageLetter(character.getLetter(), character.getModifier(), searchCharacter.getX(), searchCharacter.getY(), searchCharacter.getWidth(), searchCharacter.getHeight(), character.getAvgWidth(), character.getAvgHeight(), ((double) searchCharacter.getWidth()) / ((double) searchCharacter.getHeight()), searchCharacter.getCoordinates());
+                imageLetter.setMaxCenter(character.getMaxCenter());
+                imageLetter.setMinCenter(character.getMinCenter());
+                diffs.put(imageLetter, charDifference);
+            }));
 
             return getCharacterFor(searchCharacter, diffs, lineBounds);
 
@@ -366,4 +364,8 @@ public class OCRActions implements Actions {
         return lines;
     }
 
+    @Override
+    public OCROptions getOptions() {
+        return this.options;
+    }
 }

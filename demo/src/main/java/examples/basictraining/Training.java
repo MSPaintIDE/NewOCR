@@ -31,7 +31,7 @@ public class Training {
 
         var fontConfiguration = new HOCONFontConfiguration("fonts/ComicSans", new ConfigReflectionCacher(), similarityManager, mergenceManager);
 
-        var ocrTrain = new OCRTrain(databaseManager, fontConfiguration.fetchOptions(similarityManager));
+        var ocrTrain = new OCRTrain(databaseManager, fontConfiguration.fetchOptions());
 
         ocrTrain.trainImage(new File("train_comicsans.png"), generateOptions);
 

@@ -5,6 +5,7 @@ import com.uddernetworks.newocr.character.ImageLetter;
 import com.uddernetworks.newocr.character.SearchCharacter;
 import com.uddernetworks.newocr.character.TrainedCharacterData;
 import com.uddernetworks.newocr.detection.SearchImage;
+import com.uddernetworks.newocr.train.OCROptions;
 import com.uddernetworks.newocr.utils.IntPair;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
@@ -114,5 +115,12 @@ public interface Actions {
      * @return A list of the absolute top and bottom line values
      */
     List<IntPair> getLineBoundsForTraining(SearchImage image);
+
+    /**
+     * Gets the {@link OCROptions} the {@link Actions} is using.
+     *
+     * @return The {@link OCROptions} being used
+     */
+    OCROptions getOptions();
 
 }

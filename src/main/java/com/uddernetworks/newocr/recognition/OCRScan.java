@@ -40,6 +40,7 @@ public class OCRScan implements Scan {
     private Actions actions;
     private SimilarityManager similarityManager;
     private MergenceManager mergenceManager;
+    private OCROptions options;
 
     /**
      * Creates a new {@link OCRScan} with a default {@link SimilarityManager} and {@link MergenceManager}.
@@ -87,6 +88,7 @@ public class OCRScan implements Scan {
         this.mergenceManager = mergenceManager;
         this.similarityManager = similarityManager;
         this.actions = actions;
+        this.options = actions.getOptions();
         ImageIO.setUseCache(false);
     }
 
@@ -98,7 +100,9 @@ public class OCRScan implements Scan {
         var start = System.currentTimeMillis();
 
         // Preparing image
-        var input = OCRUtils.readImage(file);
+        var inputOptional = this.options.getImageReadMethod().apply(file);
+        if (inputOptional.isEmpty()) throw new RuntimeException("Input file not found!");
+        var input = inputOptional.get();
         var values = OCRUtils.createGrid(input);
         var searchCharacters = new ArrayList<SearchCharacter>();
 
@@ -159,6 +163,7 @@ public class OCRScan implements Scan {
                     sortedLines.put(y, databaseCharacters);
                 });
 
+        System.out.println("sortedLines = " + sortedLines);
         this.mergenceManager.beginMergence(sortedLines, this.similarityManager);
 
         // Inserts all the spaces in the line. This is based on the first character of the line's height, and will be

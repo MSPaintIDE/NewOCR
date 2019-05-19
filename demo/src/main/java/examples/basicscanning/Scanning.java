@@ -33,7 +33,7 @@ public class Scanning {
         }
 
         var fontConfiguration = new HOCONFontConfiguration("fonts/ComicSans", new ConfigReflectionCacher(), similarityManager, mergenceManager);
-        var ocrScan = new OCRScan(databaseManager, fontConfiguration.fetchOptions(similarityManager), similarityManager, mergenceManager);
+        var ocrScan = new OCRScan(databaseManager, fontConfiguration.fetchOptions(), similarityManager, mergenceManager);
 
         ScannedImage scannedImage = ocrScan.scanImage(new File("demo\\src\\main\\resources\\basic-scanning.png"));
         System.out.println(OCRUtils.removeLeadingSpaces(scannedImage.getPrettyString()));

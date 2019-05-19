@@ -28,7 +28,7 @@ public class FontDetection {
 
         var fontConfiguration = new HOCONFontConfiguration("fonts/ComicSans", new ConfigReflectionCacher(), similarityManager, mergenceManager);
 
-        var actions = new OCRActions(similarityManager, databaseManager, fontConfiguration.fetchOptions(similarityManager));
+        var actions = new OCRActions(similarityManager, databaseManager, fontConfiguration.fetchOptions());
 
         var ocrScan = new OCRScan(databaseManager, similarityManager, mergenceManager, actions);
 

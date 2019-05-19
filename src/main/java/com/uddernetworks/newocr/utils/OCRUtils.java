@@ -6,7 +6,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -27,18 +26,13 @@ public class OCRUtils {
      *
      * @param input The file to read
      * @return The BufferedImage of the file
+     * @throws IOException If there are issues reading the file
      */
-    public static BufferedImage readImage(File input) {
-        BufferedImage bufferedImage = null;
-        try {
-            ImageIcon imageIcon = new ImageIcon(input.toURI().toURL());
-            bufferedImage = new BufferedImage(imageIcon.getIconWidth(), imageIcon.getIconHeight(), BufferedImage.TYPE_INT_RGB);
-            Graphics graphics = bufferedImage.getGraphics();
-            graphics.drawImage(imageIcon.getImage(), 0, 0, null);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
+    public static BufferedImage readImage(File input) throws IOException {
+        ImageIcon imageIcon = new ImageIcon(input.toURI().toURL());
+        var bufferedImage = new BufferedImage(imageIcon.getIconWidth(), imageIcon.getIconHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics graphics = bufferedImage.getGraphics();
+        graphics.drawImage(imageIcon.getImage(), 0, 0, null);
         return bufferedImage;
     }
 

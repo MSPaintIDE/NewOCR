@@ -53,8 +53,9 @@ public class OCRTrain implements Train {
     /**
      * Creates a new {@link OCRTrain}.
      *
-     * @param databaseManager The {@link DatabaseManager} to use
-     * @param options         The {@link OCROptions} to use
+     * @param databaseManager   The {@link DatabaseManager} to use
+     * @param similarityManager The {@link SimilarityManager} to use
+     * @param options           The {@link OCROptions} to use
      */
     public OCRTrain(DatabaseManager databaseManager, SimilarityManager similarityManager, OCROptions options) {
         this(databaseManager, options, new OCRActions(similarityManager, databaseManager, options));
@@ -74,9 +75,9 @@ public class OCRTrain implements Train {
     /**
      * Creates a new {@link OCRTrain}.
      *
-     * @param databaseManager The {@link DatabaseManager} to use
-     * @param options         The {@link OCROptions} to use
-     * @param actions         The {@link Actions} to use
+     * @param databaseManager  The {@link DatabaseManager} to use
+     * @param options          The {@link OCROptions} to use
+     * @param actions          The {@link Actions} to use
      * @param generatorOptions The {@link TrainGeneratorOptions} to use during training
      */
     public OCRTrain(DatabaseManager databaseManager, OCROptions options, Actions actions, TrainGeneratorOptions generatorOptions) {
@@ -107,8 +108,9 @@ public class OCRTrain implements Train {
         List<TrainedCharacterData> trainedCharacterDataList = new ArrayList<>();
 
         // Preparing image
-
-        var input = OCRUtils.readImage(file);
+        var inputOptional = this.options.getImageReadMethod().apply(file);
+        if (inputOptional.isEmpty()) throw new RuntimeException("Input file not found!");
+        var input = inputOptional.get();
         var values = OCRUtils.createGrid(input);
 
         input = OCRUtils.filter(input).orElseThrow();

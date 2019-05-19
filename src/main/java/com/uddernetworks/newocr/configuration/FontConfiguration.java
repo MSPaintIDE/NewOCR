@@ -41,19 +41,16 @@ public interface FontConfiguration {
     /**
      * Generates and returns the {@link OCROptions} from the file configuration.
      *
-     * @param similarityManager The {@link SimilarityManager} to use
      * @return The {@link OCROptions} from the settings
      */
-    OCROptions fetchOptions(SimilarityManager similarityManager);
+    OCROptions fetchOptions();
 
     /**
      * Fetches the similarities' settings from the configuration and applies them to the given
      * {@link SimilarityManager}. All similarities will be an instance of
      * {@link com.uddernetworks.newocr.recognition.similarity.rules.BasicSimilarityRule}.
-     *
-     * @param similarityManager The {@link SimilarityManager} to apply all similarities to
      */
-    void fetchAndApplySimilarities(SimilarityManager similarityManager);
+    void fetchAndApplySimilarities();
 
     /**
      * Fetches the mergence rules' settings from the configuration and applies them to the given

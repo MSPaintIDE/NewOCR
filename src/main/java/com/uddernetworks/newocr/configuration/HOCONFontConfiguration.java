@@ -34,24 +34,24 @@ public class HOCONFontConfiguration implements FontConfiguration {
 
     private String systemName;
     private String friendlyName;
+    private SimilarityManager similarityManager;
 
     /**
      * Creates a {@link HOCONFontConfiguration} with a given file name and {@link ReflectionCacher} (Which should be
      * global across all instances of this current class). This also includes a {@link SimilarityManager} and a
      * {@link MergenceManager} to automatically invoke the methods
-     * {@link FontConfiguration#fetchAndApplySimilarities(SimilarityManager)} and
+     * {@link FontConfiguration#fetchAndApplySimilarities()} and
      * {@link FontConfiguration#fetchAndApplyMergeRules(MergenceManager)} in their respective order.
      *
      * @param fileName          The name of the file
      * @param reflectionCacher  The {@link ReflectionCacher} to use
-     * @param similarityManager The {@link SimilarityManager} to invoke
-     *                          {@link FontConfiguration#fetchAndApplySimilarities(SimilarityManager)} on
+     * @param similarityManager The {@link SimilarityManager} to use
      * @param mergenceManager   The {@link MergenceManager} to invoke
      *                          {@link FontConfiguration#fetchAndApplyMergeRules(MergenceManager)} on
      */
     public HOCONFontConfiguration(String fileName, ReflectionCacher reflectionCacher, SimilarityManager similarityManager, MergenceManager mergenceManager) {
-        this(fileName, reflectionCacher);
-        fetchAndApplySimilarities(similarityManager);
+        this(fileName, reflectionCacher, similarityManager);
+        fetchAndApplySimilarities();
         fetchAndApplyMergeRules(mergenceManager);
     }
 
@@ -61,11 +61,13 @@ public class HOCONFontConfiguration implements FontConfiguration {
      *
      * @param fileName         The name of the file
      * @param reflectionCacher The {@link ReflectionCacher} to use
+     * @param similarityManager The {@link SimilarityManager} to use
      */
-    public HOCONFontConfiguration(String fileName, ReflectionCacher reflectionCacher) {
+    public HOCONFontConfiguration(String fileName, ReflectionCacher reflectionCacher, SimilarityManager similarityManager) {
         this.fileName = fileName;
         this.config = ConfigFactory.load(fileName);
         this.reflectionCacher = reflectionCacher;
+        this.similarityManager = similarityManager;
 
         var langProperties = this.config.getConfig("language.properties");
         this.systemName = langProperties.getString("system-name");
@@ -90,7 +92,7 @@ public class HOCONFontConfiguration implements FontConfiguration {
     }
 
     @Override
-    public OCROptions fetchOptions(SimilarityManager similarityManager) {
+    public OCROptions fetchOptions() {
         var options = this.config.getConfig("language.options");
         var ocrOptions = new OCROptions();
 
@@ -108,7 +110,7 @@ public class HOCONFontConfiguration implements FontConfiguration {
             var letterList = item.getEnumList(Letter.class, "letters");
             var ruleList = item.getStringList("similarities")
                     .stream()
-                    .map(similarityManager::getRule)
+                    .map(this.similarityManager::getRule)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toList());
@@ -125,7 +127,7 @@ public class HOCONFontConfiguration implements FontConfiguration {
     }
 
     @Override
-    public void fetchAndApplySimilarities(SimilarityManager similarityManager) {
+    public void fetchAndApplySimilarities() {
         var similarities = this.config.getConfig("language.similarities");
 
         var entries = similarities.entrySet();
@@ -139,12 +141,12 @@ public class HOCONFontConfiguration implements FontConfiguration {
 
             var configList = (ConfigList) children.get("letters");
 
-            var letters = configList.stream().map(value -> getEnumValue(Letter.class, value))
+            var letters = configList.stream().map(this::toLetter)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toSet());
 
-            similarityManager.addSimilarity(new BasicSimilarityRule((String) children.get("name").unwrapped(), letters));
+            this.similarityManager.addSimilarity(new BasicSimilarityRule((String) children.get("name").unwrapped(), letters));
         });
 
         LOGGER.info("[{}] Generated and added {} similarities...", this.friendlyName, entries.size());
@@ -181,17 +183,15 @@ public class HOCONFontConfiguration implements FontConfiguration {
     /**
      * Slightly adapted from SimpleConfig#getEnumValue(String, Class, ConfigValue)
      *
-     * @param enumClass       The class of the enum
      * @param enumConfigValue The value of the enum in the config
-     * @param <T>             The enum type
      * @return The enum value of the key
      */
-    private <T extends Enum<T>> Optional<T> getEnumValue(Class<T> enumClass, ConfigValue enumConfigValue) {
+    private Optional<Letter> toLetter(ConfigValue enumConfigValue) {
         String enumName = (String) enumConfigValue.unwrapped();
         try {
-            return Optional.of(Enum.valueOf(enumClass, enumName));
+            return Optional.of(Enum.valueOf(Letter.class, enumName));
         } catch (IllegalArgumentException e) {
-            LOGGER.error("Invalid enum value {} for enum {}", enumName, enumClass.getSimpleName());
+            LOGGER.error("Invalid enum value {} for enum Letter", enumName);
             return Optional.empty();
         }
     }

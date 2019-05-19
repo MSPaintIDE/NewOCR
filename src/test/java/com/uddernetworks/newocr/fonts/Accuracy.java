@@ -36,9 +36,9 @@ public class Accuracy {
         var databaseManager = new OCRDatabaseManager(new File("src\\test\\resources\\database\\ocr_db_" + strippedName));
         var similarityManager = new DefaultSimilarityManager();
 
-        var fontConfiguration = new HOCONFontConfiguration(configFileName, new ConfigReflectionCacher());
-        fontConfiguration.fetchAndApplySimilarities(similarityManager);
-        var options = fontConfiguration.fetchOptions(similarityManager);
+        var fontConfiguration = new HOCONFontConfiguration(configFileName, new ConfigReflectionCacher(), similarityManager);
+        fontConfiguration.fetchAndApplySimilarities();
+        var options = fontConfiguration.fetchOptions();
 
         return generate(fontFamily, options, similarityManager, databaseManager, fontConfiguration);
     }

@@ -25,7 +25,7 @@ group 'com.uddernetworks.newocr'
 archivesBaseName = "NewOCR"
 version '2.0.0-SNAPSHOT'
 
-sourceCompatibility = 11
+sourceCompatibility = 12
 
 repositories {
     mavenCentral()
