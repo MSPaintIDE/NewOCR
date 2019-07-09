@@ -20,12 +20,14 @@ public class DefaultScannedImage implements ScannedImage {
 
     private transient File originalFile;
 
+    private BufferedImage binarizedImage;
     private transient BufferedImage originalImage;
 
     private final Int2ObjectMap<List<ImageLetter>> grid = new Int2ObjectLinkedOpenHashMap<>();
 
-    public DefaultScannedImage(File originalFile, BufferedImage originalImage) {
+    public DefaultScannedImage(File originalFile, BufferedImage binarizedImage, BufferedImage originalImage) {
         this.originalFile = originalFile;
+        this.binarizedImage = binarizedImage;
         this.originalImage = originalImage;
     }
 
@@ -100,6 +102,11 @@ public class DefaultScannedImage implements ScannedImage {
     @Override
     public Int2ObjectMap.Entry<List<ImageLetter>> getLineEntry(int y) {
         return grid.int2ObjectEntrySet().stream().skip(y).findFirst().orElse(null);
+    }
+
+    @Override
+    public BufferedImage getBinarizedImage() {
+        return binarizedImage;
     }
 
     @Override

@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -103,6 +104,7 @@ public class OCRScan implements Scan {
         var inputOptional = this.options.getImageReadMethod().apply(file);
         if (inputOptional.isEmpty()) throw new RuntimeException("Input file not found!");
         var input = inputOptional.get();
+        var originalInput = copyBufferedImage(input);
         var values = OCRUtils.createGrid(input);
         var searchCharacters = new ArrayList<SearchCharacter>();
 
@@ -172,7 +174,7 @@ public class OCRScan implements Scan {
 
         // Sorts the lines again based on X values, to move spaces from the back to their proper locations in the line.
 
-        ScannedImage scannedImage = new DefaultScannedImage(file, input);
+        ScannedImage scannedImage = new DefaultScannedImage(file, input, originalInput);
 
         sortedLines.keySet().stream().sorted().forEach(y -> {
             List<ImageLetter> line = sortedLines.get(y.intValue());
@@ -233,5 +235,10 @@ public class OCRScan implements Scan {
         double extra = input % 1;
         known += OCRUtils.diff(extra, 1) < 0.2D ? 1 : 0;
         return known;
+    }
+
+    private BufferedImage copyBufferedImage(BufferedImage image) {
+        var colorModel = image.getColorModel();
+        return new BufferedImage(colorModel, image.copyData(null), colorModel.isAlphaPremultiplied(), null);
     }
 }

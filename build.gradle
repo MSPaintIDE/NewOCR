@@ -23,7 +23,7 @@ apply plugin: 'io.codearte.nexus-staging'
 
 group 'com.uddernetworks.newocr'
 archivesBaseName = "NewOCR"
-version '2.0.0-SNAPSHOT'
+version '2.0.0'
 
 sourceCompatibility = 12
 

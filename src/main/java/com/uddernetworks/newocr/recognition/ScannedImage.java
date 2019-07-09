@@ -89,6 +89,13 @@ public interface ScannedImage {
     Int2ObjectMap.Entry<List<ImageLetter>> getLineEntry(int y);
 
     /**
+     * Gets the binarized image before any preprocessing
+     *
+     * @return The binarized image, which may be null if pulled from caches
+     */
+    BufferedImage getBinarizedImage();
+
+    /**
      * Gets the original image scanned by the OCR.
      *
      * @return The original image, which may be null if pulled from caches

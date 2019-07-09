@@ -38,7 +38,7 @@ public enum ImageReadMethod implements Function<File, Optional<BufferedImage>> {
         @Override
         public Optional<BufferedImage> apply(File file) {
             try {
-                return Optional.ofNullable(OCRUtils.readImage(file));
+                return Optional.of(OCRUtils.readImage(file));
             } catch (IOException e) {
                 LOGGER.error("Error reading file with ImageReadMethod.IMAGE_ICON", e);
                 return Optional.empty();
