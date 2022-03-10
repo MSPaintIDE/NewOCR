@@ -17,7 +17,7 @@ git clone https://github.com/MSPaintIDE/NewOCR-javadocs .
 rm -rf *
 cd ../
 
-gradle javadoc --no-daemon
+gradle javadoc --daemon
 cd build/docs/
 mv javadoc/* ../../pages
 cd ../../pages
