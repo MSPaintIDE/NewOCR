@@ -1,7 +1,10 @@
 os: windows
 language: shell
 filter_secrets: false
-cache: false
+cache:
+   directories:
+   - $HOME/.gradle/caches/
+   - $HOME/.gradle/wrapper/
 before_install:
   - choco install openjdk -y
   - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
